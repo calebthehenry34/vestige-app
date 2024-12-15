@@ -2,13 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import authRoutes from './src/routes/authRoutes.js';
-import profileRoutes from './src/routes/profileRoutes.js';
-import adminRoutes from './src/routes/adminRoutes.js';
-import postRoutes from './src/routes/postRoutes.js';
-import chatRoutes from './src/routes/messageRoutes.js';
-import userRoutes from './src/routes/userRoutes.js';
-import videoRoutes from './src/routes/videoRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import profileRoutes from './routes/profileRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import postRoutes from './routes/postRoutes.js';
+import chatRoutes from './routes/messageRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import videoRoutes from './routes/videoRoutes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { startEmailQueue } from './services/emailService.js';
@@ -60,7 +60,7 @@ app.get('/test', (req, res) => {
   res.json({ message: 'Server is running' });
 });
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 3000;
 
 try {
   await mongoose.connect(process.env.MONGODB_URI, {
