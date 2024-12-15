@@ -16,48 +16,28 @@ import { startEmailQueue } from './src/services/emailService.js';
 dotenv.config();
 startEmailQueue();
 
-const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const app = express();
 
-// Before your route definitions
+// Allow multiple origins
 const allowedOrigins = [
-  'https://gleeful-starburst-18884e.netlify.app',
-  'http://localhost:3000'
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'https://your-netlify-app.netlify.app' // Add your Netlify URL when ready
 ];
 
-
-// CORS configuration
 app.use(cors({
-  origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with'],
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
-// Add OPTIONS handling for preflight requests
-app.options('*', cors({
-  origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with'],
-  credentials: true,
-  optionsSuccessStatus: 204
-}));
-
-// Add headers middleware
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-requested-with');
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  next();
-});
-
 
 app.use(express.json());
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
@@ -68,24 +48,6 @@ app.use('/api/posts', postRoutes);
 app.use('/api/messages', chatRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts/videos', videoRoutes);
-
-app.options('*', cors());
-
-app.post('/api/test-email', async (req, res) => {
-  try {
-    await queueEmail({
-      to: "test@example.com",
-      templateId: 'verification',
-      templateData: '123456',
-      priority: 1
-    });
-    res.json({ message: 'Test email queued successfully' });
-  } catch (error) {
-    console.error('Email test error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -103,9 +65,7 @@ const PORT = process.env.PORT || 5001;
 try {
   await mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
-    useUnifiedTopology: true,
-    authSource: 'admin',
-    maxPoolSize: 10
+    useUnifiedTopology: true
   });
   console.log('Connected to MongoDB');
   app.listen(PORT, () => {
