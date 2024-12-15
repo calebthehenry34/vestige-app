@@ -155,6 +155,9 @@ export const verifyCode = async (req, res) => {
   }
 };
 
+const bcrypt = require('bcrypt');
+
+
 export const login = async (req, res) => {
   try {
     // Add detailed logging
