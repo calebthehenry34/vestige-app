@@ -26,38 +26,43 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
-    try {
-      const response = await fetch('https://vestige-app.onrender.com/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
+  try {
+    console.log('Attempting login with:', {
+      email: formData.email,
+      hasPassword: !!formData.password
+    });
 
-      const data = await response.json();
+    const response = await fetch('https://vestige-app.onrender.com/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: formData.email,
+        password: formData.password
+      })
+    });
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
-      }
+    const data = await response.json();
+    console.log('Login response:', data);
 
-      await login(data.token, data.user);
-      
-      if (!data.user.onboardingComplete) {
-        navigate('/onboarding');
-      } else {
-        navigate('/');
-      }
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      throw new Error(data.error || data.details || 'Login failed');
     }
-  };
+
+    await login(data.token, data.user);
+    navigate('/');
+  } catch (error) {
+    console.error('Login error details:', error);
+    setError(error.message || 'Login failed. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Theme theme="g100">
