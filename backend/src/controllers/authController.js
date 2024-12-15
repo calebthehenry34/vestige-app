@@ -157,25 +157,39 @@ export const verifyCode = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
+    // Add detailed logging
+    console.log('Login attempt received:', {
+      email: req.body.email,
+      receivedPassword: !!req.body.password // Just log if password was received
+    });
+
     const { email, password } = req.body;
 
     // Find user
     const user = await User.findOne({ email });
     if (!user) {
+      console.log('User not found:', email);
       return res.status(401).json({ 
-        error: 'Invalid credentials' 
+        error: 'Invalid credentials',
+        details: 'User not found'
       });
     }
 
     // Check password
     const isValidPassword = await bcrypt.compare(password, user.password);
+    console.log('Password validation:', { 
+      isValid: isValidPassword,
+      userExists: !!user
+    });
+
     if (!isValidPassword) {
       return res.status(401).json({ 
-        error: 'Invalid credentials' 
+        error: 'Invalid credentials',
+        details: 'Password mismatch'
       });
     }
 
-    // Generate token
+    // If we get here, login is successful
     const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET,
@@ -188,15 +202,16 @@ export const login = async (req, res) => {
         id: user._id,
         email: user.email,
         username: user.username,
-        isAdmin: Boolean(user.isAdmin),
-        bio: user.bio,
-        profilePicture: user.profilePicture,
-        onboardingComplete: user.onboardingComplete
+        isAdmin: Boolean(user.isAdmin)
       }
     });
+
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed' });
+    res.status(500).json({ 
+      error: 'Login failed',
+      details: error.message
+    });
   }
 };
 
