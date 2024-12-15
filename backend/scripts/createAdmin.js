@@ -1,14 +1,27 @@
 // backend/scripts/createAdmin.js
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import User from '../models/User.js';
+import User from '../src/models/User.js';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { config } from 'dotenv';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables from the backend .env file
+config({ path: join(__dirname, '..', '.env') });
 
 const createAdminUser = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    // Connect to MongoDB
+    const uri = process.env.MONGODB_URI;
+    if (!uri) {
+      throw new Error('MONGODB_URI environment variable is not set');
+    }
+
+    await mongoose.connect(uri);
     console.log('Connected to MongoDB');
 
     // Check if admin already exists
@@ -28,7 +41,8 @@ const createAdminUser = async () => {
       password: hashedPassword,
       username: 'admin',
       isAdmin: true,
-      onboardingComplete: true
+      onboardingComplete: true,
+      role: 'admin'
     });
 
     await adminUser.save();
