@@ -23,7 +23,7 @@ const app = express();
 // Allow multiple origins
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3000',
-  'https://your-netlify-app.netlify.app' // Add your Netlify URL when ready
+  'https://gleeful-starburst-18884e.netlify.app/' // Add your Netlify URL when ready
 ];
 
 app.use(cors({
@@ -60,7 +60,7 @@ app.get('/test', (req, res) => {
   res.json({ message: 'Server is running' });
 });
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 3000;
 
 try {
   await mongoose.connect(process.env.MONGODB_URI, {
