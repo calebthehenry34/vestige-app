@@ -1,6 +1,5 @@
 // backend/scripts/createAdmin.js
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
 import User from '../src/models/User.js';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
@@ -24,21 +23,18 @@ const createAdminUser = async () => {
     await mongoose.connect(uri);
     console.log('Connected to MongoDB');
 
-    // Check if admin already exists
+    // Delete existing admin if exists
     const existingAdmin = await User.findOne({ email: 'admin@vestige.com' });
     if (existingAdmin) {
-      console.log('Admin user already exists');
-      process.exit(0);
+      console.log('Deleting existing admin user...');
+      await User.deleteOne({ email: 'admin@vestige.com' });
+      console.log('Existing admin user deleted');
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('adminpassword', salt);
-
-    // Create admin user
+    // Create admin user - let the User model's pre-save middleware handle password hashing
     const adminUser = new User({
       email: 'admin@vestige.com',
-      password: hashedPassword,
+      password: 'adminpassword', // This will be hashed by the pre-save middleware
       username: 'admin',
       isAdmin: true,
       onboardingComplete: true,
@@ -46,7 +42,7 @@ const createAdminUser = async () => {
     });
 
     await adminUser.save();
-    console.log('Admin user created successfully');
+    console.log('Admin user created successfully with password: adminpassword');
     process.exit(0);
   } catch (error) {
     console.error('Error creating admin user:', error);
