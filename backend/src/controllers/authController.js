@@ -20,9 +20,6 @@ export const registerValidation = [
 ];
 
 
-
-
-
 export const register = async (req, res) => {
   try {
     // Validate input
@@ -155,7 +152,6 @@ export const verifyCode = async (req, res) => {
   }
 };
 
-const bcrypt = require('bcrypt');
 
 
 export const login = async (req, res) => {
