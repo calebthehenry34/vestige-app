@@ -16,15 +16,11 @@ async function resetTestUser() {
     await User.deleteOne({ email: 'test@test.com' });
     console.log('Deleted existing test user');
 
-    // Create new test user
-    const plainPassword = 'Test123!';
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(plainPassword, salt);
-
+    // Create new test user - don't hash password, let the model's pre-save middleware do it
     const user = new User({
       email: 'test@test.com',
       username: 'testuser',
-      password: hashedPassword,
+      password: 'Test123!', // Plain password - will be hashed by pre-save middleware
       firstLogin: false,
       onboardingComplete: true
     });
@@ -32,16 +28,21 @@ async function resetTestUser() {
     await user.save();
     console.log('Created new test user');
     
-    // Verify password works
+    // Verify password using the model's comparePassword method
     const savedUser = await User.findOne({ email: 'test@test.com' });
-    const isMatch = await bcrypt.compare(plainPassword, savedUser.password);
+    const isMatch = await savedUser.comparePassword('Test123!');
     
     console.log('Password verification test:', {
-      plainPassword,
+      plainPassword: 'Test123!',
       hashedPassword: savedUser.password,
       passwordLength: savedUser.password.length,
       passwordMatches: isMatch
     });
+
+    // Double check with direct bcrypt compare
+    const bcryptMatch = await bcrypt.compare('Test123!', savedUser.password);
+    console.log('Direct bcrypt comparison:', bcryptMatch);
+
   } catch (error) {
     console.error('Error:', error);
   } finally {
