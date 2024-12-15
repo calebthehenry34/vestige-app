@@ -1,0 +1,63 @@
+/* PostComments.module.css */
+.commentForm {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 12px 5px;
+  margin-top: 0;
+  width: 100%;
+}
+
+.commentInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 8px;
+  font-size: 14px;
+  background: transparent;
+}
+
+.commentInput::placeholder {
+  color: #9ca3af;
+}
+
+.replyBox {
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px 5px 0 0;
+  position: absolute;
+  top: -40px;
+  font-size: 0.875rem;
+}
+
+.replyBox[data-theme='dark-theme'] {
+  background-color: #262626;
+  color: #a3a3a3;
+}
+
+.replyBox[data-theme='light-theme'] {
+  background-color: #f1f1f2;
+  color: #696969;
+}
+
+.closeButton {
+  margin-left: 8px;
+  color: #6b7280;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.postButton {
+  margin-left: 8px;
+  font-weight: 600;
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.postButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

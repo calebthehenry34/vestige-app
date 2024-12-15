@@ -1,0 +1,38 @@
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fafafa;
+  }
+  
+  .auth-form-container {
+    max-width: 400px;
+    width: 100%;
+    padding: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .password-requirements {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+  }
+  
+  .username-status {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.875rem;
+  }
+  
+  .username-available {
+    color: #059669;
+  }
+  
+  .username-taken {
+    color: #dc2626;
+  }
