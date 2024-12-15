@@ -36,7 +36,7 @@ const Login = () => {
       hasPassword: !!formData.password
     });
 
-    const response = await fetch('https://vestige-app.onrender.com/api/auth/login', {
+    const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
