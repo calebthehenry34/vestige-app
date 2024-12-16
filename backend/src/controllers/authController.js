@@ -51,6 +51,7 @@ export const register = async (req, res) => {
     }
 
     console.log('Registration attempt:', req.body); // Add logging
+
     const { email, password, username } = req.body;
 
     // Check if all required fields are present
@@ -65,27 +66,32 @@ export const register = async (req, res) => {
       });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ 
-      $or: [{ email }, { username }] 
+    // Check if verification exists and is verified
+    const verificationData = await VerificationCode.findOne({ 
+      email,
+      verified: true
     });
 
-    if (existingUser) {
-      return res.status(400).json({ 
-        error: existingUser.email === email ? 'Email already registered' : 'Username already taken'
-      });
-    }
-
-     // Check if email was verified
-    const verificationData = verificationCodes.get(email);
-    console.log('Verification data:', verificationData); // Add logging
-
-    if (!verificationData?.verified) {
+    if (!verificationData) {
       return res.status(400).json({ 
         error: 'Email not verified',
         details: 'Please verify your email first'
       });
     }
+
+
+    // Check if user already exists
+   const existingUser = await User.findOne({ 
+      $or: [{ email }, { username }] 
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ 
+        error: existingUser.email === email ? 'Email already registered' : 'Username is not available'
+      });
+    }
+
+
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
@@ -188,12 +194,17 @@ export const verifyCode = async (req, res) => {
   try {
     const { email, code } = req.body;
     console.log('Verifying code:', { email, code });
-    const verificationData = await VerificationCode.findOne({ email });
 
-    if (!verificationData) {
+const verificationData = await VerificationCode.findOne({ 
+      email,
+      code,
+      verified: false
+    });
+
+     if (!verificationData) {
       return res.status(400).json({ 
-        error: 'No verification code found',
-        details: 'Please request a new code'
+        error: 'Invalid verification code',
+        details: 'Code does not match or has expired'
       });
     }
 
@@ -213,10 +224,8 @@ export const verifyCode = async (req, res) => {
     }
 
      // Mark as verified
-     verificationCodes.set(email, {
-      ...verificationData,
-      verified: true
-    });
+     verificationData.verified = true;
+    await verificationData.save();
 
     res.json({ message: 'Email verified successfully' });
   } catch (error) {

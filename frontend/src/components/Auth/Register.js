@@ -84,7 +84,7 @@ const Register = () => {
         throw new Error(usernameStatus.message);
       }
 
-      const response = await fetch(API_URL + 'api/auth/send-verification', {
+      const response = await fetch(`${API_URL}/api/auth/send-verification`, { 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -151,7 +151,7 @@ const Register = () => {
         code: formData.verificationCode
       });
 
-      const verifyResponse = await fetch(API_URL + 'api/auth/verify-code', {
+      const verifyResponse = await fetch(`${API_URL}/api/auth/verify-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -170,7 +170,8 @@ const Register = () => {
       }
 
       // Then register the user
-      const registerResponse = await fetch(API_URL + 'api/auth/register', {
+      const registerResponse = await fetch(`${API_URL}/api/auth/register`, {
+
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
