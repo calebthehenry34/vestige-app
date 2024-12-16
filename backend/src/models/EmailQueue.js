@@ -8,7 +8,7 @@ const emailQueueSchema = new mongoose.Schema({
   from: {
     type: String,
     required: true,
-    default: 'noreply@vestige.internal'
+    default: process.env.EMAIL_FROM
   },
   subject: String,
   html: String,

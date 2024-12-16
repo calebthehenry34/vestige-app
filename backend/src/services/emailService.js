@@ -43,6 +43,7 @@ export const queueEmail = async ({ to, templateId, templateData, priority = 0, s
     
     const email = new EmailQueue({
       to,
+      from: process.env.EMAIL_FROM, // Explicitly set from address
       subject,
       html: html.replace('#{trackingId}', trackingId) + trackingPixel,
       templateId,
@@ -54,6 +55,12 @@ export const queueEmail = async ({ to, templateId, templateData, priority = 0, s
 
     await email.save();
     console.log(`Email queued successfully: ${email._id}`);
+    
+    // Trigger immediate processing for high-priority emails
+    if (priority > 0) {
+      processEmailQueue();
+    }
+    
     return email;
   } catch (error) {
     console.error('Error queuing email:', error);
@@ -123,7 +130,7 @@ export const processEmailQueue = async () => {
         await email.save();
 
         const result = await transporter.sendMail({
-          from: email.from || process.env.EMAIL_FROM,
+          from: process.env.EMAIL_FROM, // Always use configured SES email
           to: email.to,
           subject: email.subject,
           html: email.html
@@ -172,6 +179,8 @@ export const trackEmailOpen = async (trackingId, req) => {
 const startEmailQueue = () => {
   console.log('Starting email queue processor...');
   setInterval(processEmailQueue, 30000); // Process every 30 seconds
+  // Initial process
+  processEmailQueue();
 };
 
 // Export queue starter
