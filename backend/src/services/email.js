@@ -15,7 +15,7 @@ export const sendEmail = async ({ to, subject, html, type }) => {
         // Create email record
         const email = new Email({
             to,
-            from: 'noreply@vestige.internal',
+            from: 'support@vestigeapp.com',
             subject,
             html,
             type
