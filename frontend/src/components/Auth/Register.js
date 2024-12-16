@@ -246,7 +246,7 @@ const Register = () => {
 
   return (
     <Theme theme="g100">
-        <div className="px-6 min-h-screen flex items-center justify-center">
+        <div className="px-6 h-screen flex items-center justify-center">
         <div className="w-full max-w-lg bg-black rounded-lg shadow-xl login-card">
             <div>
               <div class="card-header">
@@ -256,11 +256,6 @@ const Register = () => {
               </div>
               {error && (
                 <InlineNotification
-                  kind="error"
-                  title="Error"
-                  subtitle={error}
-                  hideCloseButton
-                  className="mb-6"
                 />
               )}
 
@@ -274,7 +269,7 @@ const Register = () => {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     invalid={formData.email && !isValidEmail(formData.email)}
-                    invalidText="Please enter a valid email address"
+                    invalidText="Email not valid"
                     style={{
                       backgroundColor: '#000',
                       borderBottom: '1px solid #525252',
@@ -310,9 +305,6 @@ const Register = () => {
                       }}
                       className="[&_.cds--label]:text-white [&_input]:text-white [&_input:focus]:outline-none"
                     />
-                    {isCheckingUsername && (
-                      <p className="text-sm text-gray-400 mt-1">Checking username...</p>
-                    )}
                     {!isCheckingUsername && usernameStatus.message && (
                       <p className={`text-sm mt-1 ${usernameStatus.valid ? 'text-green-500' : 'text-red-500'}`}>
                         {usernameStatus.message}
@@ -464,7 +456,7 @@ const Register = () => {
               <div className="text-center  mb-25  text-sm mt-6">
                 <Link 
                   to="/login" 
-                  className="text-[#f1f1f2]hover:text-[#0f62fe]"
+                  className="text-[#f1f1f2]hover:text-[#f1f1f2]"
                 >
                   Go back to login
                 </Link>
