@@ -49,7 +49,16 @@ const Home = () => {
       }
 
       const data = await response.json();
-      setPosts(data || []); // Ensure we always set an array
+      // Ensure data is an array before setting posts
+      if (Array.isArray(data)) {
+        setPosts(data);
+      } else if (data && typeof data === 'object' && Array.isArray(data.posts)) {
+        // If data is wrapped in an object with a posts property
+        setPosts(data.posts);
+      } else {
+        console.error('Invalid posts data format:', data);
+        setPosts([]);
+      }
     } catch (error) {
       console.error('Error fetching posts:', error);
       setPosts([]); // Set empty array on error
@@ -274,7 +283,7 @@ const Home = () => {
         if (post._id === postId) {
           return {
             ...post,
-            comments: [...post.comments, data]
+            comments: [...(post.comments || []), data]
           };
         }
         return post;
@@ -344,7 +353,7 @@ const Home = () => {
   return (
     <div className="max-w-xl mx-auto p-4 m-50">
       <div className="space-y-6">
-        {posts.map((post) => (
+        {Array.isArray(posts) && posts.map((post) => (
           <div key={post._id} className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="relative">
               {/* User Info and Menu Overlay at Top */}
