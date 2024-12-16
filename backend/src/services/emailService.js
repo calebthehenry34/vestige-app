@@ -5,21 +5,53 @@ import EmailQueue from '../models/EmailQueue.js';
 import { templates } from './emailTemplates.js';
 import crypto from 'crypto';
 
-// Create SES client with debug logging
-const ses = new aws.SES({
-  apiVersion: '2010-12-01',
-  region: process.env.AWS_REGION,
-  credentials: defaultProvider(),
-  logger: console
-});
+// Create a test account if AWS credentials are not available
+const createTestAccount = async () => {
+  console.log('Creating test email account...');
+  const testAccount = await nodemailer.createTestAccount();
+  console.log('Test email account created:', testAccount);
+  return nodemailer.createTransport({
+    host: 'smtp.ethereal.email',
+    port: 587,
+    secure: false,
+    auth: {
+      user: testAccount.user,
+      pass: testAccount.pass,
+    },
+    debug: true,
+    logger: true
+  });
+};
 
-// Create Nodemailer transporter using SES
-const transporter = nodemailer.createTransport({
-  SES: { ses, aws },
-  sendingRate: 1, // Limit to avoid hitting SES sending limits
-  debug: true, // Enable debug logging
-  logger: true // Enable built-in logger
-});
+// Create transporter based on environment
+const createTransporter = async () => {
+  if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_REGION) {
+    console.log('Using AWS SES for email...');
+    const ses = new aws.SES({
+      apiVersion: '2010-12-01',
+      region: process.env.AWS_REGION,
+      credentials: defaultProvider(),
+      logger: console
+    });
+
+    return nodemailer.createTransport({
+      SES: { ses, aws },
+      sendingRate: 1,
+      debug: true,
+      logger: true
+    });
+  } else {
+    console.log('AWS credentials not found, using test email account...');
+    return await createTestAccount();
+  }
+};
+
+// Initialize transporter
+let transporter;
+createTransporter().then(t => {
+  transporter = t;
+  console.log('Email transporter created successfully');
+}).catch(console.error);
 
 // Generate tracking pixel
 const generateTrackingPixel = (trackingId) => `
@@ -43,7 +75,7 @@ export const queueEmail = async ({ to, templateId, templateData, priority = 0, s
     
     const email = new EmailQueue({
       to,
-      from: process.env.EMAIL_FROM, // Explicitly set from address
+      from: process.env.EMAIL_FROM || 'noreply@vestige.com',
       subject,
       html: html.replace('#{trackingId}', trackingId) + trackingPixel,
       templateId,
@@ -72,17 +104,16 @@ export const sendVerificationEmail = async (email, code) => {
   try {
     console.log(`Attempting to send verification email to ${email}`);
     
-    // Test SES connection
-    try {
-      const sesResponse = await ses.getSendQuota({});
-      console.log('SES Quota:', sesResponse);
-    } catch (sesError) {
-      console.error('SES Connection Error:', sesError);
-      throw new Error('Failed to connect to SES');
+    if (!transporter) {
+      console.log('Waiting for transporter initialization...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!transporter) {
+        throw new Error('Email transporter not initialized');
+      }
     }
 
     const result = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from: process.env.EMAIL_FROM || 'noreply@vestige.com',
       to: email,
       subject: "Verify your email address",
       html: `
@@ -96,6 +127,10 @@ export const sendVerificationEmail = async (email, code) => {
     });
     
     console.log('Email sent successfully:', result);
+    // If using ethereal email, log the preview URL
+    if (result.messageId && transporter.options.host === 'smtp.ethereal.email') {
+      console.log('Preview URL: %s', nodemailer.getTestMessageUrl(result));
+    }
     return result;
   } catch (error) {
     console.error('Detailed error sending email:', {
@@ -111,6 +146,11 @@ export const sendVerificationEmail = async (email, code) => {
 // Process email queue
 export const processEmailQueue = async () => {
   try {
+    if (!transporter) {
+      console.log('Email transporter not initialized, skipping queue processing');
+      return;
+    }
+
     console.log('Processing email queue...');
     
     const emails = await EmailQueue.find({
@@ -130,13 +170,17 @@ export const processEmailQueue = async () => {
         await email.save();
 
         const result = await transporter.sendMail({
-          from: process.env.EMAIL_FROM, // Always use configured SES email
+          from: email.from,
           to: email.to,
           subject: email.subject,
           html: email.html
         });
 
         console.log(`Email ${email._id} sent successfully:`, result);
+        // If using ethereal email, log the preview URL
+        if (result.messageId && transporter.options.host === 'smtp.ethereal.email') {
+          console.log('Preview URL: %s', nodemailer.getTestMessageUrl(result));
+        }
 
         email.status = 'sent';
         email.sentAt = new Date();
