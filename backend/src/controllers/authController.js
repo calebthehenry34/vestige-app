@@ -27,6 +27,18 @@ export const register = async (req, res) => {
 
     const { email, password, username } = req.body;
 
+    // Check if all required fields are present
+    if (!email || !password || !username) {
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        details: {
+          email: !email ? 'Email is required' : null,
+          password: !password ? 'Password is required' : null,
+          username: !username ? 'Username is required' : null
+        }
+      });
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({ 
       $or: [{ email }, { username }] 

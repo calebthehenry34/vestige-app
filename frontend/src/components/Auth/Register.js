@@ -23,6 +23,7 @@ const Register = () => {
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
+    username: '',
     password: '',
     verificationCode: ''
   });
@@ -35,6 +36,14 @@ const Register = () => {
     setError('');
 
     try {
+      // First check if username is available
+      const checkUsernameResponse = await fetch(`${API_URL}/api/auth/check-username?username=${formData.username}`);
+      const usernameData = await checkUsernameResponse.json();
+      
+      if (!usernameData.available) {
+        throw new Error('Username is already taken');
+      }
+
       const response = await fetch(API_URL + '/api/auth/send-verification', {
         method: 'POST',
         headers: {
@@ -90,7 +99,6 @@ const Register = () => {
     setLoading(true);
     setError('');
 
-    
     try {
       // First verify the code
       console.log('Sending verification code:', {
@@ -98,7 +106,6 @@ const Register = () => {
         code: formData.verificationCode
       });
 
-      
       const verifyResponse = await fetch(API_URL + '/api/auth/verify-code', {
         method: 'POST',
         headers: {
@@ -114,7 +121,7 @@ const Register = () => {
       console.log('Verification response:', verifyData);
 
       if (!verifyResponse.ok) {
-        throw new Error('Invalid verification code');
+        throw new Error(verifyData.error || 'Invalid verification code');
       }
 
       // Then register the user
@@ -125,6 +132,7 @@ const Register = () => {
         },
         body: JSON.stringify({
           email: formData.email,
+          username: formData.username,
           password: formData.password
         })
       });
@@ -173,6 +181,26 @@ const Register = () => {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    style={{
+                      backgroundColor: '#262626',
+                      borderBottom: '1px solid #525252',
+                      color: 'white',
+                      width: '100%',
+                      paddingLeft: '3px',
+                      padding:'5px',
+                      outline: 'none',
+                      marginTop: '10px'
+                    }}
+                    className="[&_.cds--label]:text-white [&_input]:text-white [&_input:focus]:outline-none"
+                  />
+
+                  <TextInput
+                    id="username"
+                    labelText="Username"
+                    type="text"
+                    required
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase() })}
                     style={{
                       backgroundColor: '#262626',
                       borderBottom: '1px solid #525252',
