@@ -11,7 +11,6 @@ import {
   EyeRegular,
   EyeOffRegular
 } from '@fluentui/react-icons';
-import GradientBackground from '../../components/GradientBackground';
 import { API_URL } from '../../config';
 
 const Login = () => {
@@ -66,24 +65,15 @@ const Login = () => {
 
   return (
     <Theme theme="g100">
-      <GradientBackground>
-        <div className="w-full max-w-md px-6 py-8 mx-auto">
-          <div className="bg-[#262626] rounded-lg shadow-xl">
-            <div className="px-8 pt-8 pb-6">
-              <h1 className="text-2xl md:text-3xl font-medium text-white mb-8">Login</h1>
-              
-              {error && (
-                <div className="bg-white mb-6 p-4 flex items-start gap-3 rounded-lg">
-                  <ErrorBoundary className="text-[#da1e28] flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium">Error:</p>
-                    <p>{error}</p>
-                  </div>
+        <div className="px-6 min-h-screen flex items-center justify-center ">
+          <div className="w-full max-w-lg bg-black rounded-lg shadow-xl login-card">
+            <div>
+              <div className="card-header">
+              <h1 className="flex items-center justify-left font-headlines text-3xl md:text-3xl text-white mt-25">
+              <img src="/logos/logo.svg" alt="Logo" className="mr-3 h-5 w-auto"/>Login</h1>
                 </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-6 px-8 pt-8 pb-6">
+                <div className=" font-medium space-y-4 mt-20">
                   <TextInput
                     id="email"
                     labelText="Email"
@@ -92,9 +82,9 @@ const Login = () => {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     style={{
-                      backgroundColor: '#262626',
+                      backgroundColor: '#000',
                       borderBottom: '1px solid #525252',
-                      color: 'white',
+                      color: '#f1f1f2',
                       width: '100%',
                       paddingLeft: '3px',
                       outline: 'none',
@@ -112,9 +102,9 @@ const Login = () => {
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       style={{
-                        backgroundColor: '#262626',
+                        backgroundColor: '#000',
                         borderBottom: '1px solid #525252',
-                        color: 'white',
+                        color: '#f1f1f2',
                         width: '100%',
                         paddingLeft: '3px',
                         outline: 'none',
@@ -125,37 +115,42 @@ const Login = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2 top-8 text-gray-400 hover:text-white transition-colors"
+                      className="absolute right-2 top-9 text-gray-400 hover:text-white transition-colors"
                     >
                       {showPassword ? <EyeOffRegular size={20} /> : <EyeRegular size={20} />}
                     </button>
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <Link to="/forgot-password" className="text-[#4589ff] text-sm hover:text-[#0f62fe]">
+                <div className="text-left">
+                  <Link to="/forgot-password" className=" font-medium text-white text-xs hover:text-[#f1f1f2]">
                     Forgot password?
                   </Link>
                 </div>
 
+                {error && (
+                <div className="mb-6 p-4 flex items-start gap-1 rounded-lg">
+                  <ErrorBoundary className="text-[#c9083b] flex-shrink-0" />
+                  <div>
+                    <p className="font-medium font-sm text-[#c9083b]">Error: {error}</p><p className="font-sm text-[#c9083b]"></p>
+                  </div>
+                </div>
+              )}
+
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="button-border w-full font-headlines"
                   disabled={loading}
-                  size="lg"
+                  size="xl"
                   style={{
-                    backgroundColor: '#0f62fe',
-                    minHeight: '48px',
-                    borderRadius: '5px',
-                    outline: 'none'
+                    minHeight: '60px',
                   }}
                 >
                   {loading ? 'Signing in...' : 'Continue'}
                 </Button>
-
-                <p className="text-sm text-gray-400 text-center">
+                <p className="text-sm text-gray-400 mt-35 text-center">
                   {' '}
-                  <Link to="/register" className="text-[#4589ff] text-sm hover:text-[#0f62fe]">
+                  <Link to="/register" className="text-[#f1f1f2] font-medium text-sm hover:text-[#0f62fe]">
                     Create an account
                   </Link>
                 </p>
@@ -163,7 +158,6 @@ const Login = () => {
             </div>
           </div>
         </div>
-      </GradientBackground>
     </Theme>
   );
 };

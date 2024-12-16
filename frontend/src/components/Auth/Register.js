@@ -247,14 +247,14 @@ const Register = () => {
 
   return (
     <Theme theme="g100">
-      <GradientBackground>
-        <div className="w-full max-w-md px-6 py-8 mx-auto">
-          <div className="bg-[#262626] rounded-lg shadow-xl">
-            <div className="px-8 pt-8 pb-6">
-              <h1 className="text-2xl md:text-3xl font-medium text-white mb-8">
-                {step === 1 ? 'Create Account' : 'Verify Email'}
+        <div className="px-6 min-h-screen flex items-center justify-center">
+        <div className="w-full max-w-lg bg-black rounded-lg shadow-xl login-card">
+            <div>
+              <div class="card-header">
+              <h1 className="flex items-center justify-left font-headlines text-3xl md:text-3xl text-white mt-25">
+              <img src="/logos/logo.svg" alt="Logo" className="mr-3 h-5 w-auto"/> {step === 1 ? 'Signup' : 'Verify Email'}
               </h1>
-
+              </div>
               {error && (
                 <InlineNotification
                   kind="error"
@@ -266,7 +266,7 @@ const Register = () => {
               )}
 
               {step === 1 ? (
-                <form onSubmit={handleInitialSubmit} className="space-y-6">
+                <form onSubmit={handleInitialSubmit} className="space-y-6 px-8 pt-8 pb-6">
                   <TextInput
                     id="email"
                     labelText="Email"
@@ -277,7 +277,7 @@ const Register = () => {
                     invalid={formData.email && !isValidEmail(formData.email)}
                     invalidText="Please enter a valid email address"
                     style={{
-                      backgroundColor: '#262626',
+                      backgroundColor: '#000',
                       borderBottom: '1px solid #525252',
                       color: 'white',
                       width: '100%',
@@ -300,7 +300,7 @@ const Register = () => {
                       invalid={formData.username.length >= 3 && !usernameStatus.valid}
                       invalidText={usernameStatus.message}
                       style={{
-                        backgroundColor: '#262626',
+                        backgroundColor: '#000',
                         borderBottom: '1px solid #525252',
                         color: 'white',
                         width: '100%',
@@ -330,7 +330,7 @@ const Register = () => {
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       style={{
-                        backgroundColor: '#262626',
+                        backgroundColor: '#000',
                         borderBottom: '1px solid #525252',
                         color: 'white',
                         width: '100%',
@@ -361,7 +361,7 @@ const Register = () => {
                       invalid={formData.confirmPassword && formData.password !== formData.confirmPassword}
                       invalidText="Passwords do not match"
                       style={{
-                        backgroundColor: '#262626',
+                        backgroundColor: '#000',
                         borderBottom: '1px solid #525252',
                         color: 'white',
                         width: '100%',
@@ -383,11 +383,10 @@ const Register = () => {
 
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="button-border w-full font-headlines"
                     disabled={loading || !isValidEmail(formData.email) || !usernameStatus.valid || !formData.password || formData.password !== formData.confirmPassword}
                     style={{
-                      backgroundColor: '#0f62fe',
-                      minHeight: '48px',
+                      minHeight: '60px',
                       borderRadius: '5px',
                       outline: 'none'
                     }}
@@ -463,18 +462,17 @@ const Register = () => {
                 </div>
               )}
 
-              <div className="text-center text-sm mt-6">
+              <div className="text-center  mb-25  text-sm mt-6">
                 <Link 
                   to="/login" 
-                  className="text-[#4589ff] hover:text-[#0f62fe]"
+                  className="text-[#f1f1f2]hover:text-[#0f62fe]"
                 >
-                  Back to Login
+                  Go back to login
                 </Link>
               </div>
             </div>
           </div>
         </div>
-      </GradientBackground>
     </Theme>
   );
 };
