@@ -65,7 +65,7 @@ const Login = () => {
 
   return (
     <Theme theme="g100">
-        <div className="px-6 min-h-screen flex items-center justify-center ">
+        <div className="px-6 h-screen flex items-center justify-center ">
           <div className="w-full max-w-lg bg-black rounded-lg shadow-xl login-card">
             <div>
               <div className="card-header">
