@@ -4,6 +4,10 @@ import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import EmailQueue from '../models/EmailQueue.js';
 import { templates } from './emailTemplates.js';
 import crypto from 'crypto';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 // Create a test account if AWS credentials are not available
 const createTestAccount = async () => {
@@ -25,21 +29,31 @@ const createTestAccount = async () => {
 
 // Create transporter based on environment
 const createTransporter = async () => {
-  if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_REGION) {
-    console.log('Using AWS SES for email...');
-    const ses = new aws.SES({
-      apiVersion: '2010-12-01',
-      region: process.env.AWS_REGION,
-      credentials: defaultProvider(),
-      logger: console
-    });
+  // Check if AWS credentials are available
+  const hasAWSCredentials = process.env.AWS_ACCESS_KEY_ID && 
+                           process.env.AWS_SECRET_ACCESS_KEY && 
+                           process.env.AWS_REGION;
 
-    return nodemailer.createTransport({
-      SES: { ses, aws },
-      sendingRate: 1,
-      debug: true,
-      logger: true
-    });
+  if (hasAWSCredentials) {
+    try {
+      console.log('Using AWS SES for email...');
+      const ses = new aws.SES({
+        apiVersion: '2010-12-01',
+        region: process.env.AWS_REGION,
+        credentials: defaultProvider(),
+        logger: console
+      });
+
+      return nodemailer.createTransport({
+        SES: { ses, aws },
+        sendingRate: 1,
+        debug: true,
+        logger: true
+      });
+    } catch (error) {
+      console.error('Error creating SES transport, falling back to test account:', error);
+      return await createTestAccount();
+    }
   } else {
     console.log('AWS credentials not found, using test email account...');
     return await createTestAccount();
@@ -55,7 +69,7 @@ createTransporter().then(t => {
 
 // Generate tracking pixel
 const generateTrackingPixel = (trackingId) => `
-  <img src="${process.env.FRONTEND_URL}/api/email/track/${trackingId}" style="width:1px;height:1px;" />
+  <img src="${process.env.FRONTEND_URL || ''}/api/email/track/${trackingId}" style="width:1px;height:1px;" />
 `;
 
 // Add email to queue
