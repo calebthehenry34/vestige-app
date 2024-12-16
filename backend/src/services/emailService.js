@@ -89,7 +89,7 @@ export const queueEmail = async ({ to, templateId, templateData, priority = 0, s
     
     const email = new EmailQueue({
       to,
-      from: process.env.EMAIL_FROM || 'noreply@vestige.com',
+      from: process.env.EMAIL_FROM,
       subject,
       html: html.replace('#{trackingId}', trackingId) + trackingPixel,
       templateId,
@@ -127,7 +127,7 @@ export const sendVerificationEmail = async (email, code) => {
     }
 
     const result = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || 'noreply@vestige.com',
+      from: process.env.EMAIL_FROM,
       to: email,
       subject: "Verify your email address",
       html: `
