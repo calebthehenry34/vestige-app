@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer';
 import aws from '@aws-sdk/client-ses';
-import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import EmailQueue from '../models/EmailQueue.js';
 import { templates } from './emailTemplates.js';
 import crypto from 'crypto';
@@ -46,15 +45,14 @@ const createTransporter = async () => {
         const ses = new aws.SES({
           apiVersion: '2010-12-01',
           region: process.env.AWS_REGION,
-          credentials: defaultProvider(),
-          logger: console
+          credentials: {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+          }
         });
 
         return nodemailer.createTransport({
-          SES: { ses, aws },
-          sendingRate: 1,
-          debug: true,
-          logger: true
+          SES: { ses, aws }
         });
       } catch (error) {
         console.error('Error creating SES transport:', error);
@@ -91,6 +89,10 @@ let transporter;
 initializeTransporter()
   .then(t => {
     transporter = t;
+    console.log('Email transporter initialized with configuration:', {
+      isAWS: !!t?.transporter?.options?.SES,
+      region: process.env.AWS_REGION
+    });
   })
   .catch(error => {
     console.error('Failed to initialize email transporter:', error);
