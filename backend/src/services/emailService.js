@@ -5,17 +5,20 @@ import EmailQueue from '../models/EmailQueue.js';
 import { templates } from './emailTemplates.js';
 import crypto from 'crypto';
 
-// Create SES client
+// Create SES client with debug logging
 const ses = new aws.SES({
   apiVersion: '2010-12-01',
   region: process.env.AWS_REGION,
-  credentials: defaultProvider()
+  credentials: defaultProvider(),
+  logger: console
 });
 
 // Create Nodemailer transporter using SES
 const transporter = nodemailer.createTransport({
   SES: { ses, aws },
-  sendingRate: 1 // Limit to avoid hitting SES sending limits
+  sendingRate: 1, // Limit to avoid hitting SES sending limits
+  debug: true, // Enable debug logging
+  logger: true // Enable built-in logger
 });
 
 // Generate tracking pixel
@@ -26,6 +29,8 @@ const generateTrackingPixel = (trackingId) => `
 // Add email to queue
 export const queueEmail = async ({ to, templateId, templateData, priority = 0, scheduledFor = new Date() }) => {
   try {
+    console.log(`Queueing email to ${to} with template ${templateId}`, { templateData });
+    
     const trackingId = crypto.randomUUID();
     const template = templates[templateId];
     
@@ -48,6 +53,7 @@ export const queueEmail = async ({ to, templateId, templateData, priority = 0, s
     });
 
     await email.save();
+    console.log(`Email queued successfully: ${email._id}`);
     return email;
   } catch (error) {
     console.error('Error queuing email:', error);
@@ -57,7 +63,18 @@ export const queueEmail = async ({ to, templateId, templateData, priority = 0, s
 
 export const sendVerificationEmail = async (email, code) => {
   try {
-    await transporter.sendMail({
+    console.log(`Attempting to send verification email to ${email}`);
+    
+    // Test SES connection
+    try {
+      const sesResponse = await ses.getSendQuota({});
+      console.log('SES Quota:', sesResponse);
+    } catch (sesError) {
+      console.error('SES Connection Error:', sesError);
+      throw new Error('Failed to connect to SES');
+    }
+
+    const result = await transporter.sendMail({
       from: process.env.EMAIL_FROM,
       to: email,
       subject: "Verify your email address",
@@ -70,8 +87,16 @@ export const sendVerificationEmail = async (email, code) => {
         </div>
       `
     });
+    
+    console.log('Email sent successfully:', result);
+    return result;
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Detailed error sending email:', {
+      error: error.message,
+      stack: error.stack,
+      responseCode: error.responseCode,
+      response: error.response
+    });
     throw error;
   }
 };
@@ -79,29 +104,44 @@ export const sendVerificationEmail = async (email, code) => {
 // Process email queue
 export const processEmailQueue = async () => {
   try {
+    console.log('Processing email queue...');
+    
     const emails = await EmailQueue.find({
       status: 'queued',
       scheduledFor: { $lte: new Date() },
       attempts: { $lt: 3 }
     }).sort({ priority: -1, scheduledFor: 1 }).limit(10);
 
+    console.log(`Found ${emails.length} emails to process`);
+
     for (const email of emails) {
       try {
+        console.log(`Processing email ${email._id} to ${email.to}`);
+        
         email.status = 'processing';
         email.attempts += 1;
         await email.save();
 
-        await transporter.sendMail({
+        const result = await transporter.sendMail({
           from: email.from || process.env.EMAIL_FROM,
           to: email.to,
           subject: email.subject,
           html: email.html
         });
 
+        console.log(`Email ${email._id} sent successfully:`, result);
+
         email.status = 'sent';
         email.sentAt = new Date();
         await email.save();
       } catch (error) {
+        console.error(`Error processing email ${email._id}:`, {
+          error: error.message,
+          stack: error.stack,
+          responseCode: error.responseCode,
+          response: error.response
+        });
+        
         email.status = 'failed';
         email.error = error.message;
         await email.save();
@@ -130,6 +170,7 @@ export const trackEmailOpen = async (trackingId, req) => {
 
 // Setup email queue processing interval
 const startEmailQueue = () => {
+  console.log('Starting email queue processor...');
   setInterval(processEmailQueue, 30000); // Process every 30 seconds
 };
 
