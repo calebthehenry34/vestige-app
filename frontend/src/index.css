@@ -4,7 +4,7 @@
 
 @font-face {
   font-family: 'Roobert';
-  src: url('/fonts/Roobert-Regular.woff2') format('woff2');
+  src: url('../public/fonts/Roobert-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -12,7 +12,7 @@
 
 @font-face {
   font-family: 'Roobert';
-  src: url('/fonts/Roobert-Medium.woff2') format('woff2');
+  src: url('../public/fonts/Roobert-Medium.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -20,7 +20,7 @@
 
 @font-face {
   font-family: 'Roobert';
-  src: url('/fonts/Roobert-Bold.woff2') format('woff2');
+  src: url('../public/fonts/Roobert-Bold.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -28,7 +28,7 @@
 
 @font-face {
   font-family: 'Neue Montreal';
-  src: url('/fonts/NeueMontreal-Regular.woff2') format('woff2');
+  src: url('../public/fonts/NeueMontreal-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -36,7 +36,7 @@
 
 @font-face {
   font-family: 'Neue Montreal';
-  src: url('/fonts/NeueMontreal-Medium.woff2') format('woff2');
+  src: url('../public/fonts/NeueMontreal-Medium.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
