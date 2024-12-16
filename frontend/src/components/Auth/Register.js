@@ -19,17 +19,20 @@ const Register = () => {
   const { login } = useAuth();
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     username: '',
     password: '',
+    confirmPassword: '',
     verificationCode: ''
   });
   const [resendDisabled, setResendDisabled] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
   const [usernameStatus, setUsernameStatus] = useState({ valid: false, message: '' });
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
 
   // Validate email domain
   const isValidEmail = (email) => {
@@ -38,35 +41,75 @@ const Register = () => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  // Check username availability with debounce
-  useEffect(() => {
-    const checkUsername = async () => {
-      if (formData.username.length < 3) {
-        setUsernameStatus({ valid: false, message: 'Username must be at least 3 characters' });
-        return;
-      }
+  const validateUsername = async (username) => {
+    setIsCheckingUsername(true);
+    
+    // Basic format validation
+    const format = /^[a-zA-Z0-9._]{3,20}$/;
+    if (!format.test(username)) {
+      setUsernameStatus({
+        valid: false,
+        message: 'Username must be 3-20 characters and can only contain letters, numbers, dots, and underscores'
+      });
+      setIsCheckingUsername(false);
+      return;
+    }
 
-      try {
-        const response = await fetch(`${API_URL}/api/auth/check-username?username=${formData.username}`);
-        const data = await response.json();
-        
+    // Check for consecutive special characters
+    if (username.includes('..') || username.includes('__') || username.includes('._') || username.includes('_.')) {
+      setUsernameStatus({
+        valid: false,
+        message: 'Special characters cannot be consecutive'
+      });
+      setIsCheckingUsername(false);
+      return;
+    }
+
+    // Check if username starts or ends with special characters
+    if (username.startsWith('.') || username.startsWith('_') || 
+        username.endsWith('.') || username.endsWith('_')) {
+      setUsernameStatus({
+        valid: false,
+        message: 'Username cannot start or end with special characters'
+      });
+      setIsCheckingUsername(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/auth/check-username?username=${username}`);
+      const data = await response.json();
+
+      if (!data.available) {
         setUsernameStatus({
-          valid: data.available,
-          message: data.reason || (data.available ? 'Username is available' : 'Username is not available')
+          valid: false,
+          message: 'Username is already taken'
         });
-      } catch (error) {
-        setUsernameStatus({ valid: false, message: 'Error checking username' });
+      } else {
+        setUsernameStatus({
+          valid: true,
+          message: 'Username is available'
+        });
       }
-    };
+    } catch (error) {
+      setUsernameStatus({
+        valid: false,
+        message: 'Error checking username availability'
+      });
+    }
+    
+    setIsCheckingUsername(false);
+  };
 
-    const timeoutId = setTimeout(() => {
-      if (formData.username) {
-        checkUsername();
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [formData.username]);
+  const handleUsernameChange = (e) => {
+    const value = e.target.value.toLowerCase();
+    setFormData({ ...formData, username: value });
+    if (value.length >= 3) {
+      validateUsername(value);
+    } else {
+      setUsernameStatus({ valid: false, message: '' });
+    }
+  };
 
   const handleInitialSubmit = async (e) => {
     e.preventDefault();
@@ -82,6 +125,11 @@ const Register = () => {
       // Validate username
       if (!usernameStatus.valid) {
         throw new Error(usernameStatus.message);
+      }
+
+      // Validate passwords match
+      if (formData.password !== formData.confirmPassword) {
+        throw new Error('Passwords do not match');
       }
 
       const response = await fetch(`${API_URL}/api/auth/send-verification`, { 
@@ -171,7 +219,6 @@ const Register = () => {
 
       // Then register the user
       const registerResponse = await fetch(`${API_URL}/api/auth/register`, {
-
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -242,27 +289,37 @@ const Register = () => {
                     className="[&_.cds--label]:text-white [&_input]:text-white [&_input:focus]:outline-none"
                   />
 
-                  <TextInput
-                    id="username"
-                    labelText="Username"
-                    type="text"
-                    required
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase() })}
-                    invalid={formData.username.length >= 3 && !usernameStatus.valid}
-                    invalidText={usernameStatus.message}
-                    style={{
-                      backgroundColor: '#262626',
-                      borderBottom: '1px solid #525252',
-                      color: 'white',
-                      width: '100%',
-                      paddingLeft: '3px',
-                      padding:'5px',
-                      outline: 'none',
-                      marginTop: '10px'
-                    }}
-                    className="[&_.cds--label]:text-white [&_input]:text-white [&_input:focus]:outline-none"
-                  />
+                  <div>
+                    <TextInput
+                      id="username"
+                      labelText="Username"
+                      type="text"
+                      required
+                      value={formData.username}
+                      onChange={handleUsernameChange}
+                      invalid={formData.username.length >= 3 && !usernameStatus.valid}
+                      invalidText={usernameStatus.message}
+                      style={{
+                        backgroundColor: '#262626',
+                        borderBottom: '1px solid #525252',
+                        color: 'white',
+                        width: '100%',
+                        paddingLeft: '3px',
+                        padding:'5px',
+                        outline: 'none',
+                        marginTop: '10px'
+                      }}
+                      className="[&_.cds--label]:text-white [&_input]:text-white [&_input:focus]:outline-none"
+                    />
+                    {isCheckingUsername && (
+                      <p className="text-sm text-gray-400 mt-1">Checking username...</p>
+                    )}
+                    {!isCheckingUsername && usernameStatus.message && (
+                      <p className={`text-sm mt-1 ${usernameStatus.valid ? 'text-green-500' : 'text-red-500'}`}>
+                        {usernameStatus.message}
+                      </p>
+                    )}
+                  </div>
 
                   <div className="relative">
                     <TextInput
@@ -293,10 +350,41 @@ const Register = () => {
                     </button>
                   </div>
 
+                  <div className="relative">
+                    <TextInput
+                      id="confirm-password"
+                      labelText="Confirm Password"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      required
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      invalid={formData.confirmPassword && formData.password !== formData.confirmPassword}
+                      invalidText="Passwords do not match"
+                      style={{
+                        backgroundColor: '#262626',
+                        borderBottom: '1px solid #525252',
+                        color: 'white',
+                        width: '100%',
+                        paddingLeft: '3px',
+                        outline: 'none',
+                        marginTop: '10px',
+                        padding:'5px',
+                      }}
+                      className="[&_.cds--label]:text-white [&_input]:text-white [&_input:focus]:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-2 top-8 text-gray-400 hover:text-white transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOffRegular size={20} /> : <EyeRegular size={20} />}
+                    </button>
+                  </div>
+
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={loading || !isValidEmail(formData.email) || !usernameStatus.valid}
+                    disabled={loading || !isValidEmail(formData.email) || !usernameStatus.valid || !formData.password || formData.password !== formData.confirmPassword}
                     style={{
                       backgroundColor: '#0f62fe',
                       minHeight: '48px',

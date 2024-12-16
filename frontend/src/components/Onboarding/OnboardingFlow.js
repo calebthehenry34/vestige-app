@@ -12,7 +12,6 @@ import { ErrorFilled} from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
 
-
 const OnboardingFlow = () => {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
@@ -21,86 +20,11 @@ const OnboardingFlow = () => {
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     profilePicture: null,
-  username: '',
-  bio: '',
-  acceptedGuidelines: false
+    username: user?.username || '',
+    bio: '',
+    acceptedGuidelines: false
   });
   const [previewUrl, setPreviewUrl] = useState(null);
-
-
-  const [usernameStatus, setUsernameStatus] = useState({ valid: false, message: '' });
-const [isCheckingUsername, setIsCheckingUsername] = useState(false);
-
-const validateUsername = async (username) => {
-  setIsCheckingUsername(true);
-  
-  // Basic format validation
-  const format = /^[a-zA-Z0-9._]{3,20}$/;
-  if (!format.test(username)) {
-    setUsernameStatus({
-      valid: false,
-      message: 'Username must be 3-20 characters and can only contain letters, numbers, dots, and underscores'
-    });
-    setIsCheckingUsername(false);
-    return;
-  }
-
-  // Check for consecutive special characters
-  if (username.includes('..') || username.includes('__') || username.includes('._') || username.includes('_.')) {
-    setUsernameStatus({
-      valid: false,
-      message: 'Special characters cannot be consecutive'
-    });
-    setIsCheckingUsername(false);
-    return;
-  }
-
-  // Check if username starts or ends with special characters
-  if (username.startsWith('.') || username.startsWith('_') || 
-      username.endsWith('.') || username.endsWith('_')) {
-    setUsernameStatus({
-      valid: false,
-      message: 'Username cannot start or end with special characters'
-    });
-    setIsCheckingUsername(false);
-    return;
-  }
-
-  try {
-    const response = await fetch(API_URL + '/api/auth/check-username?username=' + username );
-    const data = await response.json();
-
-    if (!data.available) {
-      setUsernameStatus({
-        valid: false,
-        message: 'Username is already taken'
-      });
-    } else {
-      setUsernameStatus({
-        valid: true,
-        message: 'Username is available'
-      });
-    }
-  } catch (error) {
-    setUsernameStatus({
-      valid: false,
-      message: 'Error checking username availability'
-    });
-  }
-  
-  setIsCheckingUsername(false);
-};
-
-const handleUsernameChange = (e) => {
-  const value = e.target.value.toLowerCase();
-  setFormData({ ...formData, username: value });
-  if (value.length >= 3) {
-    validateUsername(value);
-  } else {
-    setUsernameStatus({ valid: false, message: '' });
-  }
-};
-
 
   const handleImageUpload = (e) => {
     const file = e.target?.files?.[0];
@@ -112,7 +36,7 @@ const handleUsernameChange = (e) => {
 
   const handleNext = () => {
     if (step === 1) {
-      if (!formData.profilePicture || !formData.username || !formData.bio) {
+      if (!formData.profilePicture || !formData.bio) {
         setError('All fields are required');
         return;
       }
@@ -127,25 +51,19 @@ const handleUsernameChange = (e) => {
     if (step < 3) setStep(step + 1);
   };
 
-  
-
-
   const handleBack = () => {
     if (step > 1) setStep(step - 1);
   };
-
-
 
   const handleComplete = async () => {
     try {
       setLoading(true);
       const formDataToSend = new FormData();
-      if (!formData.profilePicture || !formData.username || !formData.bio) {
+      if (!formData.profilePicture || !formData.bio) {
         throw new Error('Missing required profile information');
       }
   
       formDataToSend.append('profilePicture', formData.profilePicture);
-      formDataToSend.append('username', formData.username);
       formDataToSend.append('bio', formData.bio);
       formDataToSend.append('onboardingComplete', 'true');
   
@@ -173,7 +91,6 @@ const handleUsernameChange = (e) => {
       // Update user context with all the new data
       await updateUser({ 
         ...user,
-        username: formData.username,
         bio: formData.bio,
         profilePicture: data.user.profilePicture, // Use the filename from server response
         onboardingComplete: true
@@ -183,7 +100,6 @@ const handleUsernameChange = (e) => {
       const currentUserData = JSON.parse(localStorage.getItem('user') || '{}');
       localStorage.setItem('user', JSON.stringify({
         ...currentUserData,
-        username: formData.username,
         bio: formData.bio,
         profilePicture: data.user.profilePicture,
         onboardingComplete: true
@@ -197,8 +113,6 @@ const handleUsernameChange = (e) => {
       setLoading(false);
     }
   };
-
-
 
   return (
     <Theme theme="g100">
@@ -235,92 +149,83 @@ const handleUsernameChange = (e) => {
             </div>
           )}
 
-{step === 1 && (
-  <div className="space-y-6">
-    <h2 className="text-2xl font-md text-center text-white mb-10">Set Up Your Profile</h2>
-    <label htmlFor="profile-upload" className="cursor-pointer">
-      <div className="w-64 h-64 mx-auto bg-[#262626] rounded-lg flex items-center justify-center hover:bg-[#333333] transition-colors">
-        {previewUrl ? (
-          <img 
-            src={previewUrl} 
-            alt="Profile preview" 
-            className="w-full h-full object-cover rounded-lg"
-          />
-        ) : (
-          <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-              <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
-            </svg>
-          </div>
-        )}
-      </div>
-    </label>
-    <div className="space-y-1">
-      <p className="text-sm text-white text-center">Profile Photo</p>
-      <p className="text-xs text-gray-400 text-center">Max file size of 5mb. JPG, PNG, GIF</p>
-    </div>
+          {step === 1 && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-md text-center text-white mb-10">Set Up Your Profile</h2>
+              <label htmlFor="profile-upload" className="cursor-pointer">
+                <div className="w-64 h-64 mx-auto bg-[#262626] rounded-lg flex items-center justify-center hover:bg-[#333333] transition-colors">
+                  {previewUrl ? (
+                    <img 
+                      src={previewUrl} 
+                      alt="Profile preview" 
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              </label>
+              <div className="space-y-1">
+                <p className="text-sm text-white text-center">Profile Photo</p>
+                <p className="text-xs text-gray-400 text-center">Max file size of 5mb. JPG, PNG, GIF</p>
+              </div>
 
-    <input
-      type="file"
-      id="profile-upload"
-      accept=".jpg,.png,.gif"
-      onChange={handleImageUpload}
-      className="hidden"
-    />
+              <input
+                type="file"
+                id="profile-upload"
+                accept=".jpg,.png,.gif"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
 
-<div className="space-y-1">
-  <TextInput
-    id="username"
-    labelText="Pick a name"
-    value={formData.username}
-    onChange={handleUsernameChange}
-    invalid={formData.username.length >= 3 && !usernameStatus.valid}
-    style={{
-      backgroundColor: '#000',
-      borderBottom: '1px solid #525252',
-      color: 'white',
-      padding: '5px',
-      width: '100%',
-      marginTop:'10px',
-      paddingTop: '10px',
-      paddingBottom: '5px',
-      paddingLeft: '3px',
-    }}
-    className="cds--text-input--light"
-    required
-  />
-  {isCheckingUsername && (
-    <p className="text-sm text-gray-400 mt-1">Checking username...</p>
-  )}
-  {!isCheckingUsername && usernameStatus.message && (
-    <p className={`text-sm mt-1 ${usernameStatus.valid ? 'text-green-500' : 'text-red-500'}`}>
-      {usernameStatus.message}
-    </p>
-  )}
-</div>
+              <div className="space-y-1">
+                <TextInput
+                  id="username"
+                  labelText="Username"
+                  value={formData.username}
+                  disabled={true}
+                  style={{
+                    backgroundColor: '#000',
+                    borderBottom: '1px solid #525252',
+                    color: 'white',
+                    padding: '5px',
+                    width: '100%',
+                    marginTop:'10px',
+                    paddingTop: '10px',
+                    paddingBottom: '5px',
+                    paddingLeft: '3px',
+                  }}
+                  className="cds--text-input--light"
+                />
+              </div>
 
-<TextArea
-  id="bio"
-  labelText="Introduce yourself"
-  value={formData.bio}
-  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-  style={{
-    backgroundColor: '#000',
-    borderBottom: '1px solid #525252',
-    color: 'white',
-    minHeight: '100px',
-    marginTop:'10px',
-    paddingTop: '10px',
-      paddingBottom: '5px',
-      paddingLeft: '3px',
-  }}
-  placeholder="Less is more. In this case, use less than 150 words."
-  maxLength={150}
-  enableCounter={true}
-  required
-/>
-  </div>
-)}
+              <TextArea
+                id="bio"
+                labelText="Introduce yourself"
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                style={{
+                  backgroundColor: '#000',
+                  borderBottom: '1px solid #525252',
+                  color: 'white',
+                  minHeight: '100px',
+                  marginTop:'10px',
+                  paddingTop: '10px',
+                  paddingBottom: '5px',
+                  paddingLeft: '3px',
+                }}
+                placeholder="Less is more. In this case, use less than 150 words."
+                maxLength={150}
+                enableCounter={true}
+                required
+              />
+            </div>
+          )}
+
           {step === 2 && (
             <div className="space-y-6">
               <h2 className="text-2xl font-md text-white">Community Guidelines</h2>
@@ -368,7 +273,6 @@ const handleUsernameChange = (e) => {
                 kind="secondary"
                 onClick={handleBack}
                 disabled={loading}
-                
               >
                 Back
               </Button>

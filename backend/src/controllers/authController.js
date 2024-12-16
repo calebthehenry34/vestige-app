@@ -4,21 +4,7 @@ import VerificationCode from '../models/VerificationCode.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { queueEmail } from '../services/emailService.js';
-
-// List of inappropriate terms
-const inappropriateTerms = [
-  'admin',
-  'administrator',
-  'mod',
-  'moderator',
-  'support',
-  'help',
-  'staff',
-  'system',
-  'vestige',
-  'official',
-  // Add more terms as needed
-];
+import { inappropriateTerms } from '../utils/inappropriateTerms.js';
 
 // Validation rules
 export const registerValidation = [

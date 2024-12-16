@@ -18,8 +18,6 @@ import { useScroll } from '../../context/ScrollContext';
 import { useLocation } from 'react-router-dom';
 import { API_URL } from '../../config';
 
-
-
 const Home = () => {
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
@@ -31,8 +29,6 @@ const Home = () => {
   const location = useLocation();
   const scrollRestoredRef = useRef(false);
 
-
-
   const handleImageError = (e) => {
     if (!e.target.dataset.retry) {
       e.target.dataset.retry = 'true';
@@ -42,7 +38,7 @@ const Home = () => {
 
   const fetchPosts = async () => {
     try {
-      const response = await fetch(API_URL + '/api/posts', {
+      const response = await fetch(`${API_URL}/api/posts`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -53,13 +49,12 @@ const Home = () => {
       }
 
       const data = await response.json();
-      setPosts(data);
+      setPosts(data || []); // Ensure we always set an array
     } catch (error) {
       console.error('Error fetching posts:', error);
+      setPosts([]); // Set empty array on error
     }
   };
-
-
 
   useEffect(() => {
     // Fetch posts first
@@ -77,9 +72,6 @@ const Home = () => {
     };
   }, []);
 
-
-  
-  // Separate effect for saving scroll position on unmount
   useEffect(() => {
     return () => {
       if (scrollRestoredRef.current) {
@@ -87,8 +79,6 @@ const Home = () => {
       }
     };
   }, [location.pathname, saveScrollPosition]);
-  
-  
 
   const togglePostMenu = (postId) => {
     setActivePostMenu(activePostMenu === postId ? null : postId);
@@ -111,7 +101,7 @@ const Home = () => {
         return post;
       }));
   
-      const response = await fetch(`API_URL + /api/posts/${postId}/like`, {
+      const response = await fetch(`${API_URL}/api/posts/${postId}/like`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -125,7 +115,7 @@ const Home = () => {
       // Create notification if liking someone else's post
       const post = posts.find(p => p._id === postId);
       if (post && post.user._id !== user.id) {
-        await fetch(`API_URL + /api/notifications`, {
+        await fetch(`${API_URL}/api/notifications`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -170,7 +160,7 @@ const Home = () => {
         return post;
       }));
   
-      const response = await fetch(`API_URL + /api/posts/${postId}/save`, {
+      const response = await fetch(`${API_URL}/api/posts/${postId}/save`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -212,7 +202,7 @@ const Home = () => {
 
   const handleDeletePost = async (postId) => {
     try {
-      const response = await fetch(`API_URL + /api/posts/${postId}`, {
+      const response = await fetch(`${API_URL}/api/posts/${postId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -236,7 +226,7 @@ const Home = () => {
 
   const handleReportPost = async (postId) => {
     try {
-      const response = await fetch(`API_URL + /api/posts/${postId}/report`, {
+      const response = await fetch(`${API_URL}/api/posts/${postId}/report`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -264,7 +254,7 @@ const Home = () => {
     try {
       console.log('Sending comment:', { postId, text });
   
-      const response = await fetch(`API_URL + /api/posts/${postId}/comment`, {
+      const response = await fetch(`${API_URL}/api/posts/${postId}/comment`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -294,7 +284,7 @@ const Home = () => {
       const post = posts.find(p => p._id === postId);
       if (post && post.user._id !== user.id) {
         try {
-          await fetch(`API_URL + /api/notifications`, {
+          await fetch(`${API_URL}/api/notifications`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -322,7 +312,7 @@ const Home = () => {
   const handleReply = async (postId, commentId, text) => {
     try {
       const response = await fetch(
-        `API_URL + /api/posts/${postId}/comments/${commentId}/reply`,
+        `${API_URL}/api/posts/${postId}/comments/${commentId}/reply`,
         {
           method: 'POST',
           headers: {
@@ -351,30 +341,27 @@ const Home = () => {
     setShowShareModal(true);
   };
 
-
   return (
     <div className="max-w-xl mx-auto p-4 m-50">
       <div className="space-y-6">
         {posts.map((post) => (
-          
           <div key={post._id} className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="relative">
               {/* User Info and Menu Overlay at Top */}
               <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-black/50 to-transparent flex justify-between items-center">
-              <div className="flex items-center space-x-4">
-                <Link to={`/profile/${post.user.username}`} className="flex items-center">
-                <img
-                 src={`API_URL + /uploads/${post.user.profilePicture}`}
-                   alt={post.user.username}
-                   className="h-8 w-8 rounded-md object-cover"
-                    onError={(e) => {
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username || 'User')}`;
-                    e.target.onError = null;
-                  }}
-                  />
-      <span className="ml-2 font-medium text-white text-sm">{post.user?.username}</span>
-    </Link>
-
+                <div className="flex items-center space-x-4">
+                  <Link to={`/profile/${post.user.username}`} className="flex items-center">
+                    <img
+                      src={`${API_URL}/uploads/${post.user.profilePicture}`}
+                      alt={post.user.username}
+                      className="h-8 w-8 rounded-md object-cover"
+                      onError={(e) => {
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username || 'User')}`;
+                        e.target.onError = null;
+                      }}
+                    />
+                    <span className="ml-2 font-medium text-white text-sm">{post.user?.username}</span>
+                  </Link>
                 </div>
 
                 {/* Post Menu */}
@@ -421,21 +408,21 @@ const Home = () => {
 
               {/* Media Content */}
               <Link to={`/post/${post._id}`}>
-  {post.mediaType === 'video' ? (
-    <video
-      src={post.media}
-      controls
-      className="w-full h-auto"
-    />
-  ) : (
-    <img
-      src={post.media}
-      alt="Post content"
-      className="w-full h-auto"
-      onError={handleImageError}
-    />
-  )}
-</Link>
+                {post.mediaType === 'video' ? (
+                  <video
+                    src={post.media}
+                    controls
+                    className="w-full h-auto"
+                  />
+                ) : (
+                  <img
+                    src={post.media}
+                    alt="Post content"
+                    className="w-full h-auto"
+                    onError={handleImageError}
+                  />
+                )}
+              </Link>
 
               {/* Bottom Action Bar */}
               <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent">
@@ -452,17 +439,14 @@ const Home = () => {
                       onClick={() => toggleComments(post._id)}
                       className="hover:scale-110 transition-transform"
                     >
-                      <PanelTopExpandFilled
-
-className="w-6 h-6" />
+                      <PanelTopExpandFilled className="w-6 h-6" />
                     </button>
                     <button 
-  onClick={() => handleShare(post._id)} 
-  className="hover:scale-110 transition-transform"
->
-  <ShareRegular className="w-6 h-6" />
-</button>
-
+                      onClick={() => handleShare(post._id)} 
+                      className="hover:scale-110 transition-transform"
+                    >
+                      <ShareRegular className="w-6 h-6" />
+                    </button>
                   </div>
                   <button 
                     onClick={() => handleSave(post._id)}
@@ -489,35 +473,35 @@ className="w-6 h-6" />
         ))}
       </div>
       {showShareModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white rounded-lg p-4 w-80">
-      <h3 className="text-lg font-semibold mb-4">Share Post</h3>
-      <div className="space-y-4">
-        <button 
-          onClick={async () => {
-            try {
-              const postUrl = `${window.location.origin}/post/${sharePostId}`;
-              await navigator.clipboard.writeText(postUrl);
-              alert('Link copied to clipboard!');
-            } catch (error) {
-              console.error('Failed to copy link:', error);
-            }
-            setShowShareModal(false);
-          }}
-          className="w-full text-left px-4 py-2 hover:bg-gray-100 rounded"
-        >
-          Copy Link
-        </button>
-        <button 
-          onClick={() => setShowShareModal(false)}
-          className="w-full px-4 py-2 bg-gray-100 rounded"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-4 w-80">
+            <h3 className="text-lg font-semibold mb-4">Share Post</h3>
+            <div className="space-y-4">
+              <button 
+                onClick={async () => {
+                  try {
+                    const postUrl = `${window.location.origin}/post/${sharePostId}`;
+                    await navigator.clipboard.writeText(postUrl);
+                    alert('Link copied to clipboard!');
+                  } catch (error) {
+                    console.error('Failed to copy link:', error);
+                  }
+                  setShowShareModal(false);
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100 rounded"
+              >
+                Copy Link
+              </button>
+              <button 
+                onClick={() => setShowShareModal(false)}
+                className="w-full px-4 py-2 bg-gray-100 rounded"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
