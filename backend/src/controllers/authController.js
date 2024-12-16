@@ -1,3 +1,4 @@
+import { check } from 'express-validator';
 import User from '../models/User.js';
 import VerificationCode from '../models/VerificationCode.js';
 import jwt from 'jsonwebtoken';
