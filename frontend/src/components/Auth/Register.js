@@ -11,7 +11,6 @@ import {
   EyeRegular,
   EyeOffRegular
 } from '@fluentui/react-icons';
-import GradientBackground from '../../components/GradientBackground';
 import { API_URL } from '../../config';
 
 const Register = () => {
