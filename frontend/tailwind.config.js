@@ -2,6 +2,10 @@ module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx,html}'],
   darkMode: 'class',
   theme: {
+    fontFamily: {
+      'headlines': ['Roobert', 'sans-serif'],
+      'sans': ['Neue Montreal', 'sans-serif'],
+    },
     extend: {
       colors: {
         darkBg: '#000000',

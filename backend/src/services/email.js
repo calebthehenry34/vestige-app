@@ -23,7 +23,7 @@ export const sendEmail = async ({ to, subject, html, type }) => {
 
         // Send email
         await transporter.sendMail({
-            from: email.from,
+            from: 'support@vestigeapp.com',
             to: email.to,
             subject: email.subject,
             html: email.html

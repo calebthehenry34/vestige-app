@@ -2,21 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Roobert';
+  src: url('/fonts/Roobert-Regular.woff2') format('woff2'),
+       url('/fonts/Roobert-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roobert';
+  src: url('/fonts/Roobert-Medium.woff2') format('woff2'),
+       url('/fonts/Roobert-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roobert';
+  src: url('/fonts/Roobert-Bold.woff2') format('woff2'),
+       url('/fonts/Roobert-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Montreal';
+  src: url('/fonts/NeueMontreal-Regular.woff2') format('woff2'),
+       url('/fonts/NeueMontreal-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Neue Montreal';
+  src: url('/fonts/NeueMontreal-Medium.woff2') format('woff2'),
+       url('/fonts/NeueMontreal-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
 
 .body {
-    background-color: theme('colors.lightBg');
-  }
+  background-color: theme('colors.lightBg');
+}
 
-  .m-50 {
-    margin-top:50px;
-  }
-  .mb-50 {
-    margin-bottom:50px;
-  }
-  .mb-100 {
-    margin-bottom:100px;
-  }
+.m-50 {
+  margin-top:50px;
+}
+.mb-50 {
+  margin-bottom:50px;
+}
+.mb-100 {
+  margin-bottom:100px;
+}
 
-  .temp-hide {
-    display:none
-  }
+.temp-hide {
+  display:none
+}
