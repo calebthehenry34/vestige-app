@@ -103,7 +103,10 @@ export const sendVerification = async (req, res) => {
     await queueEmail({
       to: email,
       templateId: 'verification',
-      templateData: code,
+      templateData: {
+        code,
+        ipAddress: req.ip || 'Unknown'
+      },
       priority: 1 // High priority for verification emails
     });
 
@@ -151,8 +154,6 @@ export const verifyCode = async (req, res) => {
     res.status(500).json({ error: 'Verification failed' });
   }
 };
-
-
 
 export const login = async (req, res) => {
   try {
