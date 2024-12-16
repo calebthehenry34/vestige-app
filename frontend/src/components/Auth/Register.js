@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -29,6 +29,44 @@ const Register = () => {
   });
   const [resendDisabled, setResendDisabled] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
+  const [usernameStatus, setUsernameStatus] = useState({ valid: false, message: '' });
+
+  // Validate email domain
+  const isValidEmail = (email) => {
+    if (!email) return false;
+    if (email.endsWith('.internal')) return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  // Check username availability with debounce
+  useEffect(() => {
+    const checkUsername = async () => {
+      if (formData.username.length < 3) {
+        setUsernameStatus({ valid: false, message: 'Username must be at least 3 characters' });
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/api/auth/check-username?username=${formData.username}`);
+        const data = await response.json();
+        
+        setUsernameStatus({
+          valid: data.available,
+          message: data.reason || (data.available ? 'Username is available' : 'Username is not available')
+        });
+      } catch (error) {
+        setUsernameStatus({ valid: false, message: 'Error checking username' });
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      if (formData.username) {
+        checkUsername();
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.username]);
 
   const handleInitialSubmit = async (e) => {
     e.preventDefault();
@@ -36,15 +74,17 @@ const Register = () => {
     setError('');
 
     try {
-      // First check if username is available
-      const checkUsernameResponse = await fetch(`${API_URL}/api/auth/check-username?username=${formData.username}`);
-      const usernameData = await checkUsernameResponse.json();
-      
-      if (!usernameData.available) {
-        throw new Error('Username is already taken');
+      // Validate email
+      if (!isValidEmail(formData.email)) {
+        throw new Error('Invalid email address');
       }
 
-      const response = await fetch(API_URL + '/api/auth/send-verification', {
+      // Validate username
+      if (!usernameStatus.valid) {
+        throw new Error(usernameStatus.message);
+      }
+
+      const response = await fetch(`${API_URL}/api/auth/send-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -78,7 +118,7 @@ const Register = () => {
         }
       }, 1000);
 
-      const response = await fetch(API_URL + '/api/auth/send-verification', {
+      const response = await fetch(`${API_URL}/api/auth/send-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -100,13 +140,18 @@ const Register = () => {
     setError('');
 
     try {
+      // Ensure verification code is 6 digits
+      if (!/^\d{6}$/.test(formData.verificationCode)) {
+        throw new Error('Please enter a valid 6-digit code');
+      }
+
       // First verify the code
       console.log('Sending verification code:', {
         email: formData.email,
         code: formData.verificationCode
       });
 
-      const verifyResponse = await fetch(API_URL + '/api/auth/verify-code', {
+      const verifyResponse = await fetch(`${API_URL}/api/auth/verify-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -125,7 +170,7 @@ const Register = () => {
       }
 
       // Then register the user
-      const registerResponse = await fetch(API_URL + '/api/auth/register', {
+      const registerResponse = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -181,6 +226,8 @@ const Register = () => {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    invalid={formData.email && !isValidEmail(formData.email)}
+                    invalidText="Please enter a valid email address"
                     style={{
                       backgroundColor: '#262626',
                       borderBottom: '1px solid #525252',
@@ -201,6 +248,8 @@ const Register = () => {
                     required
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase() })}
+                    invalid={formData.username.length >= 3 && !usernameStatus.valid}
+                    invalidText={usernameStatus.message}
                     style={{
                       backgroundColor: '#262626',
                       borderBottom: '1px solid #525252',
@@ -246,7 +295,7 @@ const Register = () => {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={loading}
+                    disabled={loading || !isValidEmail(formData.email) || !usernameStatus.valid}
                     style={{
                       backgroundColor: '#0f62fe',
                       minHeight: '48px',
@@ -291,7 +340,7 @@ const Register = () => {
                   <Button
                     onClick={handleVerification}
                     className="w-full"
-                    disabled={loading}
+                    disabled={loading || formData.verificationCode.length !== 6}
                     style={{
                       backgroundColor: '#0f62fe',
                       minHeight: '48px',

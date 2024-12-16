@@ -6,12 +6,37 @@ import { sendVerificationEmail } from '../services/emailService.js';
 import { check, validationResult } from 'express-validator';
 import { queueEmail } from '../services/emailService.js';
 
+// List of inappropriate terms
+const inappropriateTerms = [
+  'admin',
+  'administrator',
+  'mod',
+  'moderator',
+  'support',
+  'help',
+  'staff',
+  'system',
+  'vestige',
+  'official',
+  // Add more terms as needed
+];
+
 // Validation rules
 export const registerValidation = [
-  check('email').isEmail().withMessage('Please enter a valid email'),
+  check('email')
+    .isEmail()
+    .withMessage('Please enter a valid email')
+    .custom(value => {
+      if (value.endsWith('.internal')) {
+        throw new Error('Invalid email domain');
+      }
+      return true;
+    }),
   check('username')
     .isLength({ min: 3 })
-    .withMessage('Username must be at least 3 characters'),
+    .withMessage('Username must be at least 3 characters')
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage('Username can only contain letters, numbers, underscores, and hyphens'),
   check('password')
     .matches(/^(?=.*[a-z])(?=.*[A-Z]).{8,16}$/)
     .withMessage('Password must be 8-16 characters and include upper and lowercase letters')
@@ -108,6 +133,12 @@ export const register = async (req, res) => {
 export const sendVerification = async (req, res) => {
   try {
     const { email } = req.body;
+
+    // Validate email domain
+    if (email.endsWith('.internal')) {
+      return res.status(400).json({ error: 'Invalid email domain' });
+    }
+
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     
     // Delete any existing verification codes for this email
@@ -165,6 +196,50 @@ export const verifyCode = async (req, res) => {
   }
 };
 
+export const checkUsername = async (req, res) => {
+  try {
+    const { username } = req.query;
+
+    // Check length
+    if (username.length < 3 || username.length > 20) {
+      return res.status(400).json({ 
+        available: false,
+        reason: 'Username must be between 3 and 20 characters'
+      });
+    }
+
+    // Check for valid characters
+    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+      return res.status(400).json({ 
+        available: false,
+        reason: 'Username can only contain letters, numbers, underscores, and hyphens'
+      });
+    }
+
+    // Check against inappropriate terms
+    const lowercaseUsername = username.toLowerCase();
+    if (inappropriateTerms.some(term => lowercaseUsername.includes(term))) {
+      return res.status(400).json({ 
+        available: false,
+        reason: 'This username is not allowed'
+      });
+    }
+
+    // Check if username exists
+    const existingUser = await User.findOne({ 
+      username: { $regex: new RegExp(`^${username}$`, 'i') }
+    });
+
+    res.json({ 
+      available: !existingUser,
+      reason: existingUser ? 'Username is already taken' : null
+    });
+  } catch (error) {
+    console.error('Username check error:', error);
+    res.status(500).json({ error: 'Error checking username' });
+  }
+};
+
 export const login = async (req, res) => {
   try {
     console.log('Login attempt:', req.body);
@@ -218,15 +293,5 @@ export const verifyToken = async (req, res) => {
   } catch (error) {
     console.error('Token verification error:', error);
     res.status(500).json({ error: 'Token verification failed' });
-  }
-};
-
-export const checkUsername = async (req, res) => {
-  try {
-    const { username } = req.query;
-    const existingUser = await User.findOne({ username: username.toLowerCase() });
-    res.json({ available: !existingUser });
-  } catch (error) {
-    res.status(500).json({ error: 'Error checking username' });
   }
 };
