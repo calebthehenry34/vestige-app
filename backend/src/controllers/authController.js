@@ -50,6 +50,7 @@ export const register = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
+    console.log('Registration attempt:', req.body); // Add logging
     const { email, password, username } = req.body;
 
     // Check if all required fields are present
@@ -75,15 +76,14 @@ export const register = async (req, res) => {
       });
     }
 
-    // Check if email was verified
-    const verificationData = await VerificationCode.findOne({ 
-      email,
-      verified: true
-    });
-    
-    if (!verificationData) {
+     // Check if email was verified
+    const verificationData = verificationCodes.get(email);
+    console.log('Verification data:', verificationData); // Add logging
+
+    if (!verificationData?.verified) {
       return res.status(400).json({ 
-        error: 'Email not verified' 
+        error: 'Email not verified',
+        details: 'Please verify your email first'
       });
     }
 
@@ -139,8 +139,24 @@ export const sendVerification = async (req, res) => {
       return res.status(400).json({ error: 'Invalid email domain' });
     }
 
+
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     
+
+    // Store verification code with timestamp
+    verificationCodes.set(email, {
+      code,
+      timestamp: Date.now(),
+      verified: false
+    });
+
+    console.log('Stored verification:', {
+      email,
+      code,
+      stored: verificationCodes.get(email)
+    });
+
+
     // Delete any existing verification codes for this email
     await VerificationCode.deleteMany({ email });
     
@@ -171,28 +187,44 @@ export const sendVerification = async (req, res) => {
 export const verifyCode = async (req, res) => {
   try {
     const { email, code } = req.body;
+    console.log('Verifying code:', { email, code });
     const verificationData = await VerificationCode.findOne({ email });
 
     if (!verificationData) {
       return res.status(400).json({ 
-        error: 'No verification code found' 
+        error: 'No verification code found',
+        details: 'Please request a new code'
       });
     }
 
     if (verificationData.code !== code) {
       return res.status(400).json({ 
-        error: 'Invalid verification code' 
+         error: 'Invalid verification code',
+        details: 'Code does not match'
       });
     }
 
-    // Mark as verified
-    verificationData.verified = true;
-    await verificationData.save();
+    if (Date.now() - verificationData.timestamp > 15 * 60 * 1000) {
+      verificationCodes.delete(email);
+      return res.status(400).json({ 
+        error: 'Verification code expired',
+        details: 'Please request a new code'
+      });
+    }
+
+     // Mark as verified
+     verificationCodes.set(email, {
+      ...verificationData,
+      verified: true
+    });
 
     res.json({ message: 'Email verified successfully' });
   } catch (error) {
     console.error('Verify code error:', error);
-    res.status(500).json({ error: 'Verification failed' });
+    res.status(500).json({ 
+      error: 'Verification failed',
+      details: error.message
+    });
   }
 };
 
