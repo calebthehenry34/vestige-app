@@ -1,12 +1,10 @@
 import User from '../models/User.js';
+import VerificationCode from '../models/VerificationCode.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { sendVerificationEmail } from '../services/emailService.js';
 import { check, validationResult } from 'express-validator';
 import { queueEmail } from '../services/emailService.js';
-
-// Store verification codes temporarily (in production, use Redis or similar)
-const verificationCodes = new Map();
 
 // Validation rules
 export const registerValidation = [
@@ -18,7 +16,6 @@ export const registerValidation = [
     .matches(/^(?=.*[a-z])(?=.*[A-Z]).{8,16}$/)
     .withMessage('Password must be 8-16 characters and include upper and lowercase letters')
 ];
-
 
 export const register = async (req, res) => {
   try {
@@ -42,8 +39,12 @@ export const register = async (req, res) => {
     }
 
     // Check if email was verified
-    const verificationData = verificationCodes.get(email);
-    if (!verificationData || !verificationData.verified) {
+    const verificationData = await VerificationCode.findOne({ 
+      email,
+      verified: true
+    });
+    
+    if (!verificationData) {
       return res.status(400).json({ 
         error: 'Email not verified' 
       });
@@ -64,6 +65,9 @@ export const register = async (req, res) => {
     });
 
     await user.save();
+
+    // Clean up verification code
+    await VerificationCode.deleteOne({ email });
 
     // Generate token
     const token = jwt.sign(
@@ -94,9 +98,13 @@ export const sendVerification = async (req, res) => {
     const { email } = req.body;
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     
-    verificationCodes.set(email, {
+    // Delete any existing verification codes for this email
+    await VerificationCode.deleteMany({ email });
+    
+    // Create new verification code
+    await VerificationCode.create({
+      email,
       code,
-      timestamp: Date.now(),
       verified: false
     });
 
@@ -120,7 +128,7 @@ export const sendVerification = async (req, res) => {
 export const verifyCode = async (req, res) => {
   try {
     const { email, code } = req.body;
-    const verificationData = verificationCodes.get(email);
+    const verificationData = await VerificationCode.findOne({ email });
 
     if (!verificationData) {
       return res.status(400).json({ 
@@ -134,19 +142,9 @@ export const verifyCode = async (req, res) => {
       });
     }
 
-    // Check if code is expired (15 minutes)
-    if (Date.now() - verificationData.timestamp > 15 * 60 * 1000) {
-      verificationCodes.delete(email);
-      return res.status(400).json({ 
-        error: 'Verification code expired' 
-      });
-    }
-
     // Mark as verified
-    verificationCodes.set(email, {
-      ...verificationData,
-      verified: true
-    });
+    verificationData.verified = true;
+    await verificationData.save();
 
     res.json({ message: 'Email verified successfully' });
   } catch (error) {
@@ -157,20 +155,20 @@ export const verifyCode = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    console.log('Login attempt:', req.body); // Add this for debugging
+    console.log('Login attempt:', req.body);
     const { email, password } = req.body;
 
     // Find user
     const user = await User.findOne({ email });
     if (!user) {
-      console.log('User not found:', email); // Add this for debugging
+      console.log('User not found:', email);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Check password
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
-      console.log('Invalid password for user:', email); // Add this for debugging
+      console.log('Invalid password for user:', email);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
