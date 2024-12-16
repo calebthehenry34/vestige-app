@@ -1,20 +1,26 @@
 import nodemailer from 'nodemailer';
+import aws from '@aws-sdk/client-ses';
+import { defaultProvider } from '@aws-sdk/credential-provider-node';
 import EmailQueue from '../models/EmailQueue.js';
 import { templates } from './emailTemplates.js';
 import crypto from 'crypto';
 
+// Create SES client
+const ses = new aws.SES({
+  apiVersion: '2010-12-01',
+  region: process.env.AWS_REGION,
+  credentials: defaultProvider()
+});
+
+// Create Nodemailer transporter using SES
 const transporter = nodemailer.createTransport({
-  host: 'localhost',
-  port: 1025,
-  secure: false,
-  tls: {
-    rejectUnauthorized: false
-  }
+  SES: { ses, aws },
+  sendingRate: 1 // Limit to avoid hitting SES sending limits
 });
 
 // Generate tracking pixel
 const generateTrackingPixel = (trackingId) => `
-  <img src="http://localhost:5001/api/email/track/${trackingId}" style="width:1px;height:1px;" />
+  <img src="${process.env.FRONTEND_URL}/api/email/track/${trackingId}" style="width:1px;height:1px;" />
 `;
 
 // Add email to queue
@@ -49,27 +55,26 @@ export const queueEmail = async ({ to, templateId, templateData, priority = 0, s
   }
 };
 
-
 export const sendVerificationEmail = async (email, code) => {
-    try {
-      await transporter.sendMail({
-        from: '"Vestige" <noreply@vestige.internal>',
-        to: email,
-        subject: "Verify your email address",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2>Welcome to Vestige!</h2>
-            <p>Your verification code is:</p>
-            <h1 style="font-size: 32px; letter-spacing: 4px; color: #3b82f6;">${code}</h1>
-            <p>This code will expire in 15 minutes.</p>
-          </div>
-        `
-      });
-    } catch (error) {
-      console.error('Error sending email:', error);
-      throw error;
-    }
-  };
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: "Verify your email address",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Welcome to Vestige!</h2>
+          <p>Your verification code is:</p>
+          <h1 style="font-size: 32px; letter-spacing: 4px; color: #3b82f6;">${code}</h1>
+          <p>This code will expire in 15 minutes.</p>
+        </div>
+      `
+    });
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw error;
+  }
+};
   
 // Process email queue
 export const processEmailQueue = async () => {
@@ -87,7 +92,7 @@ export const processEmailQueue = async () => {
         await email.save();
 
         await transporter.sendMail({
-          from: email.from,
+          from: email.from || process.env.EMAIL_FROM,
           to: email.to,
           subject: email.subject,
           html: email.html
