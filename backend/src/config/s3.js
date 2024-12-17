@@ -1,17 +1,36 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables from .env file
-dotenv.config();
+// Specify the path to ensure we're loading from the correct location
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-// Function to validate S3 credentials
+// Function to validate S3 credentials with detailed logging
 const validateS3Credentials = () => {
+  console.log('Validating S3 credentials...');
+  
   const required = {
     AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
     AWS_BUCKET_NAME: process.env.AWS_BUCKET_NAME,
     AWS_REGION: process.env.AWS_REGION
   };
+
+  // Log each credential status (without exposing sensitive data)
+  Object.entries(required).forEach(([key, value]) => {
+    console.log(`${key}: ${value ? 'Present' : 'Missing'}`);
+    if (value) {
+      // For non-sensitive fields, show the value
+      if (key === 'AWS_REGION' || key === 'AWS_BUCKET_NAME') {
+        console.log(`${key} value: ${value}`);
+      }
+    }
+  });
 
   const missing = Object.entries(required)
     .filter(([_, value]) => !value)
