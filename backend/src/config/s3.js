@@ -1,4 +1,4 @@
-import AWS from 'aws-sdk';
+import { S3Client } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
 
 // Load environment variables from .env file
@@ -14,28 +14,16 @@ let s3 = null;
 
 if (hasS3Credentials) {
   try {
-    AWS.config.update({
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID?.trim(),
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY?.trim(),
+    // Initialize the S3 client with v3 SDK
+    s3 = new S3Client({
       region: process.env.AWS_REGION?.trim(),
-    });
-
-    // Initialize the S3 client
-    s3 = new AWS.S3({
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID?.trim(),
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY?.trim(),
-      region: process.env.AWS_REGION?.trim(),
-      signatureVersion: 'v4',
-    });
-
-    // Verify if credentials are loaded properly
-    s3.config.getCredentials((err) => {
-      if (err) {
-        console.error("Error loading S3 credentials:", err);
-      } else {
-        console.log("S3 Credentials loaded successfully");
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID?.trim(),
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY?.trim(),
       }
     });
+
+    console.log("S3 Client initialized successfully");
   } catch (error) {
     console.error("Error initializing S3:", error);
   }

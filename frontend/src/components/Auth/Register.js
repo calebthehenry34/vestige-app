@@ -386,7 +386,7 @@ const Register = () => {
                   </Button>
                 </form>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-6 px-8 pt-8 pb-6 align-center">
                   <p className="text-gray-400">
                     We sent a verification code to {formData.email}
                   </p>
@@ -407,8 +407,7 @@ const Register = () => {
                       color: 'white',
                       width: '100%',
                       padding:'20px',
-                      fontSize:'22px',
-                      paddingLeft: '3px',
+                      fontSize:'30px',
                       borderRadius: '5px',
                       textAlign: 'center',
                       letterSpacing: '5px'
@@ -434,7 +433,7 @@ const Register = () => {
                     <button
                       type="button"
                       onClick={() => setStep(1)}
-                      className="text-[#4589ff] hover:text-[#0f62fe]"
+                      className="text-[#4589ff] hover:text-[#ae52e3]"
                     >
                       Use a different email
                     </button>
@@ -442,7 +441,7 @@ const Register = () => {
                       type="button"
                       onClick={handleResendCode}
                       disabled={resendDisabled}
-                      className="text-[#4589ff] hover:text-[#0f62fe] disabled:text-gray-500"
+                      className="text-[#4589ff] hover:text-[#ae52e3] disabled:text-gray-500"
                     >
                       {resendDisabled 
                         ? `Resend code in ${resendTimer}s` 
