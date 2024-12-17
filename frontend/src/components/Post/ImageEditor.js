@@ -10,10 +10,9 @@ import { ThemeContext } from '../../App';
 import Slider from '@mui/material/Slider';
 
 const ASPECT_RATIOS = {
-  'original': undefined,
-  '1:1': 1,
-  '4:5': 4/5,
+  '9:16': 9/16,
   '16:9': 16/9,
+  '4:5': 4/5,
 };
 
 const filters = {
@@ -90,7 +89,7 @@ const ImageEditor = ({ image, onSave, onBack }) => {
   
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [aspect, setAspect] = useState(ASPECT_RATIOS['1:1']);
+  const [aspect, setAspect] = useState(ASPECT_RATIOS['4:5']); // Default to 4:5
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
@@ -176,7 +175,7 @@ const ImageEditor = ({ image, onSave, onBack }) => {
             <img
               src={image}
               alt={name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               style={{ filter: value }}
             />
           </div>
@@ -248,7 +247,7 @@ const ImageEditor = ({ image, onSave, onBack }) => {
       theme === 'dark-theme' ? 'bg-black' : 'bg-white'
     }`}>
       {activeTab === 'crop' ? renderCropping() : (
-        <div className="relative aspect-square bg-black">
+        <div className="relative aspect-square">
           <img
             src={image}
             alt="Preview"

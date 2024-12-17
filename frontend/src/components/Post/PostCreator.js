@@ -16,7 +16,6 @@ import UserSearch from '../Common/UserSearch';
 import axios from 'axios';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/heic', 'image/heif'];
 
 const PostCreator = ({ isOpen, onClose }) => {
   const { theme } = useContext(ThemeContext);
@@ -58,7 +57,10 @@ const PostCreator = ({ isOpen, onClose }) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ACCEPTED_TYPES
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/png': ['.png'],
+      'image/heic': ['.heic'],
+      'image/heif': ['.heif']
     },
     maxSize: MAX_FILE_SIZE,
     multiple: false
@@ -349,7 +351,7 @@ const PostCreator = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-8 overflow-auto">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 sm:p-8 overflow-auto">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div
         className={`relative w-full max-w-lg rounded-xl overflow-hidden shadow-xl ${
