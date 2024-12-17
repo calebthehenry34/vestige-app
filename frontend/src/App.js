@@ -32,7 +32,7 @@ function App() {
   };
 
   const ProtectedRouteWrapper = ({ children, requiresNav = true }) => {
-    const location = useLocation(); // Move hook inside a component within Router
+    const location = useLocation();
     const { user, loading } = useAuth();
     
     if (loading) {
@@ -70,6 +70,7 @@ function App() {
           <ScrollProvider>
             <div className={`${theme === 'dark-theme' ? 'bg-gray-800 text-white' : 'bg-gray-50 text-black'} min-h-screen`}>
               <Routes>
+
                 {/* Public Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
