@@ -237,14 +237,14 @@ const OnboardingFlow = () => {
                   <p className="font-medium text-gray-200">
                     Welcome to Vestige beta! You currently have access to all features 
                     free of charge while we're in beta testing. <br></br><br></br>Please remember that features may not work as expected
-                    and we need your help. <br></br><br></br>If you find a problem, email beta@getvestige.com and we'll fix it.
+                    and we need your help. <br></br><br></br>If you find a problem, email support@vestigeapp.com and we'll fix it.
                   </p>
                 </div>
               </Tile>
             </div>
           )}
 
-          <div className="flex flex-col space-y-4 mt-8 text-white">
+          <div className="flex flex-col space-y-4 mt-8 text-white button-borderbutton-border">
             {step < 3 ? (
               <Button
                 onClick={handleNext}

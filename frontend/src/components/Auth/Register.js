@@ -420,7 +420,7 @@ const Register = () => {
                     className="w-full"
                     disabled={loading || formData.verificationCode.length !== 6}
                     style={{
-                      backgroundColor: '#0f62fe',
+                      backgroundColor: '#ae52e3',
                       minHeight: '48px',
                       borderRadius: '5px',
                       outline: 'none'
@@ -433,7 +433,7 @@ const Register = () => {
                     <button
                       type="button"
                       onClick={() => setStep(1)}
-                      className="text-[#4589ff] hover:text-[#ae52e3]"
+                      className="text-[#f1f1f2] hover:text-[#ae52e3]"
                     >
                       Use a different email
                     </button>
@@ -441,7 +441,7 @@ const Register = () => {
                       type="button"
                       onClick={handleResendCode}
                       disabled={resendDisabled}
-                      className="text-[#4589ff] hover:text-[#ae52e3] disabled:text-gray-500"
+                      className="text-[#f1f1f2] hover:text-[#ae52e3] disabled:text-gray-500"
                     >
                       {resendDisabled 
                         ? `Resend code in ${resendTimer}s` 
@@ -457,7 +457,7 @@ const Register = () => {
                   to="/login" 
                   className="text-[#f1f1f2]hover:text-[#f1f1f2]"
                 >
-                  Go back to login
+                  Back to login
                 </Link>
               </div>
             </div>
