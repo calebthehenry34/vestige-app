@@ -6,7 +6,7 @@ const MainLayout = ({ children }) => {
   const { theme } = useContext(ThemeContext);
 
   return (
-    <div className={`min-h-screen ${
+    <div className={`h-screen ${
       theme === 'dark-theme' ? 'bg-black' : 'bg-gray-50'
     }`}>
       <Navbar />
