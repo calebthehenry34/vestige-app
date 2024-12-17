@@ -116,21 +116,21 @@ const OnboardingFlow = () => {
 
   return (
     <Theme theme="g100">
-      <div className="min-h-screen bg-black">
+      <div className="h-screen bg-black">
         {/* Progress Steps */}
         <div className="w-full bg-[#262626] px-4 py-3">
           <div className="max-w-[250px] mx-auto "> 
             <div className="flex items-center space-x-4 text-sm text-gray-400">
               <div className={`flex items-center ${step >= 1 ? 'text-white' : ''}`}>
-                <div className={`w-2 h-2 rounded-full mr-2 ${step >= 1 ? 'bg-[#0f62fe]' : 'bg-gray-500'}`} />
+                <div className={`font-headlines w-2 h-2 rounded-full mr-2 ${step >= 1 ? 'bg-[#ae52e3]' : 'bg-gray-500'}`} />
                 Profile
               </div>
               <div className={`flex items-center ${step >= 2 ? 'text-white' : ''}`}>
-                <div className={`w-2 h-2 rounded-full mr-2 ${step >= 2 ? 'bg-[#0f62fe]' : 'bg-gray-500'}`} />
+                <div className={`font-headlines w-2 h-2 rounded-full mr-2 ${step >= 2 ? 'bg-[#ae52e3]' : 'bg-gray-500'}`} />
                 Guidelines
               </div>
               <div className={`flex items-center ${step >= 3 ? 'text-white' : ''}`}>
-                <div className={`w-2 h-2 rounded-full mr-2 ${step >= 3 ? 'bg-[#0f62fe]' : 'bg-gray-500'}`} />
+                <div className={`w-2 h-2 rounded-full mr-2 ${step >= 3 ? 'bg-[#ae52e3]' : 'bg-gray-500'}`} />
                 Complete
               </div>
             </div>
@@ -151,7 +151,7 @@ const OnboardingFlow = () => {
 
           {step === 1 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-md text-center text-white mb-10">Set Up Your Profile</h2>
+              <h2 className="font-headlines text-2xl font-md text-center text-white mb-10">Set Up Your Profile</h2>
               <label htmlFor="profile-upload" className="cursor-pointer">
                 <div className="w-64 h-64 mx-auto bg-[#262626] rounded-lg flex items-center justify-center hover:bg-[#333333] transition-colors">
                   {previewUrl ? (
@@ -170,8 +170,8 @@ const OnboardingFlow = () => {
                 </div>
               </label>
               <div className="space-y-1">
-                <p className="text-sm text-white text-center">Profile Photo</p>
-                <p className="text-xs text-gray-400 text-center">Max file size of 5mb. JPG, PNG, GIF</p>
+                <p className="font-medium text-sm text-white text-center">Profile Photo</p>
+                <p className="font-medium text-xs text-gray-400 text-center">${formData.username}</p>
               </div>
 
               <input
@@ -228,11 +228,11 @@ const OnboardingFlow = () => {
 
           {step === 2 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-md text-white">Community Guidelines</h2>
+              <h2 className="font-headlines text-2xl font-md text-white">Community Guidelines</h2>
               <Tile className="bg-[#262626] rounded-md p-6">
                 <div className="text-white">
                   <h4 className="font-medium mb-4">Our Community Standards</h4>
-                  <ul className="space-y-2 text-gray-400">
+                  <ul className="font-medium space-y-2 text-gray-400">
                     <li>Be respectful and kind to others</li>
                     <li>No hate speech or bullying</li>
                     <li>Protect your privacy and others'</li>
@@ -254,10 +254,10 @@ const OnboardingFlow = () => {
 
           {step === 3 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-md text-white">You're All Set!</h2>
+              <h2 className="fonte-headlines text-2xl font-md text-white">You're All Set!</h2>
               <Tile className="bg-[#262626] rounded-md p-6">
                 <div className="space-y-4 ">
-                  <p className="text-gray-200">
+                  <p className="font-medium text-gray-200">
                     Welcome to Vestige beta! You currently have access to all features 
                     free of charge while we're in beta testing. <br></br><br></br>Please remember that features may not work as expected
                     and we need your help. <br></br><br></br>If you find a problem, email beta@getvestige.com and we'll fix it.
@@ -267,43 +267,46 @@ const OnboardingFlow = () => {
             </div>
           )}
 
-          <div className="flex justify-between mt-8 text-white">
-            {step > 1 && (
-              <Button
-                kind="secondary"
-                onClick={handleBack}
-                disabled={loading}
-              >
-                Back
-              </Button>
-            )}
+          <div className="flex flex-col space-y-4 mt-8 text-white">
             {step < 3 ? (
               <Button
-                className="ml-auto"
                 onClick={handleNext}
                 disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
                 style={{
-                  width:'50%',
-                  backgroundColor: '#0f62fe',
+                  width: '100%',
+                  backgroundColor: '#ae52e3',
                   minHeight: '48px',
-                  borderRadius: '5px;'
+                  borderRadius: '5px'
                 }}
               >
                 Continue
               </Button>
             ) : (
               <Button
-                className="ml-auto"
                 onClick={handleComplete}
                 disabled={loading}
                 style={{
-                  width:'50%',
+                  width: '100%',
                   backgroundColor: '#0f62fe',
                   minHeight: '48px',
-                  borderRadius: '5px',
+                  borderRadius: '5px'
                 }}
               >
                 {loading ? 'Completing...' : 'Got It!'}
+              </Button>
+            )}
+            {step > 1 && (
+              <Button
+                kind="secondary"
+                onClick={handleBack}
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  minHeight: '48px',
+                  borderRadius: '5px'
+                }}
+              >
+                Back
               </Button>
             )}
           </div>
