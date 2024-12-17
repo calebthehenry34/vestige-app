@@ -1,21 +1,29 @@
 import Email from '../models/Email.js';
 import nodemailer from 'nodemailer';
+import aws from '@aws-sdk/client-ses';
 
-const transporter = nodemailer.createTransport({
-    host: 'localhost',
-    port: 1025,
-    secure: false,
-    tls: {
-        rejectUnauthorized: false
+// Create SES client
+const ses = new aws.SES({
+    region: process.env.EMAIL_REGION || 'us-east-2',
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
     }
 });
 
+// Create transporter using SES
+const transporter = nodemailer.createTransport({
+    SES: { ses, aws },
+    sendingRate: process.env.EMAIL_RATE_LIMIT || 1 // emails per second
+});
+
 export const sendEmail = async ({ to, subject, html, type }) => {
+    let email;
     try {
         // Create email record
-        const email = new Email({
+        email = new Email({
             to,
-            from: 'support@vestigeapp.com',
+            from: process.env.EMAIL_FROM || 'support@vestigeapp.com',
             subject,
             html,
             type
@@ -23,7 +31,7 @@ export const sendEmail = async ({ to, subject, html, type }) => {
 
         // Send email
         await transporter.sendMail({
-            from: 'support@vestigeapp.com',
+            from: email.from,
             to: email.to,
             subject: email.subject,
             html: email.html
@@ -39,6 +47,7 @@ export const sendEmail = async ({ to, subject, html, type }) => {
         console.error('Email sending failed:', error);
         if (email) {
             email.status = 'failed';
+            email.error = error.message;
             await email.save();
         }
         throw error;
