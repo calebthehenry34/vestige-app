@@ -70,18 +70,6 @@ function App() {
           <ScrollProvider>
             <div className={`${theme === 'dark-theme' ? 'bg-gray-800 text-white' : 'bg-gray-50 text-black'} min-h-screen`}>
               <Routes>
-                {/* Development Routes - These bypass authentication */}
-                {process.env.NODE_ENV === 'development' && [
-                  { path: "/dev/onboarding", element: <DevRouteWrapper component={OnboardingFlow} /> },
-                  { path: "/dev/home", element: <DevRouteWrapper component={Home} /> },
-                  { path: "/dev/profile", element: <DevRouteWrapper component={Profile} /> },
-                  { path: "/dev/explore", element: <DevRouteWrapper component={Explore} /> },
-                  { path: "/dev/activity", element: <DevRouteWrapper component={ActivityFeed} /> },
-                  { path: "/dev/chat", element: <DevRouteWrapper component={Chat} /> },
-                  { path: "/dev/settings", element: <DevRouteWrapper component={ProfileSettings} /> }
-                ].map(({ path, element }) => (
-                  <Route key={path} path={path} element={element} />
-                ))}
 
                 {/* Public Routes */}
                 <Route path="/login" element={<Login />} />
