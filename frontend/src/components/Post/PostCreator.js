@@ -14,6 +14,7 @@ import ImageEditor from './ImageEditor';
 import LocationAutocomplete from '../Common/LocationAutocomplete';
 import UserSearch from '../Common/UserSearch';
 import axios from 'axios';
+import { API_URL } from '../../config';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -105,6 +106,8 @@ const PostCreator = ({ isOpen, onClose }) => {
 
   const handleShare = async () => {
     try {
+      setError(null);
+      
       // Convert base64 to blob
       const response = await fetch(editedMedia.url);
       const blob = await response.blob();
@@ -122,11 +125,12 @@ const PostCreator = ({ isOpen, onClose }) => {
       formData.append('filter', editedMedia.filter);
       formData.append('adjustments', JSON.stringify(editedMedia.rawAdjustments));
 
-      // Upload to backend
-      await axios.post('/api/posts', formData, {
+      // Upload to backend with full API URL
+      await axios.post(`${API_URL}/api/posts`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         },
+        withCredentials: true, // Important for sending cookies
         onUploadProgress: (progressEvent) => {
           const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           setUploadProgress(progress);
@@ -145,7 +149,9 @@ const PostCreator = ({ isOpen, onClose }) => {
       setUploadProgress(0);
     } catch (error) {
       console.error('Error creating post:', error);
-      setError(error.response?.data?.message || 'Error creating post');
+      const errorMessage = error.response?.data?.error || error.message || 'Error creating post';
+      setError(errorMessage);
+      setUploadProgress(0);
     }
   };
 
