@@ -4,50 +4,139 @@ import s3, { isS3Available } from '../config/s3.js';
 import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
+import sharp from 'sharp';
 
 // Helper function to store file locally when S3 is not available
-const storeFileLocally = async (file) => {
+const storeFileLocally = async (file, processedBuffer) => {
   const uploadsDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
-  const fileExtension = path.extname(file.originalname);
+  const fileExtension = '.jpg'; // Always save as JPEG after processing
   const key = `${crypto.randomUUID()}${fileExtension}`;
   const filePath = path.join(uploadsDir, key);
   
-  await fs.promises.writeFile(filePath, file.buffer);
+  await fs.promises.writeFile(filePath, processedBuffer);
   return {
     key,
-    url: `/uploads/${key}` // This will be served by your static file middleware
+    url: `/uploads/${key}`
   };
+};
+
+// Helper function to process image with sharp
+const processImage = async (buffer, adjustments) => {
+  try {
+    let sharpImage = sharp(buffer);
+
+    // Apply adjustments
+    const { brightness, contrast, saturation, blur } = adjustments;
+    
+    sharpImage = sharpImage
+      .modulate({
+        brightness: brightness / 100,
+        saturation: saturation / 100
+      })
+      .gamma(contrast / 100)
+      .blur(blur || 0);
+
+    // Always convert to JPEG and optimize
+    sharpImage = sharpImage
+      .jpeg({
+        quality: 85,
+        mozjpeg: true,
+      })
+      .withMetadata(); // Preserve metadata like orientation
+
+    // Generate both full size and thumbnail
+    const processedBuffer = await sharpImage.toBuffer();
+    
+    // Create thumbnail
+    const thumbnailBuffer = await sharp(processedBuffer)
+      .resize(400, 400, {
+        fit: 'cover',
+        position: 'centre'
+      })
+      .jpeg({
+        quality: 70,
+        mozjpeg: true,
+      })
+      .toBuffer();
+
+    return {
+      processedBuffer,
+      thumbnailBuffer
+    };
+  } catch (error) {
+    console.error('Image processing error:', error);
+    throw new Error('Failed to process image');
+  }
 };
 
 export const createPost = async (req, res) => {
   try {
-    const { content } = req.body;
+    const { 
+      caption,
+      location,
+      hashtags: hashtagsString,
+      taggedUsers: taggedUsersString,
+      adjustments: adjustmentsString
+    } = req.body;
+
     let mediaUrl = null;
+    let thumbnailUrl = null;
     let key = null;
+    let thumbnailKey = null;
+
+    // Parse JSON strings
+    const hashtags = JSON.parse(hashtagsString || '[]');
+    const taggedUsers = JSON.parse(taggedUsersString || '[]');
+    const adjustments = JSON.parse(adjustmentsString || '{}');
+
+    // Validate tagged users exist
+    if (taggedUsers.length > 0) {
+      const users = await User.find({ _id: { $in: taggedUsers } });
+      if (users.length !== taggedUsers.length) {
+        return res.status(400).json({ error: 'One or more tagged users do not exist' });
+      }
+    }
 
     // Handle file upload if present
     if (req.file) {
       try {
+        // Process image with adjustments
+        const { processedBuffer, thumbnailBuffer } = await processImage(req.file.buffer, adjustments);
+
         if (isS3Available()) {
-          // Upload to S3 if available
-          key = `${crypto.randomUUID()}${path.extname(req.file.originalname)}`;
-          await s3.upload({
-            Bucket: process.env.AWS_BUCKET_NAME,
-            Key: key,
-            Body: req.file.buffer,
-            ContentType: req.file.mimetype
-          }).promise();
+          // Upload both full size and thumbnail to S3
+          key = `posts/${crypto.randomUUID()}.jpg`;
+          thumbnailKey = `posts/thumbnails/${crypto.randomUUID()}.jpg`;
+
+          await Promise.all([
+            s3.upload({
+              Bucket: process.env.AWS_BUCKET_NAME,
+              Key: key,
+              Body: processedBuffer,
+              ContentType: 'image/jpeg'
+            }).promise(),
+            s3.upload({
+              Bucket: process.env.AWS_BUCKET_NAME,
+              Key: thumbnailKey,
+              Body: thumbnailBuffer,
+              ContentType: 'image/jpeg'
+            }).promise()
+          ]);
           
           mediaUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+          thumbnailUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${thumbnailKey}`;
         } else {
           // Fall back to local storage
-          const result = await storeFileLocally(req.file);
+          const result = await storeFileLocally(req.file, processedBuffer);
+          const thumbnailResult = await storeFileLocally(req.file, thumbnailBuffer);
           key = result.key;
+          thumbnailKey = thumbnailResult.key;
           mediaUrl = result.url;
+          thumbnailUrl = thumbnailResult.url;
         }
       } catch (uploadError) {
         console.error('File upload error:', uploadError);
@@ -57,15 +146,24 @@ export const createPost = async (req, res) => {
 
     const post = new Post({
       user: req.user.userId,
-      content,
+      caption,
+      location,
+      hashtags,
+      taggedUsers,
       media: mediaUrl,
-      mediaKey: key
+      thumbnail: thumbnailUrl,
+      mediaKey: key,
+      thumbnailKey: thumbnailKey,
+      imageAdjustments: adjustments
     });
 
     await post.save();
     
-    // Populate user details
-    await post.populate('user', 'username profilePicture');
+    // Populate user details and tagged users
+    await post.populate([
+      { path: 'user', select: 'username profilePicture' },
+      { path: 'taggedUsers', select: 'username profilePicture' }
+    ]);
     
     res.status(201).json(post);
   } catch (error) {
@@ -91,16 +189,27 @@ export const deletePost = async (req, res) => {
     if (post.media && post.mediaKey) {
       try {
         if (isS3Available()) {
-          // Delete from S3 if available
-          await s3.deleteObject({
-            Bucket: process.env.AWS_BUCKET_NAME,
-            Key: post.mediaKey
-          }).promise();
+          // Delete both full size and thumbnail from S3
+          await Promise.all([
+            s3.deleteObject({
+              Bucket: process.env.AWS_BUCKET_NAME,
+              Key: post.mediaKey
+            }).promise(),
+            post.thumbnailKey && s3.deleteObject({
+              Bucket: process.env.AWS_BUCKET_NAME,
+              Key: post.thumbnailKey
+            }).promise()
+          ]);
         } else {
-          // Delete local file
+          // Delete local files
           const filePath = path.join(process.cwd(), 'uploads', post.mediaKey);
+          const thumbnailPath = post.thumbnailKey && path.join(process.cwd(), 'uploads', post.thumbnailKey);
+          
           if (fs.existsSync(filePath)) {
             await fs.promises.unlink(filePath);
+          }
+          if (thumbnailPath && fs.existsSync(thumbnailPath)) {
+            await fs.promises.unlink(thumbnailPath);
           }
         }
       } catch (deleteError) {
@@ -127,7 +236,8 @@ export const getPosts = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('user', 'username profilePicture');
+      .populate('user', 'username profilePicture')
+      .populate('taggedUsers', 'username profilePicture');
 
     const total = await Post.countDocuments();
     
@@ -154,7 +264,8 @@ export const getUserPosts = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('user', 'username profilePicture');
+      .populate('user', 'username profilePicture')
+      .populate('taggedUsers', 'username profilePicture');
 
     const total = await Post.countDocuments({ user: userId });
     
@@ -172,7 +283,7 @@ export const getUserPosts = async (req, res) => {
 
 export const updatePost = async (req, res) => {
   try {
-    const { content } = req.body;
+    const { caption, location, hashtags, taggedUsers } = req.body;
     const post = await Post.findById(req.params.id);
 
     if (!post) {
@@ -183,8 +294,27 @@ export const updatePost = async (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    post.content = content;
+    // Validate tagged users if they're being updated
+    if (taggedUsers && taggedUsers.length > 0) {
+      const users = await User.find({ _id: { $in: taggedUsers } });
+      if (users.length !== taggedUsers.length) {
+        return res.status(400).json({ error: 'One or more tagged users do not exist' });
+      }
+    }
+
+    // Update fields if provided
+    if (caption !== undefined) post.caption = caption;
+    if (location !== undefined) post.location = location;
+    if (hashtags !== undefined) post.hashtags = hashtags;
+    if (taggedUsers !== undefined) post.taggedUsers = taggedUsers;
+
     await post.save();
+
+    // Populate user details and tagged users
+    await post.populate([
+      { path: 'user', select: 'username profilePicture' },
+      { path: 'taggedUsers', select: 'username profilePicture' }
+    ]);
 
     res.json(post);
   } catch (error) {
@@ -210,9 +340,44 @@ export const likePost = async (req, res) => {
     }
 
     await post.save();
+    
+    // Populate user details and tagged users
+    await post.populate([
+      { path: 'user', select: 'username profilePicture' },
+      { path: 'taggedUsers', select: 'username profilePicture' }
+    ]);
+
     res.json(post);
   } catch (error) {
     console.error('Like post error:', error);
     res.status(500).json({ error: 'Error liking post' });
+  }
+};
+
+export const getPostsByHashtag = async (req, res) => {
+  try {
+    const { hashtag } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const posts = await Post.find({ hashtags: hashtag })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('user', 'username profilePicture')
+      .populate('taggedUsers', 'username profilePicture');
+
+    const total = await Post.countDocuments({ hashtags: hashtag });
+    
+    res.json({
+      posts,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalPosts: total
+    });
+  } catch (error) {
+    console.error('Get posts by hashtag error:', error);
+    res.status(500).json({ error: 'Error fetching posts' });
   }
 };

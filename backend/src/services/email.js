@@ -2,6 +2,9 @@ import Email from '../models/Email.js';
 import nodemailer from 'nodemailer';
 import aws from '@aws-sdk/client-ses';
 
+// Note: Environment variables are loaded by dotenv.config() in server.js
+// No need to import dotenv here as it's already configured at application startup
+
 // Create SES client
 const ses = new aws.SES({
     region: process.env.EMAIL_REGION || 'us-east-2',
