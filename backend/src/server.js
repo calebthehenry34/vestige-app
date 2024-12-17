@@ -58,6 +58,18 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
   lastModified: true
 }));
 
+// Test route for AWS configuration
+app.get('/test-aws', (req, res) => {
+  const awsConfig = {
+    region: process.env.AWS_REGION,
+    hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+    hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
+    bucketName: process.env.AWS_BUCKET_NAME
+  };
+  console.log('AWS Configuration:', awsConfig);
+  res.json({ message: 'Check server logs for AWS configuration' });
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
