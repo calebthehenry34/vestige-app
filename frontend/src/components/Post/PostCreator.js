@@ -66,13 +66,14 @@ const PostCreator = ({ isOpen, onClose }) => {
     multiple: false
   });
 
-  const handleEditComplete = async ({ croppedImage, filter, adjustments }) => {
+  const handleEditComplete = async ({ croppedImage, filter, adjustments, aspectRatio }) => {
     setEditedMedia({
       url: croppedImage,
       filter: filter || '',
       adjustments: adjustments ? 
         `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%)` 
-        : ''
+        : '',
+      aspectRatio
     });
     setStep('details');
   };
@@ -231,15 +232,24 @@ const PostCreator = ({ isOpen, onClose }) => {
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto">
         {editedMedia && (
-          <div className="relative aspect-square">
-            <img
-              src={editedMedia.url}
-              alt="Preview"
-              className="w-full h-full object-cover"
-              style={{ 
-                filter: `${editedMedia.filter} ${editedMedia.adjustments}`
+          <div className="relative w-full max-h-[60vh] flex items-center justify-center bg-black">
+            <div
+              className="relative w-full"
+              style={{
+                paddingBottom: `${(1 / editedMedia.aspectRatio) * 100}%`,
+                maxHeight: '60vh',
+                overflow: 'hidden'
               }}
-            />
+            >
+              <img
+                src={editedMedia.url}
+                alt="Preview"
+                className="absolute inset-0 w-full h-full object-contain"
+                style={{ 
+                  filter: `${editedMedia.filter} ${editedMedia.adjustments}`
+                }}
+              />
+            </div>
           </div>
         )}
         

@@ -108,7 +108,8 @@ const ImageEditor = ({ image, onSave, onBack }) => {
       onSave({
         croppedImage,
         filter: selectedFilter,
-        adjustments
+        adjustments,
+        aspectRatio: aspect
       });
     } catch (e) {
       console.error('Error getting cropped image:', e);
