@@ -41,7 +41,15 @@ const createTransporter = async () => {
 
     if (hasAWSCredentials) {
       try {
-        console.log('Using AWS SES for email...');
+        console.log('AWS Credentials Check:', {
+          hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+          accessKeyLength: process.env.AWS_ACCESS_KEY_ID?.length,
+          hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
+          secretKeyLength: process.env.AWS_SECRET_ACCESS_KEY?.length,
+          region: process.env.AWS_REGION
+        });
+
+        console.log('Initializing AWS SES...');
         const ses = new aws.SES({
           apiVersion: '2010-12-01',
           region: process.env.AWS_REGION,
@@ -51,16 +59,41 @@ const createTransporter = async () => {
           }
         });
 
-        return nodemailer.createTransport({
+        console.log('Creating SES transport...');
+        const transport = nodemailer.createTransport({
           SES: { ses, aws }
         });
+
+        // Test SES configuration
+        console.log('Testing SES configuration...');
+        try {
+          const data = await ses.getSendQuota({});
+          console.log('SES Quota:', data);
+          return transport;
+        } catch (quotaError) {
+          console.error('Error getting SES quota:', {
+            code: quotaError.code,
+            message: quotaError.message,
+            stack: quotaError.stack
+          });
+          throw quotaError;
+        }
       } catch (error) {
-        console.error('Error creating SES transport:', error);
+        console.error('Error creating SES transport:', {
+          code: error.code,
+          message: error.message,
+          stack: error.stack
+        });
         console.log('Falling back to test account...');
         return await createTestAccount();
       }
     } else {
-      console.log('AWS credentials not found, using test email account...');
+      console.log('AWS credentials missing:', {
+        accessKey: process.env.AWS_ACCESS_KEY_ID ? 'present' : 'missing',
+        secretKey: process.env.AWS_SECRET_ACCESS_KEY ? 'present' : 'missing',
+        region: process.env.AWS_REGION ? 'present' : 'missing'
+      });
+      console.log('Using test email account...');
       return await createTestAccount();
     }
   } catch (error) {
@@ -91,7 +124,8 @@ initializeTransporter()
     transporter = t;
     console.log('Email transporter initialized with configuration:', {
       isAWS: !!t?.transporter?.options?.SES,
-      region: process.env.AWS_REGION
+      region: process.env.AWS_REGION,
+      transporterType: t?.transporter?.options?.SES ? 'SES' : 'Ethereal'
     });
   })
   .catch(error => {
@@ -158,7 +192,11 @@ export const sendVerificationEmail = async (email, code) => {
       }).html
     });
     
-    console.log('Email sent successfully:', result);
+    console.log('Email sent successfully:', {
+      messageId: result.messageId,
+      transporterType: transporter?.transporter?.options?.SES ? 'SES' : 'Ethereal'
+    });
+
     if (result.messageId && transporter.options.host === 'smtp.ethereal.email') {
       console.log('Preview URL: %s', nodemailer.getTestMessageUrl(result));
     }
@@ -168,7 +206,8 @@ export const sendVerificationEmail = async (email, code) => {
       error: error.message,
       stack: error.stack,
       responseCode: error.responseCode,
-      response: error.response
+      response: error.response,
+      transporterType: transporter?.transporter?.options?.SES ? 'SES' : 'Ethereal'
     });
     throw error;
   }
@@ -207,7 +246,11 @@ export const processEmailQueue = async () => {
           html: email.html
         });
 
-        console.log(`Email ${email._id} sent successfully:`, result);
+        console.log(`Email ${email._id} sent successfully:`, {
+          messageId: result.messageId,
+          transporterType: transporter?.transporter?.options?.SES ? 'SES' : 'Ethereal'
+        });
+
         if (result.messageId && transporter.options.host === 'smtp.ethereal.email') {
           console.log('Preview URL: %s', nodemailer.getTestMessageUrl(result));
         }
@@ -220,7 +263,8 @@ export const processEmailQueue = async () => {
           error: error.message,
           stack: error.stack,
           responseCode: error.responseCode,
-          response: error.response
+          response: error.response,
+          transporterType: transporter?.transporter?.options?.SES ? 'SES' : 'Ethereal'
         });
         
         email.status = 'failed';

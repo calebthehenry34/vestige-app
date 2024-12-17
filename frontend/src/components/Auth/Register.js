@@ -393,7 +393,7 @@ const Register = () => {
 
                   <TextInput
                     id="verification-code"
-                    labelText="Verification Code"
+                    labelText=""
                     required
                     value={formData.verificationCode}
                     onChange={(e) => {
