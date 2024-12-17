@@ -18,7 +18,7 @@ import SinglePost from './components/Post/SinglePost';
 import VideoFeed from './components/Feed/VideoFeed';
 import Roadmap from './components/Roadmap';
 import { ScrollProvider } from './context/ScrollContext';
-import DevRouteWrapper from './components/DevTools/DevRouteWrapper';
+
 
 export const ThemeContext = createContext();
 
