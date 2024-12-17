@@ -170,8 +170,7 @@ const OnboardingFlow = () => {
                 </div>
               </label>
               <div className="space-y-1">
-                <p className="font-medium text-sm text-white text-center">Profile Photo</p>
-                <p className="font-medium text-xs text-gray-400 text-center">${formData.username}</p>
+                <p className="font-medium text-md text-gray-400 text-center">{formData.username}</p>
               </div>
 
               <input
@@ -181,27 +180,6 @@ const OnboardingFlow = () => {
                 onChange={handleImageUpload}
                 className="hidden"
               />
-
-              <div className="space-y-1">
-                <TextInput
-                  id="username"
-                  labelText="Username"
-                  value={formData.username}
-                  disabled={true}
-                  style={{
-                    backgroundColor: '#000',
-                    borderBottom: '1px solid #525252',
-                    color: 'white',
-                    padding: '5px',
-                    width: '100%',
-                    marginTop:'10px',
-                    paddingTop: '10px',
-                    paddingBottom: '5px',
-                    paddingLeft: '3px',
-                  }}
-                  className="cds--text-input--light"
-                />
-              </div>
 
               <TextArea
                 id="bio"
@@ -228,7 +206,7 @@ const OnboardingFlow = () => {
 
           {step === 2 && (
             <div className="space-y-6">
-              <h2 className="font-headlines text-2xl font-md text-white">Community Guidelines</h2>
+              <h2 className="font-headlines text-center text-2xl font-md text-white">Community Guidelines</h2>
               <Tile className="bg-[#262626] rounded-md p-6">
                 <div className="text-white">
                   <h4 className="font-medium mb-4">Our Community Standards</h4>
@@ -254,7 +232,7 @@ const OnboardingFlow = () => {
 
           {step === 3 && (
             <div className="space-y-6">
-              <h2 className="fonte-headlines text-2xl font-md text-white">You're All Set!</h2>
+              <h2 className="font-headlines text-center text-2xl font-md text-white">You're All Set!</h2>
               <Tile className="bg-[#262626] rounded-md p-6">
                 <div className="space-y-4 ">
                   <p className="font-medium text-gray-200">
@@ -275,7 +253,7 @@ const OnboardingFlow = () => {
                 style={{
                   width: '100%',
                   backgroundColor: '#ae52e3',
-                  minHeight: '48px',
+                  minHeight: '60px',
                   borderRadius: '5px'
                 }}
               >
@@ -287,8 +265,8 @@ const OnboardingFlow = () => {
                 disabled={loading}
                 style={{
                   width: '100%',
-                  backgroundColor: '#0f62fe',
-                  minHeight: '48px',
+                  backgroundColor: '#ae52e3',
+                  minHeight: '60px',
                   borderRadius: '5px'
                 }}
               >
@@ -302,7 +280,7 @@ const OnboardingFlow = () => {
                 disabled={loading}
                 style={{
                   width: '100%',
-                  minHeight: '48px',
+                  minHeight: '60px',
                   borderRadius: '5px'
                 }}
               >
