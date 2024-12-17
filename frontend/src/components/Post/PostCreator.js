@@ -3,12 +3,11 @@ import { useDropzone } from 'react-dropzone';
 import {
   ImageRegular,
   SparkleRegular,
-  DocumentRegular,
   ArrowLeftRegular,
   DismissRegular,
-  HashtagRegular,
   PersonRegular,
-  LocationRegular
+  LocationRegular,
+  NumberSymbolSquareRegular
 } from '@fluentui/react-icons';
 import { ThemeContext } from '../../App';
 import ImageEditor from './ImageEditor';
@@ -260,7 +259,7 @@ const PostCreator = ({ isOpen, onClose }) => {
                 onClick={() => document.getElementById('hashtag-input').focus()}
                 className="text-blue-500 hover:text-blue-600"
               >
-                <HashtagRegular className="w-5 h-5" />
+                <NumberSymbolSquareRegular className="w-5 h-5" />
               </button>
               <button
                 onClick={() => document.getElementById('user-search').focus()}
