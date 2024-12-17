@@ -73,7 +73,8 @@ const PostCreator = ({ isOpen, onClose }) => {
       adjustments: adjustments ? 
         `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%)` 
         : '',
-      aspectRatio
+      aspectRatio,
+      rawAdjustments: adjustments
     });
     setStep('details');
   };
@@ -108,15 +109,18 @@ const PostCreator = ({ isOpen, onClose }) => {
       const response = await fetch(editedMedia.url);
       const blob = await response.blob();
       
+      // Create file from blob
+      const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+      
       // Create form data
       const formData = new FormData();
-      formData.append('image', blob);
+      formData.append('image', file);
       formData.append('caption', caption);
       formData.append('location', location);
       formData.append('hashtags', JSON.stringify(hashtags));
-      formData.append('taggedUsers', JSON.stringify(taggedUsers));
+      formData.append('taggedUsers', JSON.stringify(taggedUsers.map(user => user.id)));
       formData.append('filter', editedMedia.filter);
-      formData.append('adjustments', editedMedia.adjustments);
+      formData.append('adjustments', JSON.stringify(editedMedia.rawAdjustments));
 
       // Upload to backend
       await axios.post('/api/posts', formData, {
@@ -140,6 +144,7 @@ const PostCreator = ({ isOpen, onClose }) => {
       setTaggedUsers([]);
       setUploadProgress(0);
     } catch (error) {
+      console.error('Error creating post:', error);
       setError(error.response?.data?.message || 'Error creating post');
     }
   };
