@@ -21,7 +21,6 @@ const Profile = () => {
   const [posts, setPosts] = useState([]);
   const { theme } = useContext(ThemeContext);
 
-
   // Fetch profile data and posts
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -54,9 +53,11 @@ const Profile = () => {
           throw new Error('Failed to fetch posts');
         }
 
-        setPosts(postsData);
+        // Ensure posts is always an array
+        setPosts(Array.isArray(postsData) ? postsData : []);
       } catch (error) {
         console.error('Error fetching profile data:', error);
+        setPosts([]); // Set empty array on error
       } finally {
         setLoading(false);
       }
@@ -75,68 +76,74 @@ const Profile = () => {
     );
   }
 
-  const isOwnProfile = currentUser?.username === profileData?.username;
+  if (!profileData) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-red-500">Failed to load profile</div>
+      </div>
+    );
+  }
 
+  const isOwnProfile = currentUser?.username === profileData?.username;
 
   return (
     <div className="max-w-4xl mx-auto pt-16 px-0">
       <div className="relative w-full aspect-[4/5] overflow-hidden mb-0">
-      <img
-  src={profileData?.profilePicture 
-    ? `${API_URL}/uploads/${profileData.profilePicture}`
-    : `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`
-  }
-  alt={profileData?.username}
-  className="absolute inset-0 w-full h-full object-cover"
-  onError={(e) => {
-    console.log('Profile picture load error, using fallback');
-    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`;
-    e.target.onError = null;
-  }}
-/>
-  {/* Gradient Overlay */}
-  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
-  {/* Content */}
-  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-  <div className="flex justify-between items-start">
-    <h1 className="text-2xl font-bold">{profileData?.username}</h1>
-    <div className="flex gap-2">
-      {isOwnProfile ? (
-        <Link
-          to="/settings"
-          className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-        >
-          <LauncherSettingsRegular className="w-6 h-6" />
-        </Link>
-      ) : (
-        <button className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center">
-          Follow
-        </button>
-      )}
-    </div>
-  </div>
-  {profileData?.bio && (
-    <p className="text-md text-white/80 mb-4">{profileData.bio}</p>
-  )}
-    <div className="flex space-x-6">
-      <div>
-        <div className="text-lg font-bold">{profileData?.posts?.length || 0}</div>
-        <div className="text-sm text-white/80">Posts</div>
+        <img
+          src={profileData?.profilePicture 
+            ? `${API_URL}/uploads/${profileData.profilePicture}`
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`
+          }
+          alt={profileData?.username}
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => {
+            console.log('Profile picture load error, using fallback');
+            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`;
+            e.target.onError = null;
+          }}
+        />
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
+        {/* Content */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+          <div className="flex justify-between items-start">
+            <h1 className="text-2xl font-bold">{profileData?.username}</h1>
+            <div className="flex gap-2">
+              {isOwnProfile ? (
+                <Link
+                  to="/settings"
+                  className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  <LauncherSettingsRegular className="w-6 h-6" />
+                </Link>
+              ) : (
+                <button className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center">
+                  Follow
+                </button>
+              )}
+            </div>
+          </div>
+          {profileData?.bio && (
+            <p className="text-md text-white/80 mb-4">{profileData.bio}</p>
+          )}
+          <div className="flex space-x-6">
+            <div>
+              <div className="text-lg font-bold">{profileData?.posts?.length || 0}</div>
+              <div className="text-sm text-white/80">Posts</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold">{profileData?.followers?.length || 0}</div>
+              <div className="text-sm text-white/80">Followers</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold">{profileData?.following?.length || 0}</div>
+              <div className="text-sm text-white/80">Following</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div>
-        <div className="text-lg font-bold">{profileData?.followers?.length || 0}</div>
-        <div className="text-sm text-white/80">Followers</div>
-      </div>
-      <div>
-        <div className="text-lg font-bold">{profileData?.following?.length || 0}</div>
-        <div className="text-sm text-white/80">Following</div>
-      </div>
-    </div>
-  </div>
-</div>
 
-
-      {/* Tabs and Posts remain the same */}
+      {/* Tabs */}
       <div className="flex justify-center">
         <button
           className={`text-sm flex items-center px-8 py-4 border-t border-transparent ${
@@ -160,56 +167,55 @@ const Profile = () => {
         )}
       </div>
 
-       {/* Posts Grid */}
-       <div className="grid grid-cols-2 gap-3 md:gap-4 p-2">
-        {posts.map((post) => (
-          <Link 
-            key={post._id} 
-            to={`/post/${post._id}`}
-            className={`relative aspect-square group overflow-hidden rounded-lg ${
-              theme === 'dark-theme' ? 'bg-gray-800' : 'bg-white'
-            }`}
-          >
-            {post.mediaType === 'video' ? (
-              <div className="w-full h-full bg-black">
-                <video
+      {/* Posts Grid */}
+      {Array.isArray(posts) && posts.length > 0 ? (
+        <div className="grid grid-cols-2 gap-3 md:gap-4 p-2">
+          {posts.map((post) => (
+            <Link 
+              key={post._id} 
+              to={`/post/${post._id}`}
+              className={`relative aspect-square group overflow-hidden rounded-lg ${
+                theme === 'dark-theme' ? 'bg-gray-800' : 'bg-white'
+              }`}
+            >
+              {post.mediaType === 'video' ? (
+                <div className="w-full h-full bg-black">
+                  <video
+                    src={post.media.startsWith('http') 
+                      ? post.media 
+                      : `${API_URL}/uploads/${post.media}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <img
                   src={post.media.startsWith('http') 
                     ? post.media 
                     : `${API_URL}/uploads/${post.media}`}
+                  alt=""
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.log('Image load error:', post.media);
+                    e.target.src = '/api/placeholder/400/400';
+                  }}
                 />
+              )}
+              
+              {/* Hover Overlay */}
+              <div className="opacity-0 group-hover:opacity-100 absolute inset-0 bg-black/50 flex items-center justify-center space-x-6 transition-opacity">
+                <div className="flex items-center text-white">
+                  <HeartRegular className="w-6 h-6 mr-2" />
+                  <span className="font-semibold">{post.likes?.length || 0}</span>
+                </div>
+                <div className="flex items-center text-white">
+                  <ChatRegular className="w-6 h-6 mr-2" />
+                  <span className="font-semibold">{post.comments?.length || 0}</span>
+                </div>
               </div>
-            ) : (
-              <img
-                src={post.media.startsWith('http') 
-                  ? post.media 
-                  : `${API_URL}/uploads/${post.media}`}
-                alt=""
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.log('Image load error:', post.media);
-                  e.target.src = '/api/placeholder/400/400';
-                }}
-              />
-            )}
-            
-            {/* Hover Overlay */}
-            <div className="opacity-0 group-hover:opacity-100 absolute inset-0 bg-black/50 flex items-center justify-center space-x-6 transition-opacity">
-              <div className="flex items-center text-white">
-                <HeartRegular className="w-6 h-6 mr-2" />
-                <span className="font-semibold">{post.likes?.length || 0}</span>
-              </div>
-              <div className="flex items-center text-white">
-                <ChatRegular className="w-6 h-6 mr-2" />
-                <span className="font-semibold">{post.comments?.length || 0}</span>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* No Posts Message */}
-      {posts.length === 0 && (
+            </Link>
+          ))}
+        </div>
+      ) : (
         <div className={`text-center py-12 ${
           theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
         }`}>
