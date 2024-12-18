@@ -1,6 +1,6 @@
 import Post from '../models/Post.js';
 import User from '../models/User.js';
-import s3, { isS3Available } from '../config/s3.js';
+import s3, { isS3Available, getCredentialsProvider } from '../config/s3.js';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 import path from 'path';
@@ -79,21 +79,47 @@ export const createPost = async (req, res) => {
       if (isS3Available()) {
         console.log('Uploading to S3...');
         try {
+          // Get fresh credentials
+          const credentialsProvider = getCredentialsProvider();
+          const credentials = await credentialsProvider();
+          
+          // Log credential state before upload
+          console.log('S3 Upload Credentials Check:', {
+            hasAccessKey: !!credentials.accessKeyId,
+            accessKeyLength: credentials.accessKeyId?.length,
+            hasSecretKey: !!credentials.secretAccessKey,
+            secretKeyLength: credentials.secretAccessKey?.length,
+            region: process.env.AWS_REGION
+          });
+
           // Upload to S3
           key = `posts/${filename}`;
 
-          await s3.send(new PutObjectCommand({
+          const command = new PutObjectCommand({
             Bucket: process.env.AWS_BUCKET_NAME,
             Key: key,
             Body: req.file.buffer,
             ContentType: 'image/jpeg'
-          }));
+          });
+
+          const result = await s3.send(command);
+          console.log('S3 upload response:', {
+            requestId: result.$metadata?.requestId,
+            attempts: result.$metadata?.attempts,
+            totalTime: result.$metadata?.totalTime
+          });
 
           mediaUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
           console.log('S3 upload successful');
         } catch (s3Error) {
-          console.error('S3 upload error:', s3Error);
-          throw new Error('Failed to upload to S3');
+          console.error('Detailed S3 upload error:', {
+            name: s3Error.name,
+            message: s3Error.message,
+            code: s3Error.code,
+            requestId: s3Error.$metadata?.requestId,
+            stack: s3Error.stack
+          });
+          throw new Error(`Failed to upload to S3: ${s3Error.message}`);
         }
       } else {
         console.log('Storing file locally...');
