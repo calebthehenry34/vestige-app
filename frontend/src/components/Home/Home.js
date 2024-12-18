@@ -379,15 +379,17 @@ const Home = () => {
               <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-black/50 to-transparent flex justify-between items-center">
                 <div className="flex items-center space-x-4">
                   <Link to={`/profile/${post.user.username}`} className="flex items-center">
-                    <img
-                      src={`${API_URL}/uploads/${post.user.profilePicture}`}
-                      alt={post.user.username}
-                      className="h-8 w-8 rounded-md object-cover"
-                      onError={(e) => {
-                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username || 'User')}`;
-                        e.target.onError = null;
-                      }}
-                    />
+                  <img
+  src={post.user.profilePicture?.startsWith('http') 
+    ? post.user.profilePicture 
+    : `${API_URL}/uploads/${post.user.profilePicture}`}
+  alt={post.user.username}
+  className="h-6 w-6 rounded-md object-cover"
+  onError={(e) => {
+    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username || 'User')}`;
+    e.target.onError = null;
+  }}
+/>
                     <span className="ml-2 font-medium text-white text-sm">{post.user?.username}</span>
                   </Link>
                 </div>
