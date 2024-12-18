@@ -444,12 +444,11 @@ const Home = () => {
                   />
                 ) : (
                   <img
-                  src={`${API_URL}/uploads/${post.media}`}
+                  src={post.media.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`}
                   alt="Post content"
                   className="w-full h-auto"
-                  crossOrigin="anonymous"
                   onError={(e) => {
-                    console.error('Image load error:', e);
+                    console.log('Image load error for:', post.media);
                     e.target.src = '/api/placeholder/400/400';
                     e.target.onError = null;
                   }}
