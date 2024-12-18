@@ -15,8 +15,6 @@ import {
 import PostComments from '../Post/PostComments';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import { useScroll } from '../../context/ScrollContext';
-import { useLocation } from 'react-router-dom';
 import { API_URL } from '../../config';
 
 const Home = () => {
@@ -27,8 +25,7 @@ const Home = () => {
   const [showComments, setShowComments] = useState({});
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharePostId, setSharePostId] = useState(null);
-  const { saveScrollPosition } = useScroll();
-  const location = useLocation();
+
   const scrollRestoredRef = useRef(false);
 
   const fetchPosts = useCallback(async () => {
@@ -359,40 +356,46 @@ const Home = () => {
       <div className="space-y-6">
         {Array.isArray(posts) && posts.map((post) => (
           <div key={post._id} className="bg-white rounded-lg shadow-md overflow-hidden">
-            <Link to={`/post/${post._id}`} className="block relative" onClick={(e) => {
-              // Prevent navigation if clicking interactive elements
-              if (e.target.closest('button')) {
-                e.preventDefault();
-                e.stopPropagation();
-              }
-            }}>
+            {/* Header with Profile Link */}
+            <div className="p-4 flex justify-between items-center">
+              <Link 
+                to={`/profile/${post.user.username}`}
+                className="flex items-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img
+                  src={post.user.profilePicture?.startsWith('http') 
+                    ? post.user.profilePicture 
+                    : `${API_URL}/uploads/${post.user.profilePicture}`}
+                  alt={post.user.username}
+                  className="h-8 w-8 rounded-md object-cover"
+                  onError={(e) => {
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username || 'User')}`;
+                    e.target.onError = null;
+                  }}
+                />
+                <span className="ml-2 font-medium">{post.user?.username}</span>
+              </Link>
+    
+              {/* Menu Button */}
+              <button 
+                onClick={() => togglePostMenu(post._id)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <MoreHorizontalRegular className="w-6 h-6" />
+              </button>
+            </div>
+    
+            {/* Post Content with Link */}
+            <Link to={`/post/${post._id}`} className="block relative">
+              {/* Media Content */}
               <div className="relative">
-                {/* User Info and Menu Overlay at Top */}
-                <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-black/50 to-transparent flex justify-between items-center">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                      <img
-                        src={post.user.profilePicture?.startsWith('http') 
-                          ? post.user.profilePicture 
-                          : `${API_URL}/uploads/${post.user.profilePicture}`}
-                        alt={post.user.username}
-                        className="h-6 w-6 rounded-md object-cover"
-                        onError={(e) => {
-                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username || 'User')}`;
-                          e.target.onError = null;
-                        }}
-                      />
-                      <span className="ml-2 font-medium text-white text-sm">{post.user?.username}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Media Content */}
                 {post.mediaType === 'video' ? (
                   <video
                     src={post.media}
                     controls
                     className="w-full h-auto"
+                    onClick={(e) => e.stopPropagation()}
                   />
                 ) : (
                   <img
@@ -406,71 +409,19 @@ const Home = () => {
                     }}
                   />
                 )}
-
-                {/* Post Menu Button */}
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    togglePostMenu(post._id);
-                  }}
-                  className="absolute top-4 right-4 text-white hover:text-white/80"
-                >
-                  <MoreHorizontalRegular className="w-6 h-6" />
-                </button>
-
-                {activePostMenu === post._id && (
-                  <div className="absolute right-4 top-12 w-48 bg-white rounded-lg shadow-lg z-20 py-1">
-                    {post.user._id === user.id ? (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleEditCaption(post._id);
-                          }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center"
-                        >
-                          <EditRegular className="w-5 h-5 mr-2" />
-                          Edit Caption
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleDeletePost(post._id);
-                          }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center"
-                        >
-                          <DeleteRegular className="w-5 h-5 mr-2" />
-                          Delete Post
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleReportPost(post._id);
-                        }}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center"
-                      >
-                        <FlagRegular className="w-5 h-5 mr-2" />
-                        Report Post
-                      </button>
-                    )}
-                  </div>
-                )}
-
+                
                 {/* Bottom Action Bar */}
                 <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent">
                   <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center text-white">
                     <div className="flex space-x-4">
-                      <button onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleLike(post._id);
-                      }} className="hover:scale-110 transition-transform">
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleLike(post._id);
+                        }} 
+                        className="hover:scale-110 transition-transform"
+                      >
                         {post.liked ? (
                           <HeartFilled className="w-6 h-6 text-red-500" />
                         ) : (
@@ -516,48 +467,93 @@ const Home = () => {
                 </div>
               </div>
             </Link>
-
-            {/* Comments Section */}
-            <PostComments
-              post={post}
-              isOpen={showComments[post._id]}
-              onComment={(text) => handleComment(post._id, text)}
-              onReply={handleReply}
-            />
-          </div>
-        ))}
-      </div>
-      {showShareModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-4 w-80">
-            <h3 className="text-lg font-semibold mb-4">Share Post</h3>
-            <div className="space-y-4">
-              <button 
-                onClick={async () => {
-                  try {
-                    const postUrl = `${window.location.origin}/post/${sharePostId}`;
-                    await navigator.clipboard.writeText(postUrl);
-                    alert('Link copied to clipboard!');
-                  } catch (error) {
-                    console.error('Failed to copy link:', error);
-                  }
-                  setShowShareModal(false);
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100 rounded"
-              >
-                Copy Link
-              </button>
-              <button 
-                onClick={() => setShowShareModal(false)}
-                className="w-full px-4 py-2 bg-gray-100 rounded"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+  
+            {/* Post Menu Dropdown */}
+            {activePostMenu === post._id && (
+              <div className="relative">
+                <div className="absolute right-4 top-0 w-48 bg-white rounded-lg shadow-lg z-20 py-1">
+                  {post.user._id === user.id ? (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleEditCaption(post._id);
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center"
+                      >
+                        <EditRegular className="w-5 h-5 mr-2" />
+                        Edit Caption
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleDeletePost(post._id);
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center"
+                      >
+                        <DeleteRegular className="w-5 h-5 mr-2" />
+                        Delete Post
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleReportPost(post._id);
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center"
+                    >
+                      <FlagRegular className="w-5 h-5 mr-2" />
+                      Report Post
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+           {/* Comments Section */}
+        <PostComments
+        post={post}
+        isOpen={showComments[post._id]}
+        onComment={(text) => handleComment(post._id, text)}
+        onReply={handleReply}
+      />
     </div>
+  ))}
+  </div>
+
+    {/* Share Modal */}
+  {showShareModal && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-4 w-80">
+        <h3 className="text-lg font-semibold mb-4">Share Post</h3>
+        <div className="space-y-4">
+          <button 
+            onClick={async () => {
+              try {
+                const postUrl = `${window.location.origin}/post/${sharePostId}`;
+                await navigator.clipboard.writeText(postUrl);
+                alert('Link copied to clipboard!');
+              } catch (error) {
+                console.error('Failed to copy link:', error);
+              }
+              setShowShareModal(false);
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-gray-100 rounded"
+          >
+            Copy Link
+          </button>
+          <button 
+            onClick={() => setShowShareModal(false)}
+            className="w-full px-4 py-2 bg-gray-100 rounded"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
+
   );
 };
 
