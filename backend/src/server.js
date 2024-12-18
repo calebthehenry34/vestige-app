@@ -66,8 +66,7 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Public file serving middleware for uploads with security measures
-app.use('/uploads', uploadsLimiter, (req, res, next) => {
+app.use('/uploads', auth, uploadsLimiter, (req, res, next) => {
   // Only allow image files
   if (!req.path.match(/\.(jpg|jpeg|png|gif)$/i)) {
     return res.status(403).json({ error: 'Invalid file type' });
@@ -97,6 +96,11 @@ app.use('/uploads', uploadsLimiter, (req, res, next) => {
     if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png') || path.endsWith('.gif')) {
       res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 day
     }
+
+    // Add CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
   }
 }));
 

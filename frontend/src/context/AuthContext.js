@@ -1,4 +1,3 @@
-// frontend/src/context/AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
@@ -11,29 +10,73 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);
 
   const login = async (token, userData) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
+    try {
+      if (!token) {
+        throw new Error('No token provided');
+      }
+
+      // Verify token format
+      const tokenParts = token.split('.');
+      if (tokenParts.length !== 3) {
+        throw new Error('Invalid token format');
+      }
+
+      // Store token
+      localStorage.setItem('token', token);
+      
+      // Store user data
+      const userString = JSON.stringify(userData);
+      localStorage.setItem('user', userString);
+      
+      // Update state
+      setUser(userData);
+
+      // Verify storage
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (storedToken !== token) {
+        throw new Error('Token storage verification failed');
+      }
+      
+      if (storedUser !== userString) {
+        throw new Error('User data storage verification failed');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      // Clean up any partial data
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      throw error;
+    }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('userData');
+    localStorage.removeItem('user');  // Changed from 'userData' to match storage key
     setUser(null);
   };
 
-  // Add this updateUser function
   const updateUser = (updatedData) => {
-    // Update localStorage with new user data
-    localStorage.setItem('userData', JSON.stringify(updatedData));
-    // Update state
-    setUser(updatedData);
+    try {
+      const userString = JSON.stringify(updatedData);
+      localStorage.setItem('user', userString);  // Changed from 'userData' to 'user'
+      setUser(updatedData);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
   };
 
   return (
@@ -42,7 +85,7 @@ export const AuthProvider = ({ children }) => {
       login, 
       logout, 
       loading,
-      updateUser // Add updateUser to the context value
+      updateUser
     }}>
       {children}
     </AuthContext.Provider>

@@ -25,43 +25,68 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
-  setLoading(true);
-
-  try {
-    console.log('Attempting login with:', {
-      email: formData.email,
-      hasPassword: !!formData.password
-    });
-
-    const response = await fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email: formData.email,
-        password: formData.password
-      })
-    });
-
-    const data = await response.json();
-    console.log('Login response:', data);
-
-    if (!response.ok) {
-      throw new Error(data.error || data.details || 'Login failed');
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+  
+    try {
+      console.log('Making login request to:', `${API_URL}/api/auth/login`);
+  
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
+      });
+  
+      const data = await response.json();
+      console.log('Login response:', {
+        status: response.status,
+        ok: response.ok,
+        hasToken: !!data.token,
+        hasUser: !!data.user,
+        tokenLength: data.token?.length
+      });
+  
+      if (!response.ok) {
+        throw new Error(data.error || data.details || 'Login failed');
+      }
+  
+      if (!data.token) {
+        throw new Error('No token received from server');
+      }
+  
+      // Verify token format before storing
+      const tokenParts = data.token.split('.');
+      if (tokenParts.length !== 3) {
+        throw new Error('Invalid token format received');
+      }
+  
+      // Store token and log the stored value
+      await login(data.token, data.user);
+      const storedToken = localStorage.getItem('token');
+      console.log('Token stored successfully:', {
+        received: data.token.substring(0, 20) + '...',
+        stored: storedToken.substring(0, 20) + '...',
+        match: data.token === storedToken
+      });
+  
+      navigate('/');
+    } catch (error) {
+      console.error('Login error:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      setError(error.message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    await login(data.token, data.user);
-    navigate('/');
-  } catch (error) {
-    console.error('Login error details:', error);
-    setError(error.message || 'Login failed. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <Theme theme="g100">

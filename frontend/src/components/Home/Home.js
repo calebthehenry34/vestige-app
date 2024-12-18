@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, navigate } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { 
   HeartRegular, 
@@ -33,33 +33,43 @@ const Home = () => {
 
   const fetchPosts = async () => {
     try {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        console.error('No auth token found');
+        navigate('/login');
+        return;
+      }
+  
       const response = await fetch(`${API_URL}/api/posts`, {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
-
+  
       if (!response.ok) {
-        throw new Error('Failed to fetch posts');
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        if (response.status === 401) {
+          // Token expired or invalid
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/login');
+          return;
+        }
+        throw new Error(errorData.error || 'Failed to fetch posts');
       }
-
+  
       const data = await response.json();
-      // Ensure data is an array before setting posts
-      if (Array.isArray(data)) {
-        setPosts(data);
-      } else if (data && typeof data === 'object' && Array.isArray(data.posts)) {
-        // If data is wrapped in an object with a posts property
-        setPosts(data.posts);
-      } else {
-        console.error('Invalid posts data format:', data);
-        setPosts([]);
-      }
+      setPosts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching posts:', error);
-      setPosts([]); // Set empty array on error
+      setPosts([]);
     }
   };
-
   useEffect(() => {
     // Fetch posts first
     fetchPosts();
@@ -420,17 +430,16 @@ const Home = () => {
                   />
                 ) : (
                   <img
-  src={post.media.includes('/uploads/') 
-    ? `${API_URL}${post.media}`  // Add API_URL to the relative path
-    : post.media}                 // Use the full URL directly if it's already complete
-  alt="Post content"
-  className="w-full h-auto"
-  onError={(e) => {
-    console.log('Image load error:', post.media);
-    e.target.src = '/api/placeholder/400/400';
-    e.target.onError = null;
-  }}
-/>
+                  src={`${API_URL}/uploads/${post.media}`}
+                  alt="Post content"
+                  className="w-full h-auto"
+                  crossOrigin="anonymous"
+                  onError={(e) => {
+                    console.error('Image load error:', e);
+                    e.target.src = '/api/placeholder/400/400';
+                    e.target.onError = null;
+                  }}
+                />
                 )}
               </Link>
 
