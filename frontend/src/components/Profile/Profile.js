@@ -11,6 +11,10 @@ import {
 import { Link } from 'react-router-dom';
 import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
+import { getProfileImageUrl } from '../../utils/imageUtils';
+
+
+
 
 const Profile = () => {
   const { username } = useParams();
@@ -20,6 +24,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState([]);
   const { theme } = useContext(ThemeContext);
+  
 
   // Fetch profile data and posts
   useEffect(() => {
@@ -89,19 +94,16 @@ const Profile = () => {
   return (
     <div className="max-w-4xl mx-auto pt-16 px-0">
       <div className="relative w-full aspect-[4/5] overflow-hidden mb-0">
-        <img
-          src={profileData?.profilePicture 
-            ? `${API_URL}/uploads/${profileData.profilePicture}`
-            : `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`
-          }
-          alt={profileData?.username}
-          className="absolute inset-0 w-full h-full object-cover"
-          onError={(e) => {
-            console.log('Profile picture load error, using fallback');
-            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`;
-            e.target.onError = null;
-          }}
-        />
+      <img
+  src={getProfileImageUrl(profileData?.profilePicture, profileData?.username)}
+  alt={profileData?.username || 'Profile'}
+  className="w-100 h-100 rounded-md object-cover"
+  onError={(e) => {
+    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`;
+    e.target.onError = null;
+  }}
+/>
+
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
         {/* Content */}
