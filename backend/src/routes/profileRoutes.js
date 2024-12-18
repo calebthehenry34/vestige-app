@@ -5,20 +5,16 @@ import Post from '../models/Post.js';
 import Follow from '../models/Follow.js';
 import upload from '../middleware/upload.js';
 
-
-
 const router = express.Router();
 
 router.post('/complete-onboarding', 
   auth, 
-  upload.single('profilePicture'), 
+  upload.handleUpload('profilePicture'), 
   async (req, res) => {
     try {
       console.log('File received:', req.file); // Check what file data you're getting
       const userId = req.user.userId;
       const { username, bio } = req.body;
-      
-      console.log('File received:', req.file); // Debug log
       
       // Update user profile
       const updatedUser = await User.findByIdAndUpdate(
@@ -52,7 +48,6 @@ router.post('/complete-onboarding',
   }
 );
 
-
 router.get('/:username', auth, async (req, res) => {
   try {
     const { username } = req.params;
@@ -79,7 +74,6 @@ router.get('/:username', auth, async (req, res) => {
     });
   }
 });
-
 
 router.post('/update', auth, async (req, res) => {
   try {
