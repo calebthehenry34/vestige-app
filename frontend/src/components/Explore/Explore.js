@@ -14,23 +14,32 @@ const Explore = () => {
   const fetchExplorePosts = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(API_URL + '/api/posts/explore', {
+      console.log('Fetching explore posts with token:', token ? 'Present' : 'Missing');
+  
+      const response = await fetch(`${API_URL}/api/posts/explore`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-
+  
+      console.log('Response status:', response.status);
       const data = await response.json();
-      setPosts(Array.isArray(data) ? data : []);
+      console.log('Received explore data:', data);
+  
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch explore posts');
+      }
+  
+      // Check if data has a posts property
+      const postsArray = data.posts || data;
+      setPosts(Array.isArray(postsArray) ? postsArray : []);
       setError(null);
+  
     } catch (error) {
       console.error('Error fetching explore posts:', error);
       setError(error.message);
+      setPosts([]);
     } finally {
       setLoading(false);
     }
