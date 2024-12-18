@@ -1,56 +1,50 @@
 import Post from '../models/Post.js';
 import User from '../models/User.js';
 import s3, { isS3Available } from '../config/s3.js';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
 import sharp from 'sharp';
 
 // Helper function to store file locally when S3 is not available
-const storeFileLocally = async (file, processedBuffer) => {
+const storeFileLocally = async (buffer, filename) => {
   const uploadsDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
-  const fileExtension = '.jpg'; // Always save as JPEG after processing
-  const key = `${crypto.randomUUID()}${fileExtension}`;
-  const filePath = path.join(uploadsDir, key);
-  
-  await fs.promises.writeFile(filePath, processedBuffer);
-  return {
-    key,
-    url: `/uploads/${key}`
-  };
+  const filePath = path.join(uploadsDir, filename);
+  await fs.promises.writeFile(filePath, buffer);
+  return `/uploads/${filename}`;
 };
 
 // Helper function to process image with sharp
-const processImage = async (buffer, adjustments) => {
+const processImage = async (buffer, adjustments = {}) => {
   try {
     let sharpImage = sharp(buffer);
 
-    // Apply adjustments
-    const { brightness, contrast, saturation, blur } = adjustments;
-    
-    sharpImage = sharpImage
-      .modulate({
-        brightness: brightness / 100,
-        saturation: saturation / 100
-      })
-      .gamma(contrast / 100)
-      .blur(blur || 0);
+    // Apply adjustments if they exist
+    if (adjustments) {
+      const { brightness = 100, contrast = 100, saturation = 100 } = adjustments;
+      
+      sharpImage = sharpImage
+        .modulate({
+          brightness: brightness / 100,
+          saturation: saturation / 100
+        })
+        .gamma(contrast / 100);
+    }
 
     // Always convert to JPEG and optimize
-    sharpImage = sharpImage
+    const processedBuffer = await sharpImage
       .jpeg({
         quality: 85,
         mozjpeg: true,
       })
-      .withMetadata(); // Preserve metadata like orientation
+      .withMetadata()
+      .toBuffer();
 
-    // Generate both full size and thumbnail
-    const processedBuffer = await sharpImage.toBuffer();
-    
     // Create thumbnail
     const thumbnailBuffer = await sharp(processedBuffer)
       .resize(400, 400, {
@@ -107,36 +101,38 @@ export const createPost = async (req, res) => {
         // Process image with adjustments
         const { processedBuffer, thumbnailBuffer } = await processImage(req.file.buffer, adjustments);
 
+        // Generate unique filenames
+        const filename = `${crypto.randomUUID()}.jpg`;
+        const thumbnailFilename = `thumbnail-${filename}`;
+
         if (isS3Available()) {
           // Upload both full size and thumbnail to S3
-          key = `posts/${crypto.randomUUID()}.jpg`;
-          thumbnailKey = `posts/thumbnails/${crypto.randomUUID()}.jpg`;
+          key = `posts/${filename}`;
+          thumbnailKey = `posts/thumbnails/${thumbnailFilename}`;
 
           await Promise.all([
-            s3.upload({
+            s3.send(new PutObjectCommand({
               Bucket: process.env.AWS_BUCKET_NAME,
               Key: key,
               Body: processedBuffer,
               ContentType: 'image/jpeg'
-            }).promise(),
-            s3.upload({
+            })),
+            s3.send(new PutObjectCommand({
               Bucket: process.env.AWS_BUCKET_NAME,
               Key: thumbnailKey,
               Body: thumbnailBuffer,
               ContentType: 'image/jpeg'
-            }).promise()
+            }))
           ]);
-          
+
           mediaUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
           thumbnailUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${thumbnailKey}`;
         } else {
           // Fall back to local storage
-          const result = await storeFileLocally(req.file, processedBuffer);
-          const thumbnailResult = await storeFileLocally(req.file, thumbnailBuffer);
-          key = result.key;
-          thumbnailKey = thumbnailResult.key;
-          mediaUrl = result.url;
-          thumbnailUrl = thumbnailResult.url;
+          mediaUrl = await storeFileLocally(processedBuffer, filename);
+          thumbnailUrl = await storeFileLocally(thumbnailBuffer, thumbnailFilename);
+          key = filename;
+          thumbnailKey = thumbnailFilename;
         }
       } catch (uploadError) {
         console.error('File upload error:', uploadError);
@@ -191,14 +187,14 @@ export const deletePost = async (req, res) => {
         if (isS3Available()) {
           // Delete both full size and thumbnail from S3
           await Promise.all([
-            s3.deleteObject({
+            s3.send(new PutObjectCommand({
               Bucket: process.env.AWS_BUCKET_NAME,
               Key: post.mediaKey
-            }).promise(),
-            post.thumbnailKey && s3.deleteObject({
+            })),
+            post.thumbnailKey && s3.send(new PutObjectCommand({
               Bucket: process.env.AWS_BUCKET_NAME,
               Key: post.thumbnailKey
-            }).promise()
+            }))
           ]);
         } else {
           // Delete local files

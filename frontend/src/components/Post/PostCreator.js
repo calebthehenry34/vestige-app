@@ -117,7 +117,7 @@ const PostCreator = ({ isOpen, onClose }) => {
       
       // Create form data
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('media', file); // Changed from 'image' to 'media' to match backend
       formData.append('caption', caption);
       formData.append('location', location);
       formData.append('hashtags', JSON.stringify(hashtags));
@@ -129,7 +129,7 @@ const PostCreator = ({ isOpen, onClose }) => {
       const token = localStorage.getItem('token');
 
       // Upload to backend with full API URL
-      await axios.post(`${API_URL}/api/posts`, formData, {
+      const result = await axios.post(`${API_URL}/api/posts`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`
@@ -150,11 +150,15 @@ const PostCreator = ({ isOpen, onClose }) => {
       setHashtags([]);
       setTaggedUsers([]);
       setUploadProgress(0);
+
+      // Return the created post data
+      return result.data;
     } catch (error) {
       console.error('Error creating post:', error);
       const errorMessage = error.response?.data?.error || error.message || 'Error creating post';
       setError(errorMessage);
       setUploadProgress(0);
+      throw error; // Re-throw to handle in parent component if needed
     }
   };
 
