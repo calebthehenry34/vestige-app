@@ -18,7 +18,6 @@ import { startEmailQueue } from './services/emailService.js';
 import rateLimit from 'express-rate-limit';
 import compression from 'compression';
 import helmet from 'helmet';
-import auth from './middleware/auth.js';
 
 dotenv.config();
 startEmailQueue();
@@ -39,27 +38,48 @@ const uploadsDir = path.join(rootDir, 'uploads');
 const app = express();
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" } // Allow images to be served cross-origin
+}));
 
-// Rate limiting
-const limiter = rateLimit({
+// Rate limiting for uploads directory
+const uploadsLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 1000, // limit each IP to 1000 requests per windowMs for images
+  message: 'Too many requests for media files, please try again later.'
 });
-app.use(limiter);
+
+// General API rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Too many API requests, please try again later.'
+});
 
 // Basic middleware
 app.use(cors());
-app.use(compression()); // Enable gzip compression
+app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Secure file serving middleware for uploads
-app.use('/uploads', auth, (req, res, next) => {
+// Public file serving middleware for uploads with security measures
+app.use('/uploads', uploadsLimiter, (req, res, next) => {
   // Only allow image files
   if (!req.path.match(/\.(jpg|jpeg|png|gif)$/i)) {
     return res.status(403).json({ error: 'Invalid file type' });
   }
+
+  // Validate file exists before serving
+  const filePath = path.join(uploadsDir, path.basename(req.path));
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+
+  // Prevent directory traversal
+  if (!filePath.startsWith(uploadsDir)) {
+    return res.status(403).json({ error: 'Invalid file path' });
+  }
+
   next();
 }, express.static(uploadsDir, {
   maxAge: '1d', // Cache for 1 day
@@ -67,7 +87,6 @@ app.use('/uploads', auth, (req, res, next) => {
   lastModified: true,
   setHeaders: (res, path) => {
     // Set security headers
-    res.setHeader('Content-Security-Policy', "default-src 'self'");
     res.setHeader('X-Content-Type-Options', 'nosniff');
     
     // Set cache control headers
@@ -85,7 +104,8 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// API routes
+// API routes with rate limiting
+app.use('/api', apiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/admin', adminRoutes);

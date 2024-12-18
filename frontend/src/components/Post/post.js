@@ -19,12 +19,16 @@ import { API_URL } from '../../config';
 // Helper function to handle media URLs
 const getMediaUrl = (url) => {
   if (!url) return '';
-  return url.startsWith('http') ? url : `${API_URL}${url}`;
+  // If it's already a full URL (e.g., S3), use it directly
+  if (url.startsWith('http')) return url;
+  // For local files, ensure we're using the correct base URL
+  return `${API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
 const Post = ({ post, onDelete, onReport, onEdit }) => {
   const { user } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const isOwner = post.user._id === user.id;
 
   const handleDelete = async () => {
@@ -44,7 +48,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
 
   const handleReport = async () => {
     try {
-      await fetch(API_URL + '/api/posts' +post._id + '/report', {
+      await fetch(API_URL + '/api/posts' + post._id + '/report', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -56,6 +60,16 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
       console.error('Error reporting post:', error);
     }
     setShowMenu(false);
+  };
+
+  const handleImageError = (e) => {
+    console.error('Image load error:', post.media);
+    setImageError(true);
+    // Attempt to reload the image once
+    if (!e.target.dataset.retried) {
+      e.target.dataset.retried = 'true';
+      e.target.src = getMediaUrl(post.media);
+    }
   };
 
   return (
@@ -105,18 +119,25 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
       {/* Post Content */}
       <div className="relative">
         {post.mediaType === 'video' ? (
-          <video src={getMediaUrl(post.media)} controls className="w-full" />
+          <video 
+            src={getMediaUrl(post.media)} 
+            controls 
+            className="w-full"
+            onError={(e) => console.error('Video load error:', post.media)}
+          />
         ) : (
           <Link to={`/post/${post._id}`}>
-            <img 
-              src={getMediaUrl(post.media)} 
-              alt="Post content" 
-              className="w-full"
-              onError={(e) => {
-                console.error('Failed to load image:', post.media);
-                e.target.onerror = null;
-              }}
+            <img
+              src={getMediaUrl(post.media)}
+              alt="Post content"
+              className={`w-full ${imageError ? 'opacity-50' : ''}`}
+              onError={handleImageError}
             />
+            {imageError && (
+              <div className="absolute inset-0 flex items-center justify-center text-red-500 bg-gray-100 bg-opacity-50">
+                Error loading image
+              </div>
+            )}
           </Link>
         )}
 
