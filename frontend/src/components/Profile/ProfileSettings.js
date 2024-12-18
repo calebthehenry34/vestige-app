@@ -18,6 +18,7 @@ import {
 import { ThemeContext } from '../../App';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
+import { getProfileImageUrl } from '../../utils/imageUtils';
 
 
 const ProfileSettings = () => {
@@ -261,12 +262,7 @@ const ProfileSettings = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                       <div className="relative">
                       <img
-  src={user?.profilePicture 
-    ? user.profilePicture.startsWith('http')
-      ? user.profilePicture
-      : `${API_URL}/uploads/${user.profilePicture}`
-    : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`
-  }
+  src={getProfileImageUrl(user?.profilePicture, user?.username)}
   alt={user?.username || 'Profile'}
   className="w-100 h-100 rounded-md object-cover"
   onError={(e) => {
