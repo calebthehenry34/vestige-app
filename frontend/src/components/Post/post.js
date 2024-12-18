@@ -16,6 +16,11 @@ import {
 } from '@fluentui/react-icons';
 import { API_URL } from '../../config';
 
+// Helper function to handle media URLs
+const getMediaUrl = (url) => {
+  if (!url) return '';
+  return url.startsWith('http') ? url : `${API_URL}${url}`;
+};
 
 const Post = ({ post, onDelete, onReport, onEdit }) => {
   const { user } = useAuth();
@@ -59,7 +64,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
       <div className="flex items-center justify-between p-4">
         <Link to={`/profile/${post.user.username}`} className="flex items-center">
           <img
-            src={API_URL + '/uploads/' + post.user.profilePicture }
+            src={getMediaUrl(post.user.profilePicture)}
             alt={post.user.username}
             className="h-10 w-10 rounded-full object-cover"
             onError={(e) => {
@@ -97,13 +102,21 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
         </div>
       )}
 
-      {/* Post Content */}``
+      {/* Post Content */}
       <div className="relative">
         {post.mediaType === 'video' ? (
-          <video src={post.media} controls className="w-full" />
+          <video src={getMediaUrl(post.media)} controls className="w-full" />
         ) : (
           <Link to={`/post/${post._id}`}>
-            <img src={post.media} alt="Post content" className="w-full" />
+            <img 
+              src={getMediaUrl(post.media)} 
+              alt="Post content" 
+              className="w-full"
+              onError={(e) => {
+                console.error('Failed to load image:', post.media);
+                e.target.onerror = null;
+              }}
+            />
           </Link>
         )}
 

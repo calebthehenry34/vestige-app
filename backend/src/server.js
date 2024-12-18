@@ -15,6 +15,10 @@ import videoRoutes from './routes/videoRoutes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { startEmailQueue } from './services/emailService.js';
+import rateLimit from 'express-rate-limit';
+import compression from 'compression';
+import helmet from 'helmet';
+import auth from './middleware/auth.js';
 
 dotenv.config();
 startEmailQueue();
@@ -34,16 +38,52 @@ const uploadsDir = path.join(rootDir, 'uploads');
 
 const app = express();
 
+// Security middleware
+app.use(helmet());
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use(limiter);
+
 // Basic middleware
 app.use(cors());
+app.use(compression()); // Enable gzip compression
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Debug logging middleware
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+// Secure file serving middleware for uploads
+app.use('/uploads', auth, (req, res, next) => {
+  // Only allow image files
+  if (!req.path.match(/\.(jpg|jpeg|png|gif)$/i)) {
+    return res.status(403).json({ error: 'Invalid file type' });
+  }
   next();
-});
+}, express.static(uploadsDir, {
+  maxAge: '1d', // Cache for 1 day
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, path) => {
+    // Set security headers
+    res.setHeader('Content-Security-Policy', "default-src 'self'");
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    
+    // Set cache control headers
+    if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png') || path.endsWith('.gif')) {
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 day
+    }
+  }
+}));
+
+// Debug logging middleware (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+  });
+}
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -51,55 +91,57 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/upload', uploadRoutes);
-app.use('/api/email', emailRoutes);  // Added email routes
+app.use('/api/email', emailRoutes);
 app.use('/api/messages', chatRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts/videos', videoRoutes);
 
-// Test route
-app.get('/test', (req, res) => {
-  res.json({ message: 'Server is running' });
-});
-
-// Debug route
-app.get('/debug', (req, res) => {
-  res.json({
-    aws: {
-      s3: {
-        region: process.env.AWS_REGION,
-        bucket: process.env.AWS_BUCKET_NAME,
-        hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
-        hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY
-      },
-      ses: {
-        region: process.env.AWS_REGION,
-        emailFrom: process.env.EMAIL_FROM,
-        hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
-        hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY
-      }
-    },
-    directories: {
-      public: {
-        path: publicDir,
-        exists: fs.existsSync(publicDir),
-        contents: fs.readdirSync(publicDir)
-      },
-      uploads: {
-        path: uploadsDir,
-        exists: fs.existsSync(uploadsDir),
-        contents: fs.readdirSync(uploadsDir)
-      }
-    }
+// Test route (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/test', (req, res) => {
+    res.json({ message: 'Server is running' });
   });
-});
+
+  // Debug route
+  app.get('/debug', (req, res) => {
+    res.json({
+      aws: {
+        s3: {
+          region: process.env.AWS_REGION,
+          bucket: process.env.AWS_BUCKET_NAME,
+          hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+          hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY
+        },
+        ses: {
+          region: process.env.AWS_REGION,
+          emailFrom: process.env.EMAIL_FROM,
+          hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+          hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY
+        }
+      },
+      directories: {
+        public: {
+          path: publicDir,
+          exists: fs.existsSync(publicDir),
+          contents: fs.readdirSync(publicDir)
+        },
+        uploads: {
+          path: uploadsDir,
+          exists: fs.existsSync(uploadsDir),
+          contents: fs.readdirSync(uploadsDir)
+        }
+      }
+    });
+  });
+}
 
 // Error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({
     error: 'Internal Server Error',
-    message: err.message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    message: process.env.NODE_ENV === 'production' ? 'Something went wrong' : err.message,
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
   });
 });
 

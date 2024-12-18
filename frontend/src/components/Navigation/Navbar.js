@@ -205,7 +205,7 @@ const Navbar = () => {
             <span className={`text-xl font-semibold ${
               theme === 'dark-theme' ? 'text-white' : 'text-black'
             }`}>
-              <img src="/logos/logo.svg" alt="Logo" className="mr-3 h-5 w-auto"/>
+              <img src="/logos/logofull.svg" alt="Logo" className="mr-3 h-4 w-auto"/>
             </span>
           </Link>
 
