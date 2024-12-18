@@ -23,6 +23,69 @@ const storeFileLocally = async (buffer, filename) => {
   }
 };
 
+export const getExplorePosts = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+    const skip = (page - 1) * limit;
+
+    // Get user's following list to exclude their posts
+    const user = await User.findById(req.user.userId);
+    const following = user.following || [];
+
+    // Find posts not from users the current user is following
+    // Sort by popularity (likes count and comments count)
+    const posts = await Post.aggregate([
+      {
+        $match: {
+          user: { $nin: [user._id, ...following] } // Exclude own posts and following
+        }
+      },
+      {
+        $addFields: {
+          likesCount: { $size: { $ifNull: ["$likes", []] } },
+          commentsCount: { $size: { $ifNull: ["$comments", []] } },
+          popularity: {
+            $add: [
+              { $size: { $ifNull: ["$likes", []] } },
+              { $multiply: [{ $size: { $ifNull: ["$comments", []] } }, 2] } // Comments weighted more
+            ]
+          }
+        }
+      },
+      {
+        $sort: { popularity: -1, createdAt: -1 }
+      },
+      {
+        $skip: skip
+      },
+      {
+        $limit: limit
+      }
+    ]);
+
+    // Populate user details after aggregation
+    await Post.populate(posts, [
+      { path: 'user', select: 'username profilePicture' },
+      { path: 'taggedUsers', select: 'username profilePicture' }
+    ]);
+
+    const total = await Post.countDocuments({
+      user: { $nin: [user._id, ...following] }
+    });
+
+    res.json({
+      posts,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalPosts: total
+    });
+  } catch (error) {
+    console.error('Get explore posts error:', error);
+    res.status(500).json({ error: 'Error fetching explore posts' });
+  }
+};
+
 export const createPost = async (req, res) => {
   console.log('Starting createPost');
   try {

@@ -7,6 +7,7 @@ const router = express.Router();
 
 // Core post routes
 router.get('/', auth, postController.getPosts);
+router.get('/explore', auth, postController.getExplorePosts);
 router.get('/user/:userId', auth, postController.getUserPosts);
 router.post('/', auth, upload.handleUpload('media'), postController.createPost);
 router.put('/:id', auth, postController.updatePost);
