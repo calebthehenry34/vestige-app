@@ -19,6 +19,7 @@ import { ThemeContext } from '../../App';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
 
+
 const ProfileSettings = () => {
   const [uploading, setUploading] = useState(false);
   const { user, updateUser } = useAuth();
@@ -85,12 +86,10 @@ const ProfileSettings = () => {
   
     try {
       setUploading(true);
-      console.log('Starting upload for file:', file.name);
   
       const formData = new FormData();
       formData.append('profilePicture', file);
   
-      // Fix the string template literal syntax
       const response = await fetch(`${API_URL}/api/users/profile-picture`, {
         method: 'POST',
         headers: {
@@ -100,26 +99,26 @@ const ProfileSettings = () => {
       });
   
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Upload error response:', errorData);
-        throw new Error(errorData.error || 'Failed to upload profile picture');
+        throw new Error('Failed to upload profile picture');
       }
   
       const data = await response.json();
-      console.log('Upload success response:', data);
+      // Construct the full URL for the profile picture
+      const fullImageUrl = data.profilePicture.startsWith('http') 
+        ? data.profilePicture 
+        : `${API_URL}/uploads/${data.profilePicture}`;
   
-      // Update user with new profile picture
       const updatedUser = {
         ...user,
-        profilePicture: data.profilePicture
+        profilePicture: data.profilePicture // Store the relative path
       };
-      console.log('Updating user with:', updatedUser);
-  
+      
       updateUser(updatedUser);
+      console.log('Profile picture updated:', fullImageUrl);
   
     } catch (error) {
-      console.error('Profile picture upload error:', error);
-      alert('Failed to upload profile picture. Please try again.');
+      console.error('Error uploading profile picture:', error);
+      alert('Failed to upload profile picture');
     } finally {
       setUploading(false);
     }
@@ -268,10 +267,10 @@ const ProfileSettings = () => {
       : `${API_URL}/uploads/${user.profilePicture}`
     : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`
   }
-  alt="Profile"
+  alt={user?.username || 'Profile'}
   className="w-100 h-100 rounded-md object-cover"
   onError={(e) => {
-    console.log('Profile picture load error, using fallback');
+    console.log('Profile image load error:', e.target.src);
     e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
     e.target.onError = null;
   }}

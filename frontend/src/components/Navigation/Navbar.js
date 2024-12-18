@@ -18,6 +18,7 @@ import { useAuth } from '../../context/AuthContext';
 import PostCreator from '../Post/PostCreator';
 import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
+import { getProfileImageUrl } from '../utils/imageUtils';
 
 const Navbar = () => {
   const { theme } = useContext(ThemeContext);
@@ -118,17 +119,15 @@ const Navbar = () => {
       <div className="px-4 py-3">
         <div className="flex items-center">
           <div className="relative w-10 h-10">
-            <img
-              src={user?.profilePicture 
-                ? `${API_URL}/uploads/${user.profilePicture}`
-                : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`
-              }
-              alt={user?.username || 'User'}
-              className="w-full h-full rounded-md object-cover"
-              onError={(e) => {
-                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
-              }}
-            />
+          <img
+  src={getProfileImageUrl(user?.profilePicture, user?.username)}
+  alt={user?.username || 'Profile'}
+  className="h-8 w-8 rounded-full object-cover"
+  onError={(e) => {
+    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
+    e.target.onError = null;
+  }}
+/>
           </div>
           <div className="ml-3">
             <div className="font-medium text-black">{user?.username || 'User'}</div>
