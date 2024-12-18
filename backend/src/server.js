@@ -38,7 +38,8 @@ const uploadsDir = path.join(rootDir, 'uploads');
 
 const app = express();
 
-app.set('trust proxy', true);
+app.set('trust proxy', 'loopback, linklocal, uniquelocal');
+
 
 // Security middleware
 app.use(helmet({
