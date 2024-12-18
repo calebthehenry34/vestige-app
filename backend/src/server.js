@@ -18,6 +18,7 @@ import { startEmailQueue } from './services/emailService.js';
 import rateLimit from 'express-rate-limit';
 import compression from 'compression';
 import helmet from 'helmet';
+import auth from './middleware/auth.js';
 
 dotenv.config();
 startEmailQueue();
