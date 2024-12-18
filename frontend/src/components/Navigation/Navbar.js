@@ -18,7 +18,7 @@ import { useAuth } from '../../context/AuthContext';
 import PostCreator from '../Post/PostCreator';
 import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
-import { getProfileImageUrl } from '../utils/imageUtils';
+import { getProfileImageUrl } from '../../utils/imageUtils';
 
 const Navbar = () => {
   const { theme } = useContext(ThemeContext);
