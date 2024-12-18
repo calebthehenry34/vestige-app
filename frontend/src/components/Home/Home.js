@@ -29,12 +29,7 @@ const Home = () => {
   const location = useLocation();
   const scrollRestoredRef = useRef(false);
 
-  const handleImageError = (e) => {
-    if (!e.target.dataset.retry) {
-      e.target.dataset.retry = 'true';
-      e.target.src = '/api/placeholder/400/400';
-    }
-  };
+ 
 
   const fetchPosts = async () => {
     try {
@@ -425,11 +420,17 @@ const Home = () => {
                   />
                 ) : (
                   <img
-                    src={post.media}
-                    alt="Post content"
-                    className="w-full h-auto"
-                    onError={handleImageError}
-                  />
+  src={post.media.startsWith('http') 
+    ? post.media 
+    : `${API_URL}/uploads/${post.media}`}
+  alt="Post content"
+  className="w-full h-auto"
+  onError={(e) => {
+    console.log('Image load error:', post.media);
+    e.target.src = '/api/placeholder/400/400';
+    e.target.onError = null;
+  }}
+/>
                 )}
               </Link>
 
