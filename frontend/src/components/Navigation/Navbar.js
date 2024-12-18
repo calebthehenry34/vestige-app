@@ -31,10 +31,7 @@ const Navbar = () => {
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const [visible, setVisible] = useState(true);
 
-  // Check if we're on the settings page
   const isSettingsPage = location.pathname === '/settings';
-  
-  // Hide navbar if post creator is open or we're on settings page
   const shouldHideNavbar = isPostCreatorOpen || isSettingsPage;
 
   useEffect(() => {
@@ -65,6 +62,12 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [prevScrollPos]);
 
+  const handleNavigation = (path) => {
+    setShowDropdown(false);
+    setShowFeedMenu(false);
+    navigate(path);
+  };
+
   const DesktopOverlay = () => {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-90 z-50 hidden md:flex items-center justify-center">
@@ -88,9 +91,21 @@ const Navbar = () => {
       icon: <ImageMultipleRegular className="w-6 h-6" />, 
       label: 'Feed' 
     },
-    { path: '/explore', icon: <CompassNorthwestRegular className="w-6 h-6" />, label: 'Explore' },
-    { action: () => setIsPostCreatorOpen(true), icon: <AddCircleRegular className="w-6 h-6" />, label: 'Create' },
-    { path: '/activity', icon: <HeartRegular className="w-6 h-6" />, label: 'Activity' }
+    { 
+      action: () => handleNavigation('/explore'),
+      icon: <CompassNorthwestRegular className="w-6 h-6" />,
+      label: 'Explore' 
+    },
+    { 
+      action: () => setIsPostCreatorOpen(true),
+      icon: <AddCircleRegular className="w-6 h-6" />,
+      label: 'Create' 
+    },
+    { 
+      action: () => handleNavigation('/activity'),
+      icon: <HeartRegular className="w-6 h-6" />,
+      label: 'Activity' 
+    }
   ];
 
   const handleLogout = () => {
@@ -108,7 +123,7 @@ const Navbar = () => {
                 ? `${API_URL}/uploads/${user.profilePicture}`
                 : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`
               }
-              alt={user?.username}
+              alt={user?.username || 'User'}
               className="w-full h-full rounded-md object-cover"
               onError={(e) => {
                 e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
@@ -116,16 +131,15 @@ const Navbar = () => {
             />
           </div>
           <div className="ml-3">
-            <div className="font-medium text-black">{user?.username}</div>
+            <div className="font-medium text-black">{user?.username || 'User'}</div>
           </div>
         </div>
       </div>
 
       <div className="border-t border-gray-100">
-        <Link
-          to="/activity"
-          className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          onClick={() => setShowDropdown(false)}
+        <button
+          onClick={() => handleNavigation('/activity')}
+          className="flex items-center justify-between w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
         >
           <div className="flex items-center">
             <HeartRegular className="w-5 h-5 mr-3" />
@@ -134,53 +148,46 @@ const Navbar = () => {
           {hasNotifications && (
             <div className="w-2 h-2 bg-red-500 rounded-full"></div>
           )}
-        </Link>
+        </button>
 
-        <Link
-          to={`/profile/${user.username}`}
-          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          onClick={() => setShowDropdown(false)}
+        <button
+          onClick={() => user?.username && handleNavigation(`/profile/${user.username}`)}
+          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
         >
           <PersonRegular className="w-5 h-5 mr-3" />
           <span>Profile</span>
-        </Link>
+        </button>
 
-        <Link
-          to="/settings"
-          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          onClick={() => setShowDropdown(false)}
+        <button
+          onClick={() => handleNavigation('/settings')}
+          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
         >
           <SettingsRegular className="w-5 h-5 mr-3" />
           <span>Settings</span>
-        </Link>
+        </button>
 
-        <Link
-          to="/roadmap"
-          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          onClick={() => setShowDropdown(false)}
+        <button
+          onClick={() => handleNavigation('/roadmap')}
+          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
         >
           <DocumentRegular className="w-5 h-5 mr-3" />
           <span>Roadmap</span>
-        </Link>
+        </button>
 
         {user?.isAdmin && (
-          <Link
-            to="/admin"
-            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            onClick={() => setShowDropdown(false)}
+          <button
+            onClick={() => handleNavigation('/admin')}
+            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
             <ShieldRegular className="w-5 h-5 mr-3" />
             <span>Admin Dashboard</span>
-          </Link>
+          </button>
         )}
 
         <div className="border-t my-1"></div>
 
         <button
-          onClick={() => {
-            handleLogout();
-            setShowDropdown(false);
-          }}
+          onClick={handleLogout}
           className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
         >
           <SignOutRegular className="w-5 h-5 mr-3" />
@@ -201,13 +208,13 @@ const Navbar = () => {
           : 'bg-white border-gray-200'
       } border-b`}>
         <div className="flex items-center h-16 px-4 max-w-6xl mx-auto justify-between">
-          <Link to="/" className="flex items-center">
+          <button onClick={() => handleNavigation('/')} className="flex items-center">
             <span className={`text-xl font-semibold ${
               theme === 'dark-theme' ? 'text-white' : 'text-black'
             }`}>
               <img src="/logos/logo.png" alt="Logo" className="mr-3 h-6 w-auto"/>
             </span>
-          </Link>
+          </button>
 
           <button
             onClick={() => setShowDropdown(!showDropdown)}
@@ -220,7 +227,7 @@ const Navbar = () => {
                 ? `${API_URL}/uploads/${user.profilePicture}`
                 : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`
               }
-              alt={user?.username}
+              alt={user?.username || 'User'}
               className="w-8 h-8 rounded-md object-cover"
               onError={(e) => {
                 e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
@@ -247,29 +254,16 @@ const Navbar = () => {
             <div className="flex items-center h-14">
               {navigationItems.map((item, index) => (
                 <div key={index} className="px-2">
-                  {item.path ? (
-                    <Link
-                      to={item.path}
-                      className={`p-2 rounded-full transition-colors ${
-                        theme === 'dark-theme'
-                          ? 'text-white hover:bg-gray-800'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      {item.icon}
-                    </Link>
-                  ) : (
-                    <button
-                      onClick={item.action}
-                      className={`p-2 rounded-full transition-colors ${
-                        theme === 'dark-theme'
-                          ? 'text-white hover:bg-gray-800'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      {item.icon}
-                    </button>
-                  )}
+                  <button
+                    onClick={item.action}
+                    className={`p-2 rounded-full transition-colors ${
+                      theme === 'dark-theme'
+                        ? 'text-white hover:bg-gray-800'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {item.icon}
+                  </button>
                 </div>
               ))}
             </div>
@@ -298,30 +292,28 @@ const Navbar = () => {
             <div className={`p-2 ${
               theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
             }`}>
-              <Link 
-                to="/"
-                className={`flex items-center p-3 rounded-lg ${
+              <button 
+                onClick={() => handleNavigation('/')}
+                className={`flex items-center w-full p-3 rounded-lg ${
                   theme === 'dark-theme'
                     ? 'hover:bg-gray-800 text-white'
                     : 'hover:bg-gray-100 text-gray-900'
                 }`}
-                onClick={() => setShowFeedMenu(false)}
               >
                 <ImageMultipleRegular className="w-6 h-6 mr-3" />
                 <span>Photos</span>
-              </Link>
-              <Link 
-                to="/videos"
-                className={`flex items-center p-3 rounded-lg ${
+              </button>
+              <button 
+                onClick={() => handleNavigation('/videos')}
+                className={`flex items-center w-full p-3 rounded-lg ${
                   theme === 'dark-theme'
                     ? 'hover:bg-gray-800 text-white'
                     : 'hover:bg-gray-100 text-gray-900'
                 }`}
-                onClick={() => setShowFeedMenu(false)}
               >
                 <VideoPersonPulseRegular className="w-6 h-6 mr-3" />
                 <span>Moments</span>
-              </Link>
+              </button>
               <div 
                 className={`flex items-center p-3 rounded-lg opacity-50 cursor-not-allowed ${
                   theme === 'dark-theme' ? 'text-white' : 'text-gray-900'

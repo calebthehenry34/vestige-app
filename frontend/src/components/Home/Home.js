@@ -13,8 +13,8 @@ import {
   FlagRegular,
 } from '@fluentui/react-icons';
 import PostComments from '../Post/PostComments';
-import { Link, } from 'react-router-dom';
-import { useNavigate, } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useScroll } from '../../context/ScrollContext';
 import { useLocation } from 'react-router-dom';
 import { API_URL } from '../../config';
@@ -30,8 +30,6 @@ const Home = () => {
   const { saveScrollPosition } = useScroll();
   const location = useLocation();
   const scrollRestoredRef = useRef(false);
-
- 
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -85,28 +83,26 @@ const Home = () => {
   }, [navigate]);
   
   useEffect(() => {
-    // Fetch posts first
     fetchPosts();
     
-    // Set up scroll restoration
     if (!scrollRestoredRef.current) {
-      window.scrollTo(0, sessionStorage.getItem('feedScroll') || 0);
+      const savedPosition = sessionStorage.getItem('feedScroll');
+      if (savedPosition) {
+        window.scrollTo(0, parseInt(savedPosition, 10));
+      }
       scrollRestoredRef.current = true;
     }
   
-    // Save scroll position on unmount
-    return () => {
+    const handleBeforeUnload = () => {
       sessionStorage.setItem('feedScroll', window.scrollY.toString());
     };
-  }, [fetchPosts, navigate]);
 
-  useEffect(() => {
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
     return () => {
-      if (scrollRestoredRef.current) {
-        saveScrollPosition(location.pathname);
-      }
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [location.pathname, saveScrollPosition]);
+  }, [fetchPosts]);
 
   const togglePostMenu = (postId) => {
     setActivePostMenu(activePostMenu === postId ? null : postId);
@@ -114,7 +110,6 @@ const Home = () => {
 
   const handleLike = async (postId) => {
     try {
-      // Optimistically update UI
       setPosts(prevPosts => prevPosts.map(post => {
         if (post._id === postId) {
           const newLiked = !post.liked;
@@ -140,7 +135,6 @@ const Home = () => {
         throw new Error('Failed to like post');
       }
   
-      // Create notification if liking someone else's post
       const post = posts.find(p => p._id === postId);
       if (post && post.user._id !== user.id) {
         await fetch(`${API_URL}/api/notifications`, {
@@ -158,7 +152,6 @@ const Home = () => {
       }
     } catch (error) {
       console.error('Error liking post:', error);
-      // Revert optimistic update on error
       setPosts(prevPosts => prevPosts.map(post => {
         if (post._id === postId) {
           const newLiked = !post.liked;
@@ -177,7 +170,6 @@ const Home = () => {
 
   const handleSave = async (postId) => {
     try {
-      // Optimistically update UI
       setPosts(prevPosts => prevPosts.map(post => {
         if (post._id === postId) {
           return {
@@ -202,7 +194,6 @@ const Home = () => {
         throw new Error(data.error || 'Failed to save post');
       }
   
-      // Update local state with server response
       setPosts(prevPosts => prevPosts.map(post => {
         if (post._id === postId) {
           return {
@@ -215,7 +206,6 @@ const Home = () => {
   
     } catch (error) {
       console.error('Error saving post:', error);
-      // Revert optimistic update on error
       setPosts(prevPosts => prevPosts.map(post => {
         if (post._id === postId) {
           return {
@@ -247,7 +237,6 @@ const Home = () => {
   };
 
   const handleEditCaption = (postId) => {
-    // Implement caption editing
     console.log('Edit caption for post:', postId);
     setActivePostMenu(null);
   };
@@ -297,7 +286,6 @@ const Home = () => {
         throw new Error(data.details || data.error || 'Failed to post comment');
       }
   
-      // Update posts state locally first
       setPosts(prevPosts => prevPosts.map(post => {
         if (post._id === postId) {
           return {
@@ -308,7 +296,6 @@ const Home = () => {
         return post;
       }));
   
-      // Create notification for comment
       const post = posts.find(p => p._id === postId);
       if (post && post.user._id !== user.id) {
         try {
@@ -326,11 +313,9 @@ const Home = () => {
           });
         } catch (notificationError) {
           console.error('Error creating notification:', notificationError);
-          // Continue execution even if notification fails
         }
       }
   
-      // Then fetch fresh data
       await fetchPosts();
     } catch (error) {
       console.error('Error posting comment:', error);
@@ -374,70 +359,29 @@ const Home = () => {
       <div className="space-y-6">
         {Array.isArray(posts) && posts.map((post) => (
           <div key={post._id} className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="relative">
-              {/* User Info and Menu Overlay at Top */}
-              <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-black/50 to-transparent flex justify-between items-center">
-                <div className="flex items-center space-x-4">
-                  <Link to={`/profile/${post.user.username}`} className="flex items-center">
-                  <img
-  src={post.user.profilePicture?.startsWith('http') 
-    ? post.user.profilePicture 
-    : `${API_URL}/uploads/${post.user.profilePicture}`}
-  alt={post.user.username}
-  className="h-6 w-6 rounded-md object-cover"
-  onError={(e) => {
-    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username || 'User')}`;
-    e.target.onError = null;
-  }}
-/>
-                    <span className="ml-2 font-medium text-white text-sm">{post.user?.username}</span>
-                  </Link>
-                </div>
-
-                {/* Post Menu */}
-                <div className="relative">
-                  <button 
-                    onClick={() => togglePostMenu(post._id)}
-                    className="text-white hover:text-white/80"
-                  >
-                    <MoreHorizontalRegular className="w-6 h-6" />
-                  </button>
-                  
-                  {activePostMenu === post._id && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-20 py-1">
-                      {post.user._id === user.id ? (
-                        <>
-                          <button
-                            onClick={() => handleEditCaption(post._id)}
-                            className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center"
-                          >
-                            <EditRegular className="w-5 h-5 mr-2" />
-                            Edit Caption
-                          </button>
-                          <button
-                            onClick={() => handleDeletePost(post._id)}
-                            className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center"
-                          >
-                            <DeleteRegular className="w-5 h-5 mr-2" />
-                            Delete Post
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => handleReportPost(post._id)}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center"
-                        >
-                          <FlagRegular className="w-5 h-5 mr-2" />
-                          Report Post
-                        </button>
-                      )}
+            <Link to={`/post/${post._id}`} className="block relative">
+              <div className="relative">
+                {/* User Info and Menu Overlay at Top */}
+                <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-black/50 to-transparent flex justify-between items-center">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center">
+                      <img
+                        src={post.user.profilePicture?.startsWith('http') 
+                          ? post.user.profilePicture 
+                          : `${API_URL}/uploads/${post.user.profilePicture}`}
+                        alt={post.user.username}
+                        className="h-6 w-6 rounded-md object-cover"
+                        onError={(e) => {
+                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username || 'User')}`;
+                          e.target.onError = null;
+                        }}
+                      />
+                      <span className="ml-2 font-medium text-white text-sm">{post.user?.username}</span>
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Media Content */}
-              <Link to={`/post/${post._id}`}>
+                {/* Media Content */}
                 {post.mediaType === 'video' ? (
                   <video
                     src={post.media}
@@ -446,23 +390,71 @@ const Home = () => {
                   />
                 ) : (
                   <img
-                  src={post.media.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`}
-                  alt="Post content"
-                  className="w-full h-auto"
-                  onError={(e) => {
-                    console.log('Image load error for:', post.media);
-                    e.target.src = '/api/placeholder/400/400';
-                    e.target.onError = null;
-                  }}
-                />
+                    src={post.media.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`}
+                    alt="Post content"
+                    className="w-full h-auto"
+                    onError={(e) => {
+                      console.log('Image load error for:', post.media);
+                      e.target.src = '/api/placeholder/400/400';
+                      e.target.onError = null;
+                    }}
+                  />
                 )}
-              </Link>
+              </div>
+            </Link>
+
+            {/* Interactive Elements (Outside Link) */}
+            <div className="relative">
+              {/* Post Menu Button */}
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePostMenu(post._id);
+                }}
+                className="absolute top-4 right-4 text-white hover:text-white/80"
+              >
+                <MoreHorizontalRegular className="w-6 h-6" />
+              </button>
+
+              {activePostMenu === post._id && (
+                <div className="absolute right-4 top-12 w-48 bg-white rounded-lg shadow-lg z-20 py-1">
+                  {post.user._id === user.id ? (
+                    <>
+                      <button
+                        onClick={() => handleEditCaption(post._id)}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center"
+                      >
+                        <EditRegular className="w-5 h-5 mr-2" />
+                        Edit Caption
+                      </button>
+                      <button
+                        onClick={() => handleDeletePost(post._id)}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center"
+                      >
+                        <DeleteRegular className="w-5 h-5 mr-2" />
+                        Delete Post
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => handleReportPost(post._id)}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center"
+                    >
+                      <FlagRegular className="w-5 h-5 mr-2" />
+                      Report Post
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Bottom Action Bar */}
               <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent">
                 <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center text-white">
                   <div className="flex space-x-4">
-                    <button onClick={() => handleLike(post._id)} className="hover:scale-110 transition-transform">
+                    <button onClick={(e) => {
+                      e.stopPropagation();
+                      handleLike(post._id);
+                    }} className="hover:scale-110 transition-transform">
                       {post.liked ? (
                         <HeartFilled className="w-6 h-6 text-red-500" />
                       ) : (
@@ -470,20 +462,29 @@ const Home = () => {
                       )}
                     </button>
                     <button 
-                      onClick={() => toggleComments(post._id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleComments(post._id);
+                      }}
                       className="hover:scale-110 transition-transform"
                     >
                       <PanelTopExpandFilled className="w-6 h-6" />
                     </button>
                     <button 
-                      onClick={() => handleShare(post._id)} 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShare(post._id);
+                      }} 
                       className="hover:scale-110 transition-transform"
                     >
                       <ShareRegular className="w-6 h-6" />
                     </button>
                   </div>
                   <button 
-                    onClick={() => handleSave(post._id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSave(post._id);
+                    }}
                     className="hover:scale-110 transition-transform"
                   >
                     {post.saved ? (
