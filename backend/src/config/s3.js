@@ -1,5 +1,4 @@
 import { S3Client } from '@aws-sdk/client-s3';
-import { fromEnv } from '@aws-sdk/credential-providers';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -60,23 +59,50 @@ let s3 = null;
 
 if (validateS3Credentials()) {
   try {
-    // Create credentials provider with explicit refresh
-    const credentialsProvider = fromEnv();
+    // Create explicit credentials object
+    const credentials = {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID.trim(),
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY.trim()
+    };
 
-    // Debug: Test credential loading
+    // Log credentials state (safely)
+    console.log('Creating S3 client with credentials:', {
+      accessKeyIdPresent: !!credentials.accessKeyId,
+      accessKeyIdLength: credentials.accessKeyId?.length,
+      secretAccessKeyPresent: !!credentials.secretAccessKey,
+      secretAccessKeyLength: credentials.secretAccessKey?.length,
+      region: process.env.AWS_REGION
+    });
+
+    // Initialize the S3 client with explicit credentials
+    s3 = new S3Client({
+      region: process.env.AWS_REGION.trim(),
+      credentials: {
+        accessKeyId: credentials.accessKeyId,
+        secretAccessKey: credentials.secretAccessKey
+      },
+      maxAttempts: 3,
+      // Force path style for troubleshooting
+      forcePathStyle: true
+    });
+
+    console.log('S3 Client initialized with explicit credentials');
+
+    // Test the credentials immediately
     const testCredentials = async () => {
       try {
-        const credentials = await credentialsProvider();
-        console.log('Credentials loaded successfully:', {
-          hasAccessKey: !!credentials.accessKeyId,
-          accessKeyLength: credentials.accessKeyId?.length,
-          hasSecretKey: !!credentials.secretAccessKey,
-          secretKeyLength: credentials.secretAccessKey?.length,
-          expiresAt: credentials.expiration
+        const creds = await s3.config.credentials();
+        console.log('Credential test result:', {
+          hasAccessKey: !!creds.accessKeyId,
+          accessKeyLength: creds.accessKeyId?.length,
+          hasSecretKey: !!creds.secretAccessKey,
+          secretKeyLength: creds.secretAccessKey?.length,
+          // Log the actual secret key length to verify it's not being truncated
+          actualSecretKeyLength: process.env.AWS_SECRET_ACCESS_KEY.length
         });
         return true;
       } catch (error) {
-        console.error('Error loading credentials:', {
+        console.error('Credential test error:', {
           message: error.message,
           stack: error.stack
         });
@@ -84,20 +110,9 @@ if (validateS3Credentials()) {
       }
     };
 
-    // Test credentials before creating client
-    if (await testCredentials()) {
-      // Initialize the S3 client with v3 SDK
-      s3 = new S3Client({
-        region: process.env.AWS_REGION.trim(),
-        credentials: credentialsProvider,
-        maxAttempts: 3
-      });
+    // Run the test
+    testCredentials();
 
-      console.log('S3 Client initialized with credential provider');
-    } else {
-      console.error('Failed to load credentials, S3 client not initialized');
-      s3 = null;
-    }
   } catch (error) {
     console.error("Error initializing S3 client:", {
       message: error.message,
@@ -114,7 +129,10 @@ export const isS3Available = () => Boolean(s3);
 // Helper function to get the S3 bucket name
 export const getS3BucketName = () => process.env.AWS_BUCKET_NAME;
 
-// Export the credentials provider for direct access if needed
-export const getCredentialsProvider = () => fromEnv();
+// Export the credentials for direct access if needed
+export const getCredentials = () => ({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID.trim(),
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY.trim()
+});
 
 export default s3;

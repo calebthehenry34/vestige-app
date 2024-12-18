@@ -420,17 +420,17 @@ const Home = () => {
                   />
                 ) : (
                   <img
-  src={post.media.startsWith('http') 
-    ? post.media 
-    : `${API_URL}/uploads/${post.media}`}
-  alt="Post content"
-  className="w-full h-auto"
-  onError={(e) => {
-    console.log('Image load error:', post.media);
-    e.target.src = '/api/placeholder/400/400';
-    e.target.onError = null;
-  }}
-/>
+                  src={post.media.startsWith('/') 
+                    ? post.media 
+                    : `/uploads/${post.media}`}
+                  alt="Post content"
+                  className="w-full h-auto"
+                  onError={(e) => {
+                    console.log('Image load error:', post.media);
+                    e.target.src = '/api/placeholder/400/400';
+                    e.target.onError = null;
+                  }}
+                />
                 )}
               </Link>
 

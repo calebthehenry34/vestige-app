@@ -1,6 +1,6 @@
 import Post from '../models/Post.js';
 import User from '../models/User.js';
-import s3, { isS3Available, getCredentialsProvider } from '../config/s3.js';
+import s3, { isS3Available, getCredentials } from '../config/s3.js';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 import path from 'path';
@@ -80,8 +80,7 @@ export const createPost = async (req, res) => {
         console.log('Uploading to S3...');
         try {
           // Get fresh credentials
-          const credentialsProvider = getCredentialsProvider();
-          const credentials = await credentialsProvider();
+          const credentials = getCredentials();
           
           // Log credential state before upload
           console.log('S3 Upload Credentials Check:', {
