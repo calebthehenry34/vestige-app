@@ -36,6 +36,7 @@ const Home = () => {
   const fetchPosts = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
+      console.log('Fetching posts with token:', token ? 'Present' : 'Missing');
       
       if (!token) {
         console.error('No auth token found');
@@ -51,8 +52,12 @@ const Home = () => {
         }
       });
   
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Received posts data:', data);
+  
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = data;
         console.error('API Error:', errorData);
         if (response.status === 401) {
           localStorage.removeItem('token');
@@ -63,13 +68,22 @@ const Home = () => {
         throw new Error(errorData.error || 'Failed to fetch posts');
       }
   
-      const data = await response.json();
-      setPosts(Array.isArray(data) ? data : []);
+      if (Array.isArray(data)) {
+        console.log('Setting posts array of length:', data.length);
+        setPosts(data);
+      } else if (data && typeof data === 'object' && Array.isArray(data.posts)) {
+        console.log('Setting posts from data.posts, length:', data.posts.length);
+        setPosts(data.posts);
+      } else {
+        console.log('Received data is not in expected format:', typeof data);
+        setPosts([]);
+      }
     } catch (error) {
       console.error('Error fetching posts:', error);
       setPosts([]);
     }
-  }, [navigate]); // Add navigate as dependency
+  }, [navigate]);
+  
   useEffect(() => {
     // Fetch posts first
     fetchPosts();
