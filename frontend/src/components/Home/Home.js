@@ -359,40 +359,60 @@ const Home = () => {
       <div className="space-y-6">
         {Array.isArray(posts) && posts.map((post) => (
           <div key={post._id} className="bg-white rounded-lg shadow-md overflow-hidden">
-            <Link to={`/post/${post._id}`} className="block relative">
-              <div className="relative">
-                {/* User Info and Menu Overlay at Top */}
-                <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-black/50 to-transparent flex justify-between items-center">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                      <img
-                        src={post.user.profilePicture?.startsWith('http') 
-                          ? post.user.profilePicture 
-                          : `${API_URL}/uploads/${post.user.profilePicture}`}
-                        alt={post.user.username}
-                        className="h-6 w-6 rounded-md object-cover"
-                        onError={(e) => {
-                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username || 'User')}`;
-                          e.target.onError = null;
-                        }}
-                      />
-                      <span className="ml-2 font-medium text-white text-sm">{post.user?.username}</span>
-                    </div>
-                  </div>
+            {/* User Info Header - Outside Link */}
+            <div className="p-4 flex justify-between items-center">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center">
+                  <img
+                    src={post.user.profilePicture?.startsWith('http') 
+                      ? post.user.profilePicture 
+                      : `${API_URL}/uploads/${post.user.profilePicture}`}
+                    alt={post.user.username}
+                    className="h-6 w-6 rounded-md object-cover"
+                    onError={(e) => {
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username || 'User')}`;
+                      e.target.onError = null;
+                    }}
+                  />
+                  <span className="ml-2 font-medium text-gray-900 text-sm">{post.user?.username}</span>
                 </div>
+              </div>
+              
+              {/* Post Menu Button */}
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePostMenu(post._id);
+                }}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <MoreHorizontalRegular className="w-6 h-6" />
+              </button>
+            </div>
 
-                {/* Media Content */}
+            {/* Media Content with Link */}
+            <Link 
+              to={`/post/${post._id}`} 
+              className="block relative"
+              onClick={(e) => {
+                // Prevent navigation if clicking interactive elements
+                if (e.target.closest('button')) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              <div className="relative aspect-square">
                 {post.mediaType === 'video' ? (
                   <video
                     src={post.media}
                     controls
-                    className="w-full h-auto"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   <img
                     src={post.media.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`}
                     alt="Post content"
-                    className="w-full h-auto"
+                    className="w-full h-full object-cover"
                     onError={(e) => {
                       console.log('Image load error for:', post.media);
                       e.target.src = '/api/placeholder/400/400';
@@ -403,21 +423,11 @@ const Home = () => {
               </div>
             </Link>
 
-            {/* Interactive Elements (Outside Link) */}
-            <div className="relative">
-              {/* Post Menu Button */}
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  togglePostMenu(post._id);
-                }}
-                className="absolute top-4 right-4 text-white hover:text-white/80"
-              >
-                <MoreHorizontalRegular className="w-6 h-6" />
-              </button>
-
+            {/* Interactive Elements - Outside Link */}
+            <div className="p-4">
+              {/* Post Menu Dropdown */}
               {activePostMenu === post._id && (
-                <div className="absolute right-4 top-12 w-48 bg-white rounded-lg shadow-lg z-20 py-1">
+                <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg z-20 py-1">
                   {post.user._id === user.id ? (
                     <>
                       <button
@@ -447,53 +457,42 @@ const Home = () => {
                 </div>
               )}
 
-              {/* Bottom Action Bar */}
-              <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent">
-                <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center text-white">
-                  <div className="flex space-x-4">
-                    <button onClick={(e) => {
-                      e.stopPropagation();
-                      handleLike(post._id);
-                    }} className="hover:scale-110 transition-transform">
-                      {post.liked ? (
-                        <HeartFilled className="w-6 h-6 text-red-500" />
-                      ) : (
-                        <HeartRegular className="w-6 h-6" />
-                      )}
-                    </button>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleComments(post._id);
-                      }}
-                      className="hover:scale-110 transition-transform"
-                    >
-                      <PanelTopExpandFilled className="w-6 h-6" />
-                    </button>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleShare(post._id);
-                      }} 
-                      className="hover:scale-110 transition-transform"
-                    >
-                      <ShareRegular className="w-6 h-6" />
-                    </button>
-                  </div>
+              {/* Action Buttons */}
+              <div className="flex justify-between items-center">
+                <div className="flex space-x-4">
                   <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSave(post._id);
-                    }}
+                    onClick={() => handleLike(post._id)}
                     className="hover:scale-110 transition-transform"
                   >
-                    {post.saved ? (
-                      <BookmarkFilled className="w-6 h-6" />
+                    {post.liked ? (
+                      <HeartFilled className="w-6 h-6 text-red-500" />
                     ) : (
-                      <BookmarkRegular className="w-6 h-6" />
+                      <HeartRegular className="w-6 h-6 text-gray-600" />
                     )}
                   </button>
+                  <button 
+                    onClick={() => toggleComments(post._id)}
+                    className="hover:scale-110 transition-transform"
+                  >
+                    <PanelTopExpandFilled className="w-6 h-6 text-gray-600" />
+                  </button>
+                  <button 
+                    onClick={() => handleShare(post._id)}
+                    className="hover:scale-110 transition-transform"
+                  >
+                    <ShareRegular className="w-6 h-6 text-gray-600" />
+                  </button>
                 </div>
+                <button 
+                  onClick={() => handleSave(post._id)}
+                  className="hover:scale-110 transition-transform"
+                >
+                  {post.saved ? (
+                    <BookmarkFilled className="w-6 h-6 text-gray-900" />
+                  ) : (
+                    <BookmarkRegular className="w-6 h-6 text-gray-600" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -507,6 +506,8 @@ const Home = () => {
           </div>
         ))}
       </div>
+
+      {/* Share Modal */}
       {showShareModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-4 w-80">
