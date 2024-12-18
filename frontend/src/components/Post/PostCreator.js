@@ -39,7 +39,7 @@ const PostCreator = ({ isOpen, onClose }) => {
       if (errors[0]?.code === 'file-too-large') {
         setError('File is too large. Maximum size is 10MB.');
       } else if (errors[0]?.code === 'file-invalid-type') {
-        setError('Invalid file type. Please upload a JPEG, PNG, HEIC, or HEIF image.');
+        setError('Invalid file type. Please upload a JPEG or PNG image.');
       }
       return;
     }
@@ -59,9 +59,7 @@ const PostCreator = ({ isOpen, onClose }) => {
     onDrop,
     accept: {
       'image/jpeg': ['.jpg', '.jpeg'],
-      'image/png': ['.png'],
-      'image/heic': ['.heic'],
-      'image/heif': ['.heif']
+      'image/png': ['.png']
     },
     maxSize: MAX_FILE_SIZE,
     multiple: false
@@ -104,31 +102,57 @@ const PostCreator = ({ isOpen, onClose }) => {
     }
   };
 
+  const processImage = async (imageUrl) => {
+    // Create a canvas to apply filters and get the processed image
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    
+    return new Promise((resolve, reject) => {
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas dimensions
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // Draw image with filters
+        ctx.filter = `${editedMedia.filter} ${editedMedia.adjustments}`;
+        ctx.drawImage(img, 0, 0);
+        
+        // Convert to blob
+        canvas.toBlob((blob) => {
+          resolve(blob);
+        }, 'image/jpeg', 0.85);
+      };
+      
+      img.onerror = reject;
+      img.src = imageUrl;
+    });
+  };
+
   const handleShare = async () => {
     try {
       setError(null);
       
-      // Convert base64 to blob
-      const response = await fetch(editedMedia.url);
-      const blob = await response.blob();
+      // Process the image with filters applied
+      const processedBlob = await processImage(editedMedia.url);
       
       // Create file from blob
-      const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+      const file = new File([processedBlob], 'image.jpg', { type: 'image/jpeg' });
       
       // Create form data
       const formData = new FormData();
-      formData.append('media', file); // Changed from 'image' to 'media' to match backend
+      formData.append('media', file);
       formData.append('caption', caption);
       formData.append('location', location);
       formData.append('hashtags', JSON.stringify(hashtags));
       formData.append('taggedUsers', JSON.stringify(taggedUsers.map(user => user.id)));
-      formData.append('filter', editedMedia.filter);
-      formData.append('adjustments', JSON.stringify(editedMedia.rawAdjustments));
 
       // Get auth token from localStorage
       const token = localStorage.getItem('token');
 
-      // Upload to backend with full API URL
+      // Upload to backend
       const result = await axios.post(`${API_URL}/api/posts`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -151,14 +175,13 @@ const PostCreator = ({ isOpen, onClose }) => {
       setTaggedUsers([]);
       setUploadProgress(0);
 
-      // Return the created post data
       return result.data;
     } catch (error) {
       console.error('Error creating post:', error);
       const errorMessage = error.response?.data?.error || error.message || 'Error creating post';
       setError(errorMessage);
       setUploadProgress(0);
-      throw error; // Re-throw to handle in parent component if needed
+      throw error;
     }
   };
 
@@ -213,7 +236,7 @@ const PostCreator = ({ isOpen, onClose }) => {
           <p className={`mt-2 text-sm ${
             theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
           }`}>
-            Supports JPEG, PNG, HEIC/HEIF up to 10MB
+            Supports JPEG or PNG up to 10MB
           </p>
         </div>
       </div>

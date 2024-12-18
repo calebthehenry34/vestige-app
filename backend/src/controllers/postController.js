@@ -5,87 +5,64 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
-import sharp from 'sharp';
 
 // Helper function to store file locally when S3 is not available
 const storeFileLocally = async (buffer, filename) => {
-  const uploadsDir = path.join(process.cwd(), 'uploads');
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-
-  const filePath = path.join(uploadsDir, filename);
-  await fs.promises.writeFile(filePath, buffer);
-  return `/uploads/${filename}`;
-};
-
-// Helper function to process image with sharp
-const processImage = async (buffer, adjustments = {}) => {
   try {
-    let sharpImage = sharp(buffer);
-
-    // Apply adjustments if they exist
-    if (adjustments) {
-      const { brightness = 100, contrast = 100, saturation = 100 } = adjustments;
-      
-      sharpImage = sharpImage
-        .modulate({
-          brightness: brightness / 100,
-          saturation: saturation / 100
-        })
-        .gamma(contrast / 100);
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    // Always convert to JPEG and optimize
-    const processedBuffer = await sharpImage
-      .jpeg({
-        quality: 85,
-        mozjpeg: true,
-      })
-      .withMetadata()
-      .toBuffer();
-
-    // Create thumbnail
-    const thumbnailBuffer = await sharp(processedBuffer)
-      .resize(400, 400, {
-        fit: 'cover',
-        position: 'centre'
-      })
-      .jpeg({
-        quality: 70,
-        mozjpeg: true,
-      })
-      .toBuffer();
-
-    return {
-      processedBuffer,
-      thumbnailBuffer
-    };
+    const filePath = path.join(uploadsDir, filename);
+    await fs.promises.writeFile(filePath, buffer);
+    return `/uploads/${filename}`;
   } catch (error) {
-    console.error('Image processing error:', error);
-    throw new Error('Failed to process image');
+    console.error('Error storing file locally:', error);
+    throw new Error('Failed to store file locally');
   }
 };
 
 export const createPost = async (req, res) => {
+  console.log('Starting createPost');
   try {
+    // Log the request file and body
+    console.log('Request file:', req.file ? {
+      ...req.file,
+      buffer: req.file.buffer ? 'Buffer present' : 'Buffer missing'
+    } : 'No file');
+    console.log('Request body:', {
+      ...req.body,
+      hashtags: req.body.hashtags ? 'present' : 'missing',
+      taggedUsers: req.body.taggedUsers ? 'present' : 'missing'
+    });
+
+    if (!req.file || !req.file.buffer) {
+      console.error('No file uploaded or file buffer missing');
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
     const { 
       caption,
       location,
       hashtags: hashtagsString,
-      taggedUsers: taggedUsersString,
-      adjustments: adjustmentsString
+      taggedUsers: taggedUsersString
     } = req.body;
 
     let mediaUrl = null;
-    let thumbnailUrl = null;
     let key = null;
-    let thumbnailKey = null;
 
-    // Parse JSON strings
-    const hashtags = JSON.parse(hashtagsString || '[]');
-    const taggedUsers = JSON.parse(taggedUsersString || '[]');
-    const adjustments = JSON.parse(adjustmentsString || '{}');
+    // Parse JSON strings with error handling
+    let hashtags = [];
+    let taggedUsers = [];
+
+    try {
+      hashtags = hashtagsString ? JSON.parse(hashtagsString) : [];
+      taggedUsers = taggedUsersString ? JSON.parse(taggedUsersString) : [];
+    } catch (parseError) {
+      console.error('Error parsing JSON strings:', parseError);
+      return res.status(400).json({ error: 'Invalid JSON data in request' });
+    }
 
     // Validate tagged users exist
     if (taggedUsers.length > 0) {
@@ -95,73 +72,62 @@ export const createPost = async (req, res) => {
       }
     }
 
-    // Handle file upload if present
-    if (req.file) {
-      try {
-        // Process image with adjustments
-        const { processedBuffer, thumbnailBuffer } = await processImage(req.file.buffer, adjustments);
+    try {
+      // Generate unique filename
+      const filename = `${crypto.randomUUID()}.jpg`;
 
-        // Generate unique filenames
-        const filename = `${crypto.randomUUID()}.jpg`;
-        const thumbnailFilename = `thumbnail-${filename}`;
-
-        if (isS3Available()) {
-          // Upload both full size and thumbnail to S3
+      if (isS3Available()) {
+        console.log('Uploading to S3...');
+        try {
+          // Upload to S3
           key = `posts/${filename}`;
-          thumbnailKey = `posts/thumbnails/${thumbnailFilename}`;
 
-          await Promise.all([
-            s3.send(new PutObjectCommand({
-              Bucket: process.env.AWS_BUCKET_NAME,
-              Key: key,
-              Body: processedBuffer,
-              ContentType: 'image/jpeg'
-            })),
-            s3.send(new PutObjectCommand({
-              Bucket: process.env.AWS_BUCKET_NAME,
-              Key: thumbnailKey,
-              Body: thumbnailBuffer,
-              ContentType: 'image/jpeg'
-            }))
-          ]);
+          await s3.send(new PutObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: key,
+            Body: req.file.buffer,
+            ContentType: 'image/jpeg'
+          }));
 
           mediaUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-          thumbnailUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${thumbnailKey}`;
-        } else {
-          // Fall back to local storage
-          mediaUrl = await storeFileLocally(processedBuffer, filename);
-          thumbnailUrl = await storeFileLocally(thumbnailBuffer, thumbnailFilename);
-          key = filename;
-          thumbnailKey = thumbnailFilename;
+          console.log('S3 upload successful');
+        } catch (s3Error) {
+          console.error('S3 upload error:', s3Error);
+          throw new Error('Failed to upload to S3');
         }
-      } catch (uploadError) {
-        console.error('File upload error:', uploadError);
-        return res.status(500).json({ error: 'Error uploading file' });
+      } else {
+        console.log('Storing file locally...');
+        // Fall back to local storage
+        mediaUrl = await storeFileLocally(req.file.buffer, filename);
+        key = filename;
+        console.log('Local storage successful');
       }
+
+      console.log('Creating post document...');
+      const post = new Post({
+        user: req.user.userId,
+        caption,
+        location,
+        hashtags,
+        taggedUsers,
+        media: mediaUrl,
+        mediaKey: key
+      });
+
+      await post.save();
+      console.log('Post saved successfully');
+      
+      // Populate user details and tagged users
+      await post.populate([
+        { path: 'user', select: 'username profilePicture' },
+        { path: 'taggedUsers', select: 'username profilePicture' }
+      ]);
+      
+      res.status(201).json(post);
+    } catch (processError) {
+      console.error('Error in file upload or storage:', processError);
+      return res.status(500).json({ error: processError.message });
     }
-
-    const post = new Post({
-      user: req.user.userId,
-      caption,
-      location,
-      hashtags,
-      taggedUsers,
-      media: mediaUrl,
-      thumbnail: thumbnailUrl,
-      mediaKey: key,
-      thumbnailKey: thumbnailKey,
-      imageAdjustments: adjustments
-    });
-
-    await post.save();
-    
-    // Populate user details and tagged users
-    await post.populate([
-      { path: 'user', select: 'username profilePicture' },
-      { path: 'taggedUsers', select: 'username profilePicture' }
-    ]);
-    
-    res.status(201).json(post);
   } catch (error) {
     console.error('Create post error:', error);
     res.status(500).json({ error: 'Error creating post' });
@@ -185,27 +151,15 @@ export const deletePost = async (req, res) => {
     if (post.media && post.mediaKey) {
       try {
         if (isS3Available()) {
-          // Delete both full size and thumbnail from S3
-          await Promise.all([
-            s3.send(new PutObjectCommand({
-              Bucket: process.env.AWS_BUCKET_NAME,
-              Key: post.mediaKey
-            })),
-            post.thumbnailKey && s3.send(new PutObjectCommand({
-              Bucket: process.env.AWS_BUCKET_NAME,
-              Key: post.thumbnailKey
-            }))
-          ]);
+          await s3.send(new PutObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: post.mediaKey
+          }));
         } else {
-          // Delete local files
+          // Delete local file
           const filePath = path.join(process.cwd(), 'uploads', post.mediaKey);
-          const thumbnailPath = post.thumbnailKey && path.join(process.cwd(), 'uploads', post.thumbnailKey);
-          
           if (fs.existsSync(filePath)) {
             await fs.promises.unlink(filePath);
-          }
-          if (thumbnailPath && fs.existsSync(thumbnailPath)) {
-            await fs.promises.unlink(thumbnailPath);
           }
         }
       } catch (deleteError) {

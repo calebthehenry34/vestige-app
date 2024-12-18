@@ -1,24 +1,53 @@
 // src/middleware/upload.js
 import multer from 'multer';
-import path from 'path';
 
-// Configure multer to store files in memory
+// Configure multer with basic settings
 const upload = multer({
-  storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
+    fileSize: 10 * 1024 * 1024 // 10MB
   },
   fileFilter: (req, file, cb) => {
     // Check file type
-    const filetypes = /jpeg|jpg|png|heic|heif/;
-    const mimetype = filetypes.test(file.mimetype);
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-
-    if (mimetype && extname) {
-      return cb(null, true);
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed'));
     }
-    cb(new Error('Only image files are allowed!'));
-  }
-});
 
-export default upload;
+    // Accept the file
+    cb(null, true);
+  }
+}).single('media');
+
+// Wrap multer middleware to handle errors
+const uploadMiddleware = (req, res, next) => {
+  upload(req, res, (err) => {
+    if (err) {
+      console.error('Upload error:', err);
+      
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File size cannot exceed 10MB' });
+        }
+        return res.status(400).json({ error: err.message });
+      }
+      
+      return res.status(400).json({ error: 'Error uploading file' });
+    }
+
+    // Log file details if present
+    if (req.file) {
+      console.log('File received:', {
+        fieldname: req.file.fieldname,
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        buffer: req.file.buffer ? 'Present' : 'Missing'
+      });
+    } else {
+      console.log('No file received');
+    }
+
+    next();
+  });
+};
+
+export default uploadMiddleware;

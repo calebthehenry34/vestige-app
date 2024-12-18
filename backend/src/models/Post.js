@@ -18,15 +18,6 @@ const commentSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-// Image adjustments schema
-const imageAdjustmentsSchema = new mongoose.Schema({
-  brightness: { type: Number, default: 100 },
-  contrast: { type: Number, default: 100 },
-  saturation: { type: Number, default: 100 },
-  blur: { type: Number, default: 0 },
-  temperature: { type: Number, default: 0 }
-}, { _id: false });
-
 // Finally define postSchema using commentSchema
 const postSchema = new mongoose.Schema({
   user: {
@@ -41,18 +32,12 @@ const postSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
-  media: String, // Full size image URL
-  thumbnail: String, // Thumbnail image URL
-  mediaKey: String, // S3 key for full size image
-  thumbnailKey: String, // S3 key for thumbnail
+  media: String, // Image URL
+  mediaKey: String, // S3 key for image
   mediaType: {
     type: String,
     enum: ['image', 'video'],
     default: 'image'
-  },
-  imageAdjustments: {
-    type: imageAdjustmentsSchema,
-    default: () => ({})
   },
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
