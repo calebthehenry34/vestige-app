@@ -125,12 +125,15 @@ const PostCreator = ({ isOpen, onClose }) => {
       formData.append('filter', editedMedia.filter);
       formData.append('adjustments', JSON.stringify(editedMedia.rawAdjustments));
 
+      // Get auth token from localStorage
+      const token = localStorage.getItem('token');
+
       // Upload to backend with full API URL
       await axios.post(`${API_URL}/api/posts`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
         },
-        withCredentials: true, // Important for sending cookies
         onUploadProgress: (progressEvent) => {
           const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           setUploadProgress(progress);
