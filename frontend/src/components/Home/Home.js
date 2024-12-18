@@ -420,17 +420,17 @@ const Home = () => {
                   />
                 ) : (
                   <img
-                  src={post.media.startsWith('/') 
-                    ? post.media 
-                    : `/uploads/${post.media}`}
-                  alt="Post content"
-                  className="w-full h-auto"
-                  onError={(e) => {
-                    console.log('Image load error:', post.media);
-                    e.target.src = '/api/placeholder/400/400';
-                    e.target.onError = null;
-                  }}
-                />
+  src={post.media.includes('/uploads/') 
+    ? `${API_URL}${post.media}`  // Add API_URL to the relative path
+    : post.media}                 // Use the full URL directly if it's already complete
+  alt="Post content"
+  className="w-full h-auto"
+  onError={(e) => {
+    console.log('Image load error:', post.media);
+    e.target.src = '/api/placeholder/400/400';
+    e.target.onError = null;
+  }}
+/>
                 )}
               </Link>
 

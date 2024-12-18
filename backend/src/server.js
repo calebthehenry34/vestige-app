@@ -22,7 +22,6 @@ import helmet from 'helmet';
 dotenv.config();
 startEmailQueue();
 
-app.set('trust proxy', true);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,6 +37,8 @@ const uploadsDir = path.join(rootDir, 'uploads');
 });
 
 const app = express();
+
+app.set('trust proxy', true);
 
 // Security middleware
 app.use(helmet({
