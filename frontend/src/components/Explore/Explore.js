@@ -89,7 +89,7 @@ const Explore = () => {
                   <video
                     src={post.media.startsWith('http') 
                       ? post.media 
-                      : `API_URL + /uploads/${post.media}`}
+                      : API_URL + '/uploads/' + post.media}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -97,12 +97,12 @@ const Explore = () => {
                 <img
                   src={post.media.startsWith('http') 
                     ? post.media 
-                    : `API_URL + /uploads/${post.media}`}
+                    : API_URL + '/uploads/' + post.media}
                   alt=""
                   className="w-full h-full object-cover rounded-lg"
                   onError={(e) => {
                     console.log('Image load error:', post.media);
-                    e.target.src = '/api/placeholder/400/400';
+                    e.target.src = `https://ui-avatars.com/api/?name=Post&size=400`;
                   }}
                 />
               )}
