@@ -97,7 +97,7 @@ const Profile = () => {
       <img
   src={getProfileImageUrl(profileData?.profilePicture, profileData?.username)}
   alt={profileData?.username || 'Profile'}
-  className="w-100 h-100 rounded-md object-cover"
+  className="w-full h-full object-cover"
   onError={(e) => {
     e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`;
     e.target.onError = null;
