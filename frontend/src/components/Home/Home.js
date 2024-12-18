@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, navigate } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { 
   HeartRegular, 
@@ -13,12 +13,14 @@ import {
   FlagRegular,
 } from '@fluentui/react-icons';
 import PostComments from '../Post/PostComments';
-import { Link } from 'react-router-dom';
+import { Link, } from 'react-router-dom';
+import { useNavigate, } from 'react-router-dom';
 import { useScroll } from '../../context/ScrollContext';
 import { useLocation } from 'react-router-dom';
 import { API_URL } from '../../config';
 
 const Home = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [activePostMenu, setActivePostMenu] = useState(null);
@@ -31,7 +33,7 @@ const Home = () => {
 
  
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       
@@ -46,15 +48,13 @@ const Home = () => {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        credentials: 'include'
+        }
       });
   
       if (!response.ok) {
         const errorData = await response.json();
         console.error('API Error:', errorData);
         if (response.status === 401) {
-          // Token expired or invalid
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           navigate('/login');
@@ -69,7 +69,7 @@ const Home = () => {
       console.error('Error fetching posts:', error);
       setPosts([]);
     }
-  };
+  }, [navigate]); // Add navigate as dependency
   useEffect(() => {
     // Fetch posts first
     fetchPosts();
@@ -84,7 +84,7 @@ const Home = () => {
     return () => {
       sessionStorage.setItem('feedScroll', window.scrollY.toString());
     };
-  }, []);
+  }, [fetchPosts, navigate]);
 
   useEffect(() => {
     return () => {
