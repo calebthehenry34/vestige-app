@@ -4,7 +4,7 @@ import { Theme, Button, Checkbox, Tile } from '@carbon/react';
 import { ErrorFilled } from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
-import ImageEditor from '../Post/ImageEditor';
+import ProfileImageEditor from './ProfileImageEditor';
 
 const OnboardingFlow = () => {
   const navigate = useNavigate();
@@ -101,7 +101,6 @@ const OnboardingFlow = () => {
       }
   
       const data = await response.json();
-      console.log('Onboarding complete:', data);
   
       await updateUser({ 
         ...user,
@@ -154,7 +153,7 @@ const OnboardingFlow = () => {
         {step === 1 && (
           <div className="max-w-4xl mx-auto pt-16 px-0">
             {showImageEditor && previewUrl ? (
-              <ImageEditor
+              <ProfileImageEditor
                 image={previewUrl}
                 onSave={handleImageSave}
                 onBack={() => setShowImageEditor(false)}
@@ -203,10 +202,13 @@ const OnboardingFlow = () => {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center">
-                          <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
-                          </svg>
+                        <div className="text-center">
+                          <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center mx-auto mb-4">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                              <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
+                            </svg>
+                          </div>
+                          <p className="text-white/50">Tap to add profile picture</p>
                         </div>
                       </div>
                     )}
