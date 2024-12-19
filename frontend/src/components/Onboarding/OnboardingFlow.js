@@ -20,6 +20,7 @@ const OnboardingFlow = () => {
   });
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showImageEditor, setShowImageEditor] = useState(false);
+  const [showBioInput, setShowBioInput] = useState(false);
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
@@ -35,7 +36,6 @@ const OnboardingFlow = () => {
 
   const handleImageSave = async ({ croppedImage }) => {
     try {
-      // Convert base64 to blob for upload
       const response = await fetch(croppedImage);
       const blob = await response.blob();
       const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
@@ -129,7 +129,7 @@ const OnboardingFlow = () => {
 
   return (
     <Theme theme="g100">
-      <div className="h-screen bg-black">
+      <div className="min-h-screen bg-black">
         {/* Progress Steps */}
         <div className="w-full bg-[#262626] px-4 py-3">
           <div className="max-w-[250px] mx-auto"> 
@@ -151,86 +151,119 @@ const OnboardingFlow = () => {
         </div>
 
         {/* Content */}
-        <div className="max-w-[400px] mx-auto px-4 py-8 rounded-lg onboard-card">
-          {error && (
-            <div className="text-white mb-6 p-4 flex items-start gap-3">
-              <ErrorFilled className="text-[#da1e28] flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium">Error</p>
-                <p>{error}</p>
+        {step === 1 && (
+          <div className="max-w-4xl mx-auto pt-16 px-0">
+            {showImageEditor && previewUrl ? (
+              <ImageEditor
+                image={previewUrl}
+                onSave={handleImageSave}
+                onBack={() => setShowImageEditor(false)}
+              />
+            ) : showBioInput ? (
+              <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+                <div className="w-full max-w-lg bg-[#262626] rounded-lg p-6">
+                  <h3 className="text-xl text-white mb-4">Edit Bio</h3>
+                  <textarea
+                    value={formData.bio}
+                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                    placeholder="Write a short bio..."
+                    className="w-full h-32 px-4 py-3 bg-black/50 text-white rounded-lg resize-none focus:ring-2 focus:ring-[#ae52e3] focus:outline-none"
+                    maxLength={150}
+                  />
+                  <div className="flex justify-between items-center mt-4">
+                    <p className="text-sm text-gray-400">
+                      {formData.bio.length}/150
+                    </p>
+                    <div className="space-x-4">
+                      <button
+                        onClick={() => setShowBioInput(false)}
+                        className="px-4 py-2 text-white hover:bg-white/10 rounded-lg transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => setShowBioInput(false)}
+                        className="px-4 py-2 bg-[#ae52e3] text-white rounded-lg hover:bg-[#9a3dd0] transition-colors"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-
-          {step === 1 && (
-            <div className="space-y-6">
-              <h2 className="font-headlines text-2xl font-md text-center text-white mb-10">Set Up Your Profile</h2>
-              
-              {showImageEditor && previewUrl ? (
-                <ImageEditor
-                  image={previewUrl}
-                  onSave={handleImageSave}
-                  onBack={() => setShowImageEditor(false)}
-                />
-              ) : (
-                <>
-                  <label htmlFor="profile-upload" className="cursor-pointer block">
-                  <div className="relative w-full aspect-[4/5] overflow-hidden mb-0">                     
-                   {previewUrl ? (
-                        <img 
-                          src={previewUrl} 
-                          alt="Profile preview" 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
+            ) : (
+              <div className="relative w-full aspect-[4/5] overflow-hidden mb-0">
+                <label htmlFor="profile-upload" className="block w-full h-full cursor-pointer">
+                  <div className="w-full h-full bg-[#262626]">
+                    {previewUrl ? (
+                      <img
+                        src={previewUrl}
+                        alt={formData.username || 'Profile'}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
                         <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center">
                           <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
                             <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
                           </svg>
                         </div>
-                      )}
-                    </div>
-                    <p className="text-center text-gray-400 mt-2">helper?</p>
-                  </label>
-
-                  <input
-                    type="file"
-                    id="profile-upload"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-
-                  <div className="space-y-4 mt-8">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-400">
-                        Username
-                      </label>
-                      <p className="text-white text-lg">{formData.username}</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-400">
-                        Bio
-                      </label>
-                      <textarea
-                        value={formData.bio}
-                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                        placeholder="Write a short bio..."
-                        className="w-full h-24 px-4 py-3 bg-[#262626] text-white rounded-lg resize-none focus:ring-2 focus:ring-[#ae52e3] focus:outline-none"
-                        maxLength={150}
-                      />
-                      <p className="text-sm text-gray-400 text-right">
-                        {formData.bio.length}/150
-                      </p>
-                    </div>
+                      </div>
+                    )}
                   </div>
-                </>
-              )}
-            </div>
-          )}
+                </label>
 
-          {step === 2 && (
+                <input
+                  type="file"
+                  id="profile-upload"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
+                
+                {/* Content */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                  <div className="flex justify-between items-start">
+                    <h1 className="text-2xl font-bold">{formData.username}</h1>
+                  </div>
+                  <div 
+                    onClick={() => setShowBioInput(true)}
+                    className="mt-4 cursor-pointer hover:bg-white/10 rounded-lg p-2 -m-2 transition-colors"
+                  >
+                    {formData.bio ? (
+                      <p className="text-md text-white/80">{formData.bio}</p>
+                    ) : (
+                      <p className="text-md text-white/50">Tap to add a bio...</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!showImageEditor && !showBioInput && (
+              <div className="max-w-[400px] mx-auto px-4 mt-8">
+                <Button
+                  onClick={handleNext}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#ae52e3',
+                    minHeight: '60px',
+                    borderRadius: '5px'
+                  }}
+                >
+                  Continue
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="max-w-[400px] mx-auto px-4 py-8 rounded-lg">
             <div className="space-y-6">
               <h2 className="font-headlines text-center text-2xl font-md text-white">Community Guidelines</h2>
               <Tile className="bg-[#262626] rounded-md p-6">
@@ -253,30 +286,10 @@ const OnboardingFlow = () => {
                   acceptedGuidelines: e.target.checked 
                 })}
               />
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-6">
-              <h2 className="font-headlines text-center text-2xl font-md text-white">You're All Set!</h2>
-              <Tile className="bg-[#262626] rounded-md p-6">
-                <div className="space-y-4">
-                  <p className="font-medium text-gray-200">
-                    Welcome to Vestige beta! You currently have access to all features 
-                    free of charge while we're in beta testing. <br></br><br></br>Please remember that features may not work as expected
-                    and we need your help. <br></br><br></br>If you find a problem, email support@vestigeapp.com and we'll fix it.
-                  </p>
-                </div>
-              </Tile>
-            </div>
-          )}
-
-          {!showImageEditor && (
-            <div className="flex flex-col space-y-4 mt-8 text-white button-border">
-              {step < 3 ? (
+              <div className="flex flex-col space-y-4">
                 <Button
                   onClick={handleNext}
-                  disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
+                  disabled={loading || !formData.acceptedGuidelines}
                   style={{
                     width: '100%',
                     backgroundColor: '#ae52e3',
@@ -286,21 +299,6 @@ const OnboardingFlow = () => {
                 >
                   Continue
                 </Button>
-              ) : (
-                <Button
-                  onClick={handleComplete}
-                  disabled={loading}
-                  style={{
-                    width: '100%',
-                    backgroundColor: '#ae52e3',
-                    minHeight: '60px',
-                    borderRadius: '5px'
-                  }}
-                >
-                  {loading ? 'Completing...' : 'Got It!'}
-                </Button>
-              )}
-              {step > 1 && (
                 <Button
                   kind="secondary"
                   onClick={handleBack}
@@ -313,10 +311,65 @@ const OnboardingFlow = () => {
                 >
                   Back
                 </Button>
-              )}
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="max-w-[400px] mx-auto px-4 py-8 rounded-lg">
+            <div className="space-y-6">
+              <h2 className="font-headlines text-center text-2xl font-md text-white">You're All Set!</h2>
+              <Tile className="bg-[#262626] rounded-md p-6">
+                <div className="space-y-4">
+                  <p className="font-medium text-gray-200">
+                    Welcome to Vestige beta! You currently have access to all features 
+                    free of charge while we're in beta testing. <br></br><br></br>Please remember that features may not work as expected
+                    and we need your help. <br></br><br></br>If you find a problem, email support@vestigeapp.com and we'll fix it.
+                  </p>
+                </div>
+              </Tile>
+              <div className="flex flex-col space-y-4">
+                <Button
+                  onClick={handleComplete}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#ae52e3',
+                    minHeight: '60px',
+                    borderRadius: '5px'
+                  }}
+                >
+                  {loading ? 'Completing...' : 'Got It!'}
+                </Button>
+                <Button
+                  kind="secondary"
+                  onClick={handleBack}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    minHeight: '60px',
+                    borderRadius: '5px'
+                  }}
+                >
+                  Back
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="fixed bottom-4 left-4 right-4 bg-red-500/90 text-white p-4 rounded-lg backdrop-blur-sm">
+            <div className="flex items-start gap-3">
+              <ErrorFilled className="flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium">Error</p>
+                <p>{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Theme>
   );
