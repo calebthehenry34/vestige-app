@@ -132,7 +132,7 @@ const OnboardingFlow = () => {
   return (
     <Theme theme="g100">
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="w-[95vw] h-[90vh] bg-[#262626] rounded-2xl flex flex-col">
+        <div className="w-[90vw] h-[85vh] bg-[#262626] rounded-2xl flex flex-col">
           {/* Progress Steps */}
           <div className="w-full px-4 py-3">
             <div className="max-w-[250px] mx-auto"> 

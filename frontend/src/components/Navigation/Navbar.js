@@ -12,43 +12,51 @@ import {
   ShieldRegular,
   SignOutRegular,
   SparkleRegular,
-  BeakerRegular,
+  ChevronRightRegular,
+  DismissRegular,
+  LockClosedRegular,
+  PeopleRegular,
+  PersonSquareCheckmarkRegular,
+  MoneyRegular,
+  ChartMultipleRegular,
+  ShareRegular,
+  VirtualNetworkFilled,
+  PresenceBlockedRegular,
+  WeatherMoonRegular,
+  WeatherSunnyRegular,
 } from '@fluentui/react-icons';
 import { useAuth } from '../../context/AuthContext';
 import PostCreator from '../Post/PostCreator';
 import { ThemeContext } from '../../App';
-import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 
 const Navbar = () => {
-  const { theme } = useContext(ThemeContext);
+  const { theme, toggleTheme } = useContext(ThemeContext);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
   const [showFeedMenu, setShowFeedMenu] = useState(false);
   const [hasNotifications] = useState(true);
   const [isPostCreatorOpen, setIsPostCreatorOpen] = useState(false);
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const [visible, setVisible] = useState(true);
+  const [expandedSection, setExpandedSection] = useState(null);
 
   const isSettingsPage = location.pathname === '/settings';
   const shouldHideNavbar = isPostCreatorOpen || isSettingsPage;
 
   useEffect(() => {
-    if (showFeedMenu || isPostCreatorOpen) {
+    if (showFeedMenu || isPostCreatorOpen || showDrawer) {
       document.body.style.overflow = 'hidden';
-      document.body.style.paddingRight = `${window.innerWidth - document.documentElement.clientWidth}px`;
     } else {
       document.body.style.overflow = '';
-      document.body.style.paddingRight = '';
     }
   
     return () => {
       document.body.style.overflow = '';
-      document.body.style.paddingRight = '';
     };
-  }, [showFeedMenu, isPostCreatorOpen]);
+  }, [showFeedMenu, isPostCreatorOpen, showDrawer]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -64,26 +72,15 @@ const Navbar = () => {
   }, [prevScrollPos]);
 
   const handleNavigation = (path) => {
-    setShowDropdown(false);
+    setShowDrawer(false);
     setShowFeedMenu(false);
     navigate(path);
   };
 
-  const DesktopOverlay = () => {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-90 z-50 hidden md:flex items-center justify-center">
-        <div className="max-w-md p-8 rounded-lg bg-white dark:bg-gray-800 text-center">
-          <BeakerRegular className="w-16 h-16 mx-auto text-blue-500 mb-4" />
-          <h2 className="text-2xl font-bold mb-4 dark:text-white">In Development</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-4">
-            We're currently in beta testing on mobile devices. A full web app version will be rolled out soon with enhanced features and functionality.
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            For the best experience, please use the mobile version.
-          </p>
-        </div>
-      </div>
-    );
+  const handleLogout = () => {
+    setShowDrawer(false);
+    logout();
+    navigate('/login');
   };
 
   const navigationItems = [
@@ -109,96 +106,210 @@ const Navbar = () => {
     }
   ];
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const settingsSections = [
+    {
+      id: 'account',
+      label: 'Account',
+      items: [
+        { icon: <PersonRegular />, label: 'Profile', action: () => user?.username && handleNavigation(`/profile/${user.username}`) },
+        { icon: <HeartRegular />, label: 'Notifications', action: () => handleNavigation('/activity'), hasIndicator: hasNotifications },
+        { icon: <SettingsRegular />, label: 'Settings', action: () => handleNavigation('/settings') },
+      ]
+    },
+    {
+      id: 'privacy',
+      label: 'Privacy & Security',
+      items: [
+        { icon: <LockClosedRegular />, label: 'Privacy', action: () => handleNavigation('/settings/privacy') },
+        { icon: <PeopleRegular />, label: 'Manage Followers', action: () => handleNavigation('/settings/followers') },
+        { icon: <PresenceBlockedRegular />, label: 'Blocked Users', action: () => handleNavigation('/settings/blocked') },
+      ]
+    },
+    {
+      id: 'features',
+      label: 'Features',
+      items: [
+        { icon: <PersonSquareCheckmarkRegular />, label: 'Verification', action: () => handleNavigation('/settings/verification') },
+        { icon: <MoneyRegular />, label: 'Subscription', action: () => handleNavigation('/settings/subscription') },
+        { icon: <ShareRegular />, label: 'Affiliate Program', action: () => handleNavigation('/settings/affiliate') },
+      ]
+    },
+    {
+      id: 'data',
+      label: 'Data & Analytics',
+      items: [
+        { icon: <ChartMultipleRegular />, label: 'Analytics', action: () => handleNavigation('/settings/analytics') },
+        { icon: <VirtualNetworkFilled />, label: 'Sessions', action: () => handleNavigation('/settings/sessions') },
+      ]
+    },
+    {
+      id: 'other',
+      label: 'Other',
+      items: [
+        { icon: <DocumentRegular />, label: 'Roadmap', action: () => handleNavigation('/roadmap') },
+        ...(user?.isAdmin ? [{ icon: <ShieldRegular />, label: 'Admin Dashboard', action: () => handleNavigation('/admin') }] : []),
+      ]
+    }
+  ];
 
-  const renderDropdownMenu = () => (
-    <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-1 z-50">
-      <div className="px-4 py-3">
-        <div className="flex items-center">
-          <div className="relative w-10 h-10">
-          <img
-  src={getProfileImageUrl(user?.profilePicture, user?.username)}
-  alt={user?.username || 'Profile'}
-  className="h-8 w-8 rounded-full object-cover"
-  onError={(e) => {
-    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
-    e.target.onError = null;
-  }}
-/>
+  const renderDrawer = () => (
+    <>
+      {/* Backdrop */}
+      {showDrawer && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-[150] transition-opacity duration-300"
+          onClick={() => setShowDrawer(false)}
+        />
+      )}
+      
+      {/* Drawer */}
+      <div 
+        className={`fixed top-0 right-0 h-full w-80 ${
+          theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
+        } shadow-xl z-[151] transform transition-transform duration-300 ease-in-out ${
+          showDrawer ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {/* Header */}
+        <div className={`flex items-center justify-between p-4 border-b ${
+          theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
+        }`}>
+          <div className="flex items-center space-x-3">
+            <img
+              src={getProfileImageUrl(user?.profilePicture, user?.username)}
+              alt={user?.username || 'Profile'}
+              className="h-10 w-10 rounded-full object-cover"
+              onError={(e) => {
+                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
+                e.target.onError = null;
+              }}
+            />
+            <div>
+              <div className={`font-medium ${theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`}>
+                {user?.username || 'User'}
+              </div>
+            </div>
           </div>
-          <div className="ml-3">
-            <div className="font-medium text-black">{user?.username || 'User'}</div>
+          <button
+            onClick={() => setShowDrawer(false)}
+            className={`p-2 rounded-lg transition-colors ${
+              theme === 'dark-theme' 
+                ? 'text-gray-400 hover:text-white hover:bg-gray-800' 
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <DismissRegular className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Theme Toggle */}
+        <div className={`p-4 border-b ${
+          theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
+        }`}>
+          <div className="flex items-center justify-between space-x-2">
+            <button
+              onClick={() => toggleTheme('light-theme')}
+              className={`flex-1 flex items-center justify-center px-4 py-2 rounded-lg transition-colors ${
+                theme !== 'dark-theme'
+                  ? theme === 'dark-theme'
+                    ? 'bg-gray-800 text-blue-400'
+                    : 'bg-blue-50 text-blue-600'
+                  : theme === 'dark-theme'
+                    ? 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <WeatherSunnyRegular className="w-5 h-5 mr-2" />
+              Light
+            </button>
+            <button
+              onClick={() => toggleTheme('dark-theme')}
+              className={`flex-1 flex items-center justify-center px-4 py-2 rounded-lg transition-colors ${
+                theme === 'dark-theme'
+                  ? theme === 'dark-theme'
+                    ? 'bg-gray-800 text-blue-400'
+                    : 'bg-blue-50 text-blue-600'
+                  : theme === 'dark-theme'
+                    ? 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <WeatherMoonRegular className="w-5 h-5 mr-2" />
+              Dark
+            </button>
           </div>
         </div>
-      </div>
 
-      <div className="border-t border-gray-100">
-        <button
-          onClick={() => handleNavigation('/activity')}
-          className="flex items-center justify-between w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          <div className="flex items-center">
-            <HeartRegular className="w-5 h-5 mr-3" />
-            <span>Notifications</span>
-          </div>
-          {hasNotifications && (
-            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-          )}
-        </button>
+        {/* Settings Sections */}
+        <div className="overflow-y-auto h-[calc(100%-180px)] hide-scrollbar">
+          {settingsSections.map((section) => (
+            <div 
+              key={section.id} 
+              className={`border-b ${
+                theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
+              }`}
+            >
+              <button
+                onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}
+                className={`flex items-center justify-between w-full p-4 transition-colors ${
+                  theme === 'dark-theme'
+                    ? 'text-white hover:bg-gray-800'
+                    : 'text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                <span className="font-medium">{section.label}</span>
+                <ChevronRightRegular 
+                  className={`w-5 h-5 transform transition-transform duration-200 ${
+                    expandedSection === section.id ? 'rotate-90' : ''
+                  }`} 
+                />
+              </button>
+              
+              <div className={`overflow-hidden transition-all duration-200 ${
+                expandedSection === section.id ? 'max-h-96' : 'max-h-0'
+              }`}>
+                {section.items.map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={item.action}
+                    className={`flex items-center justify-between w-full p-4 pl-8 transition-colors ${
+                      theme === 'dark-theme'
+                        ? 'text-gray-300 hover:bg-gray-800'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <span className="mr-3">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </div>
+                    {item.hasIndicator && (
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
 
-        <button
-          onClick={() => user?.username && handleNavigation(`/profile/${user.username}`)}
-          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          <PersonRegular className="w-5 h-5 mr-3" />
-          <span>Profile</span>
-        </button>
-
-        <button
-          onClick={() => handleNavigation('/settings')}
-          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          <SettingsRegular className="w-5 h-5 mr-3" />
-          <span>Settings</span>
-        </button>
-
-        <button
-          onClick={() => handleNavigation('/roadmap')}
-          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          <DocumentRegular className="w-5 h-5 mr-3" />
-          <span>Roadmap</span>
-        </button>
-
-        {user?.isAdmin && (
-          <button
-            onClick={() => handleNavigation('/admin')}
-            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
-            <ShieldRegular className="w-5 h-5 mr-3" />
-            <span>Admin Dashboard</span>
-          </button>
-        )}
-
-        <div className="border-t my-1"></div>
-
+        {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+          className={`absolute bottom-0 left-0 right-0 flex items-center justify-center w-full p-4 transition-colors ${
+            theme === 'dark-theme'
+              ? 'text-red-400 hover:bg-gray-800 border-t border-gray-800'
+              : 'text-red-600 hover:bg-gray-50 border-t border-gray-200'
+          }`}
         >
           <SignOutRegular className="w-5 h-5 mr-3" />
           <span>Log Out</span>
         </button>
       </div>
-    </div>
+    </>
   );
 
   return (
     <>
-      <DesktopOverlay />
       <div className={`fixed top-0 left-0 right-0 z-[100] transition-transform duration-300 ${
         visible ? 'translate-y-0' : '-translate-y-full'
       } ${
@@ -216,29 +327,23 @@ const Navbar = () => {
           </button>
 
           <button
-            onClick={() => setShowDropdown(!showDropdown)}
-            className={`md:hidden p-2 rounded-md ${
-              theme === 'dark-theme' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
+            onClick={() => setShowDrawer(true)}
+            className={`md:hidden p-2 rounded-md transition-colors ${
+              theme === 'dark-theme'
+                ? 'hover:bg-gray-800'
+                : 'hover:bg-gray-100'
             }`}
           >
             <img
-              src={user?.profilePicture 
-                ? `${API_URL}/uploads/${user.profilePicture}`
-                : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`
-              }
-              alt={user?.username || 'User'}
+              src={getProfileImageUrl(user?.profilePicture, user?.username)}
+              alt={user?.username || 'Profile'}
               className="w-8 h-8 rounded-md object-cover"
               onError={(e) => {
                 e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
+                e.target.onError = null;
               }}
             />
           </button>
-
-          {showDropdown && (
-            <div className="absolute top-full right-4 mt-1">
-              {renderDropdownMenu()}
-            </div>
-          )}
         </div>
       </div>
 
@@ -325,6 +430,9 @@ const Navbar = () => {
           </div>
         </div>
       )}
+
+      {/* Drawer */}
+      {renderDrawer()}
 
       {/* Post Creator Modal */}
       <PostCreator 
