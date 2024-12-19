@@ -1,4 +1,4 @@
-import React, { useState, useEffect,useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -13,9 +13,6 @@ import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 
-
-
-
 const Profile = () => {
   const { username } = useParams();
   const { user: currentUser } = useAuth();
@@ -24,7 +21,8 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState([]);
   const { theme } = useContext(ThemeContext);
-  
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [bioText, setBioText] = useState('');
 
   // Fetch profile data and posts
   useEffect(() => {
@@ -45,6 +43,7 @@ const Profile = () => {
         }
 
         setProfileData(profileData);
+        setBioText(profileData.bio || '');
 
         // Fetch user's posts using their ID
         const postsResponse = await fetch(API_URL + '/api/posts?userId=' + profileData._id, {
@@ -73,6 +72,42 @@ const Profile = () => {
     }
   }, [username]);
 
+  const handleProfilePhotoClick = () => {
+    if (isOwnProfile) {
+      // Navigate to profile photo editor or trigger photo upload
+      console.log('Edit profile photo');
+    }
+  };
+
+  const handleBioClick = () => {
+    if (isOwnProfile) {
+      setIsEditingBio(true);
+    }
+  };
+
+  const handleBioSubmit = async () => {
+    if (!isOwnProfile) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/profile/bio`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ bio: bioText }),
+      });
+
+      if (response.ok) {
+        setProfileData(prev => ({ ...prev, bio: bioText }));
+      }
+    } catch (error) {
+      console.error('Error updating bio:', error);
+    }
+    setIsEditingBio(false);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -94,19 +129,26 @@ const Profile = () => {
   return (
     <div className="max-w-4xl mx-auto pt-16 px-0">
       <div className="relative w-full aspect-[4/5] overflow-hidden mb-0">
-      <img
-  src={getProfileImageUrl(profileData?.profilePicture, profileData?.username)}
-  alt={profileData?.username || 'Profile'}
-  className="w-full h-full object-cover"
-  onError={(e) => {
-    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`;
-    e.target.onError = null;
-  }}
-/>
+        {/* Profile Photo Section - Clickable only if own profile */}
+        <div 
+          className={`relative w-full h-3/4 ${isOwnProfile ? 'cursor-pointer' : ''}`}
+          onClick={handleProfilePhotoClick}
+        >
+          <img
+            src={getProfileImageUrl(profileData?.profilePicture, profileData?.username)}
+            alt={profileData?.username || 'Profile'}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`;
+              e.target.onError = null;
+            }}
+          />
+        </div>
 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
-        {/* Content */}
+        
+        {/* Content Section */}
         <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
           <div className="flex justify-between items-start">
             <h1 className="text-2xl font-bold">{profileData?.username}</h1>
@@ -125,9 +167,35 @@ const Profile = () => {
               )}
             </div>
           </div>
-          {profileData?.bio && (
-            <p className="text-md text-white/80 mb-4">{profileData.bio}</p>
-          )}
+
+          {/* Bio Section - Separate click handler */}
+          <div 
+            className={`mb-4 ${isOwnProfile ? 'cursor-pointer' : ''}`}
+            onClick={handleBioClick}
+          >
+            {isEditingBio ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={bioText}
+                  onChange={(e) => setBioText(e.target.value)}
+                  className="bg-transparent border-b border-white/30 focus:border-white outline-none text-md text-white/80 w-full"
+                  onBlur={handleBioSubmit}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleBioSubmit();
+                    }
+                  }}
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <p className="text-md text-white/80">
+                {profileData?.bio || (isOwnProfile ? 'Add a bio' : '')}
+              </p>
+            )}
+          </div>
+
           <div className="flex space-x-6">
             <div>
               <div className="text-lg font-bold">{profileData?.posts?.length || 0}</div>
