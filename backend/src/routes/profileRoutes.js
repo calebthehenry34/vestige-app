@@ -4,8 +4,18 @@ import User from '../models/User.js';
 import Post from '../models/Post.js';
 import Follow from '../models/Follow.js';
 import upload from '../middleware/upload.js';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
+import s3, { getS3BucketName } from '../config/s3.js';
+import crypto from 'crypto';
 
 const router = express.Router();
+
+const generateUniqueFileName = (originalName) => {
+  const timestamp = Date.now();
+  const hash = crypto.randomBytes(8).toString('hex');
+  const ext = originalName.split('.').pop();
+  return `${timestamp}-${hash}.${ext}`;
+};
 
 router.post('/complete-onboarding', 
   auth, 
@@ -16,13 +26,46 @@ router.post('/complete-onboarding',
       const userId = req.user.userId;
       const { username, bio } = req.body;
       
+      let profilePictureUrl;
+      
+      if (req.file) {
+        try {
+          const fileName = generateUniqueFileName(req.file.originalname);
+          const bucketName = getS3BucketName();
+          
+          const uploadParams = {
+            Bucket: bucketName,
+            Key: `profile-pictures/${fileName}`,
+            Body: req.file.buffer,
+            ContentType: req.file.mimetype,
+            ACL: 'public-read'
+          };
+
+          console.log('Attempting S3 upload with params:', {
+            Bucket: uploadParams.Bucket,
+            Key: uploadParams.Key,
+            ContentType: uploadParams.ContentType,
+            BufferLength: req.file.buffer.length
+          });
+
+          const command = new PutObjectCommand(uploadParams);
+          await s3.send(command);
+
+          profilePictureUrl = `https://${bucketName}.s3.amazonaws.com/profile-pictures/${fileName}`;
+          console.log('S3 upload successful:', profilePictureUrl);
+        } catch (uploadError) {
+          console.error('S3 upload error:', uploadError);
+          return res.status(500).json({ message: 'Failed to upload profile picture' });
+        }
+      }
+
       // Update user profile
       const updatedUser = await User.findByIdAndUpdate(
         userId,
         {
           username,
           bio,
-          profilePicture: req.file ? req.file.filename : undefined,
+          profilePicture: profilePictureUrl,
           onboardingComplete: true
         },
         { new: true }
@@ -38,7 +81,7 @@ router.post('/complete-onboarding',
         message: 'Onboarding completed successfully',
         user: {
           ...updatedUser.toObject(),
-          profilePicture: req.file ? req.file.filename : null
+          profilePicture: profilePictureUrl
         }
       });
     } catch (error) {

@@ -134,15 +134,24 @@ const Profile = () => {
           className={`relative w-full h-3/4 ${isOwnProfile ? 'cursor-pointer' : ''}`}
           onClick={handleProfilePhotoClick}
         >
-          <img
-            src={getProfileImageUrl(profileData?.profilePicture, profileData?.username)}
-            alt={profileData?.username || 'Profile'}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`;
-              e.target.onError = null;
-            }}
-          />
+         <img
+  src={(() => {
+    const imageUrl = getProfileImageUrl(profileData?.profilePicture, profileData?.username);
+    console.log('Profile component image URL:', imageUrl);
+    return imageUrl;
+  })()}
+  alt={profileData?.username || 'Profile'}
+  className="w-full h-full object-cover"
+  onError={(e) => {
+    console.log('Image load error:', {
+      originalSrc: e.target.src,
+      profilePicture: profileData?.profilePicture,
+      username: profileData?.username
+    });
+    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`;
+    e.target.onError = null;
+  }}
+/>
         </div>
 
         {/* Gradient Overlay */}
