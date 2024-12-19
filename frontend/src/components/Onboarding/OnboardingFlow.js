@@ -220,48 +220,46 @@ const OnboardingFlow = () => {
                   <div className="flex justify-between items-start">
                     <h1 className="text-2xl font-bold text-white">{formData.username}</h1>
                   </div>
-                  {isEditingBio ? (
-                    <div className="mt-4 bg-black/50 backdrop-blur-sm rounded-lg p-4">
-                      <textarea
-                        value={tempBio}
-                        onChange={(e) => setTempBio(e.target.value)}
-                        placeholder="Write a short bio..."
-                        className="w-full h-24 px-3 py-2 bg-white/10 text-white rounded-lg resize-none focus:ring-2 focus:ring-[#ae52e3] focus:outline-none"
-                        maxLength={150}
-                        autoFocus
-                      />
-                      <div className="flex justify-between items-center mt-2">
-                        <p className="text-sm text-gray-400">
-                          {tempBio.length}/150
-                        </p>
-                        <div className="space-x-3">
-                          <button
-                            onClick={handleBioCancel}
-                            className="px-3 py-1.5 text-white hover:bg-white/10 rounded-lg transition-colors text-sm"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={handleBioSave}
-                            className="px-3 py-1.5 bg-[#ae52e3] text-white rounded-lg hover:bg-[#9a3dd0] transition-colors text-sm"
-                          >
-                            Save
-                          </button>
+                  
+                  {/* Bio Section - Directly over the image */}
+                  <div className="mt-4">
+                    {isEditingBio ? (
+                      <div className="flex flex-col">
+                        <textarea
+                          value={tempBio}
+                          onChange={(e) => setTempBio(e.target.value)}
+                          onBlur={handleBioSave}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleBioSave();
+                            }
+                          }}
+                          placeholder="Write a short bio..."
+                          className="w-full px-0 py-1 bg-transparent text-white border-b border-white/30 focus:border-white resize-none focus:outline-none text-md"
+                          maxLength={150}
+                          autoFocus
+                          rows={2}
+                        />
+                        <div className="flex justify-end mt-2">
+                          <p className="text-sm text-white/60">
+                            {tempBio.length}/150
+                          </p>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div 
-                      onClick={handleBioEdit}
-                      className="mt-4 cursor-pointer hover:bg-white/10 rounded-lg p-2 -m-2 transition-colors"
-                    >
-                      {formData.bio ? (
-                        <p className="text-md text-white/80">{formData.bio}</p>
-                      ) : (
-                        <p className="text-md text-white/50">Tap to add a bio...</p>
-                      )}
-                    </div>
-                  )}
+                    ) : (
+                      <div 
+                        onClick={handleBioEdit}
+                        className="cursor-pointer hover:bg-white/10 rounded-lg p-2 -m-2 transition-colors"
+                      >
+                        {formData.bio ? (
+                          <p className="text-md text-white/80">{formData.bio}</p>
+                        ) : (
+                          <p className="text-md text-white/50">Tap to add a bio...</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
