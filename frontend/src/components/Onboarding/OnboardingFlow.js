@@ -5,6 +5,7 @@ import { ErrorFilled, Add } from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
 import ProfileImageEditor from './ProfileImageEditor';
+import styles from './OnboardingFlow.module.css';
 
 const OnboardingFlow = () => {
   const navigate = useNavigate();
@@ -74,20 +75,20 @@ const OnboardingFlow = () => {
     
     setError('');
     if (step < 3) {
-      setSlideDirection('slideLeft');
+      setSlideDirection(styles.slideLeft);
       setTimeout(() => {
         setStep(step + 1);
-        setSlideDirection('slideCurrent');
+        setSlideDirection(styles.slideCurrent);
       }, 300);
     }
   };
 
   const handleBack = () => {
     if (step > 1) {
-      setSlideDirection('slideRight');
+      setSlideDirection(styles.slideRight);
       setTimeout(() => {
         setStep(step - 1);
-        setSlideDirection('slideCurrent');
+        setSlideDirection(styles.slideCurrent);
       }, 300);
     }
   };
@@ -193,135 +194,142 @@ const OnboardingFlow = () => {
     </div>
   );
 
-  return (
-    <Theme theme="g100">
-      <div className="min-h-screen bg-black flex items-center justify-center p-4 font-headlines">
-        <div className="w-[85vw] h-[80vh] bg-[#262626] rounded-2xl flex flex-col">
-          {renderNavigation()}
+  const renderContent = () => {
+    const contentClass = `flex-1 overflow-hidden ${slideDirection}`;
 
-          <div className={`flex-1 overflow-hidden ${slideDirection}`}>
-            {step === 1 && (
-              <div className="flex-1 flex flex-col font-headlines">
-                {showImageEditor && previewUrl ? (
-                  <ProfileImageEditor
-                    image={previewUrl}
-                    onSave={handleImageSave}
-                    onBack={() => setShowImageEditor(false)}
-                  />
-                ) : (
-                  <div className="font-headlines relative flex-1 overflow-hidden">
-                    <div className="absolute inset-0">
-                      {previewUrl ? (
-                        <img
-                          src={previewUrl}
-                          alt={formData.username || 'Profile'}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center mx-auto">
-                              <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30">
-                      <input
-                        type="file"
-                        id="profile-upload"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        onClick={(e) => e.stopPropagation()}
-                        className="hidden"
-                      />
-                      <button 
-                        onClick={handleUploadClick}
-                        className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 cursor-pointer transition-colors flex items-center justify-center"
-                      >
-                        <Add className="w-8 h-8 text-white" />
-                      </button>
-                    </div>
-
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 pointer-events-none" />
-                    
-                    <div className="absolute bottom-0 left-0 right-0 p-6">
-                      <div className="flex justify-between items-start">
-                        <h1 className="text-2xl font-headlines text-white">{formData.username}</h1>
-                      </div>
-                      
-                      <div className="mt-4">
-                        <textarea
-                          value={formData.bio}
-                          onChange={handleBioChange}
-                          placeholder="Write a short bio..."
-                          className="w-full px-0 py-1 bg-transparent text-white border-b border-white/30 focus:border-white resize-none focus:outline-none text-md"
-                          maxLength={150}
-                          rows={2}
-                        />
-                        <div className="flex justify-end mt-1">
-                          <p className="text-sm text-white/60">
-                            {formData.bio.length}/150
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {step === 2 && (
-              <div className="flex-1 overflow-y-auto p-4">
-                <div className="max-w-[400px] mx-auto">
-                  <div className="space-y-6">
-                    <Tile className="bg-[#1a1a1a] rounded-md p-6">
-                      <div className="text-white">
-                        <h4 className="font-medium mb-4">Our Community Standards</h4>
-                        <ul className="font-medium space-y-2 text-gray-400">
-                          <li>Be respectful and kind to others</li>
-                          <li>No hate speech or bullying</li>
-                          <li>Protect your privacy and others'</li>
-                          <li>Share appropriate content only</li>
-                        </ul>
-                      </div>
-                    </Tile>
-                    <Checkbox
-                      labelText={<span style={{ color: 'white' }}>I agree to follow the community guidelines</span>}
-                      id="guidelines"
-                      checked={formData.acceptedGuidelines}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        acceptedGuidelines: e.target.checked 
-                      })}
+    return (
+      <div className={contentClass}>
+        {step === 1 && (
+          <div className="flex-1 flex flex-col font-headlines h-full">
+            {showImageEditor && previewUrl ? (
+              <ProfileImageEditor
+                image={previewUrl}
+                onSave={handleImageSave}
+                onBack={() => setShowImageEditor(false)}
+              />
+            ) : (
+              <div className="font-headlines relative flex-1">
+                <div className="absolute inset-0">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt={formData.username || 'Profile'}
+                      className="w-full h-full object-cover"
                     />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {step === 3 && (
-              <div className="flex-1 overflow-y-auto p-4">
-                <div className="max-w-[400px] mx-auto">
-                  <div className="space-y-6">
-                    <Tile className="bg-[#1a1a1a] rounded-md p-6">
-                      <div className="space-y-4">
-                        <p className="font-medium text-gray-200">
-                          Welcome to Vestige beta! You currently have access to all features 
-                          free of charge while we're in beta testing. <br></br><br></br>Please remember that features may not work as expected
-                          and we need your help. <br></br><br></br>If you find a problem, email support@vestigeapp.com and we'll fix it.
-                        </p>
+                  ) : (
+                    <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center mx-auto">
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
+                          </svg>
+                        </div>
                       </div>
-                    </Tile>
+                    </div>
+                  )}
+                </div>
+
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30">
+                  <input
+                    type="file"
+                    id="profile-upload"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    onClick={(e) => e.stopPropagation()}
+                    className="hidden"
+                  />
+                  <button 
+                    onClick={handleUploadClick}
+                    className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 cursor-pointer transition-colors flex items-center justify-center"
+                  >
+                    <Add className="w-8 h-8 text-white" />
+                  </button>
+                </div>
+
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 pointer-events-none" />
+                
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <div className="flex justify-between items-start">
+                    <h1 className="text-2xl font-headlines text-white">{formData.username}</h1>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <textarea
+                      value={formData.bio}
+                      onChange={handleBioChange}
+                      placeholder="Write a short bio..."
+                      className="w-full px-0 py-1 bg-transparent text-white border-b border-white/30 focus:border-white resize-none focus:outline-none text-md"
+                      maxLength={150}
+                      rows={2}
+                    />
+                    <div className="flex justify-end mt-1">
+                      <p className="text-sm text-white/60">
+                        {formData.bio.length}/150
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
           </div>
+        )}
+
+        {step === 2 && (
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="max-w-[400px] mx-auto">
+              <div className="space-y-6">
+                <Tile className="bg-[#1a1a1a] rounded-md p-6">
+                  <div className="text-white">
+                    <h4 className="font-medium mb-4">Our Community Standards</h4>
+                    <ul className="font-medium space-y-2 text-gray-400">
+                      <li>Be respectful and kind to others</li>
+                      <li>No hate speech or bullying</li>
+                      <li>Protect your privacy and others'</li>
+                      <li>Share appropriate content only</li>
+                    </ul>
+                  </div>
+                </Tile>
+                <Checkbox
+                  labelText={<span style={{ color: 'white' }}>I agree to follow the community guidelines</span>}
+                  id="guidelines"
+                  checked={formData.acceptedGuidelines}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    acceptedGuidelines: e.target.checked 
+                  })}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="max-w-[400px] mx-auto">
+              <div className="space-y-6">
+                <Tile className="bg-[#1a1a1a] rounded-md p-6">
+                  <div className="space-y-4">
+                    <p className="font-medium text-gray-200">
+                      Welcome to Vestige beta! You currently have access to all features 
+                      free of charge while we're in beta testing. <br></br><br></br>Please remember that features may not work as expected
+                      and we need your help. <br></br><br></br>If you find a problem, email support@vestigeapp.com and we'll fix it.
+                    </p>
+                  </div>
+                </Tile>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <Theme theme="g100">
+      <div className="min-h-screen bg-black flex items-center justify-center p-4 font-headlines">
+        <div className="w-[85vw] h-[80vh] bg-[#262626] rounded-2xl flex flex-col">
+          {renderNavigation()}
+          {renderContent()}
 
           {error && (
             <div className="fixed bottom-4 left-4 right-4 bg-red-500/90 text-white p-4 rounded-lg backdrop-blur-sm">
