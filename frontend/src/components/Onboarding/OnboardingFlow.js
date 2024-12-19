@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Theme, Button, Checkbox, Tile } from '@carbon/react';
+import { Theme, Button, Checkbox } from '@carbon/react';
 import { ErrorFilled, Add } from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
 import ProfileImageEditor from './ProfileImageEditor';
 import styles from './OnboardingFlow.module.css';
+
+const StepIndicator = ({ step, label }) => (
+  <div className="absolute top-0 left-0 right-0 p-4 z-10">
+    <div className="bg-black/30 backdrop-blur-sm rounded-lg px-4 py-2 inline-block">
+      <span className="text-white/60 text-sm">Step {step}:</span>
+      <span className="text-white ml-1 text-sm font-medium">{label}</span>
+    </div>
+  </div>
+);
 
 const OnboardingFlow = () => {
   const navigate = useNavigate();
@@ -185,7 +194,9 @@ const OnboardingFlow = () => {
             backgroundColor: '#ae52e3',
             minHeight: '40px',
             borderRadius: '5px',
-            marginLeft: 'auto'
+            marginLeft: 'auto',
+            paddingLeft: '10px;',
+            paddingRight:'10px',
           }}
         >
           {loading ? 'Completing...' : 'Got It!'}
@@ -200,6 +211,7 @@ const OnboardingFlow = () => {
     if (step === 1) {
       return (
         <div className={cardClass}>
+          <StepIndicator step={1} label="Setup Profile" />
           {showImageEditor && previewUrl ? (
             <ProfileImageEditor
               image={previewUrl}
@@ -277,11 +289,11 @@ const OnboardingFlow = () => {
     if (step === 2) {
       return (
         <div className={cardClass}>
+          <StepIndicator step={2} label="Community Guidelines" />
           <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6">
             <div className="h-full flex flex-col">
               <div className="flex-1 flex items-center">
                 <div className="w-full space-y-6">
-                  <h2 className="text-2xl font-headlines text-white text-center mb-8">Community Guidelines</h2>
                   <div className="bg-black/30 rounded-lg p-6">
                     <div className="text-white">
                       <h4 className="font-medium mb-4">Our Community Standards</h4>
@@ -314,11 +326,11 @@ const OnboardingFlow = () => {
 
     return (
       <div className={cardClass}>
+        <StepIndicator step={3} label="Complete Setup" />
         <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6">
           <div className="h-full flex flex-col">
             <div className="flex-1 flex items-center">
               <div className="w-full space-y-6">
-                <h2 className="text-2xl font-headlines text-white text-center mb-8">You're All Set!</h2>
                 <div className="bg-black/30 rounded-lg p-6">
                   <div className="space-y-4">
                     <p className="font-medium text-gray-200">
