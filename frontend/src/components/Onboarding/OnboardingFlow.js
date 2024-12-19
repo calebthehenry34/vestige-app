@@ -192,44 +192,35 @@ const OnboardingFlow = () => {
               </div>
             ) : (
               <div className="relative w-full aspect-[4/5] overflow-hidden mb-0">
-                <label htmlFor="profile-upload" className="block w-full h-full cursor-pointer">
-                  <div className="w-full h-full bg-[#262626]">
-                    {previewUrl ? (
-                      <img
-                        src={previewUrl}
-                        alt={formData.username || 'Profile'}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center mx-auto mb-4">
-                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                              <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
-                            </svg>
-                          </div>
-                          <p className="text-white/50">Tap to add profile picture</p>
+                {/* Background Image Layer */}
+                <div className="absolute inset-0 z-0">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt={formData.username || 'Profile'}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[#262626] flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center mx-auto mb-4">
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
+                          </svg>
                         </div>
+                        <p className="text-white/50">Tap to add profile picture</p>
                       </div>
-                    )}
-                  </div>
-                </label>
-
-                <input
-                  type="file"
-                  id="profile-upload"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
+                    </div>
+                  )}
+                </div>
 
                 {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
+                <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/50 to-transparent pointer-events-none" />
                 
                 {/* Content */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
                   <div className="flex justify-between items-start">
-                    <h1 className="text-2xl font-bold">{formData.username}</h1>
+                    <h1 className="text-2xl font-bold text-white">{formData.username}</h1>
                   </div>
                   <div 
                     onClick={() => setShowBioInput(true)}
@@ -242,6 +233,20 @@ const OnboardingFlow = () => {
                     )}
                   </div>
                 </div>
+
+                {/* Clickable Area for Image Upload */}
+                <label 
+                  htmlFor="profile-upload" 
+                  className="absolute inset-0 z-30 cursor-pointer"
+                >
+                  <input
+                    type="file"
+                    id="profile-upload"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
               </div>
             )}
 
