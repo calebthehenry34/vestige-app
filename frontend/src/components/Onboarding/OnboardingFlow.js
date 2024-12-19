@@ -175,7 +175,7 @@ const OnboardingFlow = () => {
               ) : (
                 <>
                   <label htmlFor="profile-upload" className="cursor-pointer block">
-                    <div className="w-32 h-32 mx-auto bg-[#262626] rounded-full flex items-center justify-center hover:bg-[#333333] transition-colors overflow-hidden">
+                    <div className="w-full h-full mx-auto bg-[#262626] flex items-center justify-center hover:bg-[#333333] transition-colors overflow-hidden">
                       {previewUrl ? (
                         <img 
                           src={previewUrl} 
