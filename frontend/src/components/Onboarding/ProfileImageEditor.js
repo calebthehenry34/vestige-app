@@ -103,18 +103,20 @@ const ProfileImageEditor = ({ image, onSave, onBack }) => {
             image={image}
             crop={crop}
             zoom={zoom}
-            aspect={1}
+            aspect={4/5}
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}
             showGrid={true}
-            cropShape="round"
+            cropShape="rect"
             objectFit="contain"
             classes={{
               containerClassName: 'h-full',
               mediaClassName: isDarkTheme ? 'brightness-100' : '',
             }}
             onError={handleImageError}
+            zoomWithScroll={true}  // Enable pinch zoom
+            zoomSlider={false}     // Hide the zoom slider
           />
         ) : (
           <div className="h-full flex items-center justify-center">

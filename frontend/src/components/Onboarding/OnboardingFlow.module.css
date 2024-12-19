@@ -1,1 +1,38 @@
-/* Styles moved to inline Tailwind classes */
+.slideLeft {
+  animation: slideLeft 0.3s ease-in-out forwards;
+}
+
+.slideRight {
+  animation: slideRight 0.3s ease-in-out forwards;
+}
+
+.slideCurrent {
+  animation: slideCurrent 0.3s ease-in-out forwards;
+}
+
+@keyframes slideLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slideRight {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slideCurrent {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
