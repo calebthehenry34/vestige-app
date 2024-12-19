@@ -13,6 +13,7 @@ const ASPECT_RATIOS = {
   '9:16': 9/16,
   '16:9': 16/9,
   '4:5': 4/5,
+  '1:1': 1,
 };
 
 const filters = {
@@ -47,11 +48,9 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
     return null;
   }
 
-  // Set canvas size to match the desired crop size
   canvas.width = pixelCrop.width;
   canvas.height = pixelCrop.height;
 
-  // Draw the cropped image
   ctx.drawImage(
     image,
     pixelCrop.x,
@@ -77,6 +76,8 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
 
 const ImageEditor = ({ image, onSave, onBack }) => {
   const { theme } = useContext(ThemeContext);
+  const isDarkTheme = theme === 'dark-theme';
+  
   const [activeTab, setActiveTab] = useState('crop');
   const [selectedFilter, setSelectedFilter] = useState('none');
   const [adjustments, setAdjustments] = useState({
@@ -89,7 +90,7 @@ const ImageEditor = ({ image, onSave, onBack }) => {
   
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [aspect, setAspect] = useState(ASPECT_RATIOS['4:5']); // Default to 4:5
+  const [aspect, setAspect] = useState(ASPECT_RATIOS['4:5']);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
@@ -117,7 +118,7 @@ const ImageEditor = ({ image, onSave, onBack }) => {
   };
 
   const renderCropping = () => (
-    <div className="relative h-[60vh]">
+    <div className="relative h-[calc(100vh-300px)] min-h-[400px]">
       <Cropper
         image={image}
         crop={crop}
@@ -126,12 +127,13 @@ const ImageEditor = ({ image, onSave, onBack }) => {
         onCropChange={setCrop}
         onZoomChange={setZoom}
         onCropComplete={onCropComplete}
+        objectFit="contain"
         classes={{
           containerClassName: 'h-full',
-          mediaClassName: theme === 'dark-theme' ? 'brightness-90' : '',
+          mediaClassName: isDarkTheme ? 'brightness-100' : '',
         }}
       />
-      <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-4 bg-black/50 p-4 rounded-lg">
+      <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-4 bg-black/60 backdrop-blur-sm p-4 rounded-lg">
         <div>
           <p className="text-white text-sm mb-2">Zoom</p>
           <Slider
@@ -140,6 +142,18 @@ const ImageEditor = ({ image, onSave, onBack }) => {
             max={3}
             step={0.1}
             onChange={(_, value) => setZoom(value)}
+            sx={{
+              color: '#3b82f6',
+              '& .MuiSlider-thumb': {
+                backgroundColor: '#fff',
+              },
+              '& .MuiSlider-track': {
+                backgroundColor: '#3b82f6',
+              },
+              '& .MuiSlider-rail': {
+                backgroundColor: '#9ca3af',
+              },
+            }}
           />
         </div>
         <div className="flex space-x-2 overflow-x-auto pb-2">
@@ -150,7 +164,7 @@ const ImageEditor = ({ image, onSave, onBack }) => {
               className={`px-4 py-2 rounded-lg whitespace-nowrap ${
                 aspect === ratio
                   ? 'bg-blue-500 text-white'
-                  : 'bg-white/20 text-white'
+                  : 'bg-white/20 text-white hover:bg-white/30 transition-colors'
               }`}
             >
               <ResizeVideoRegular className="w-4 h-4 mr-2 inline-block" />
@@ -163,25 +177,27 @@ const ImageEditor = ({ image, onSave, onBack }) => {
   );
 
   const renderFilters = () => (
-    <div className="grid grid-cols-4 gap-2 p-4">
+    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 p-4">
       {Object.entries(filters).map(([name, value]) => (
         <button
           key={name}
           onClick={() => setSelectedFilter(name)}
-          className={`flex flex-col items-center ${
-            selectedFilter === name ? 'ring-2 ring-blue-500 rounded-lg' : ''
+          className={`flex flex-col items-center p-1 rounded-lg transition-all ${
+            selectedFilter === name 
+              ? 'ring-2 ring-blue-500 bg-blue-500/10' 
+              : 'hover:bg-gray-100 dark:hover:bg-gray-800'
           }`}
         >
           <div className="w-full aspect-square mb-2 rounded-lg overflow-hidden">
             <img
               src={image}
               alt={name}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover"
               style={{ filter: value }}
             />
           </div>
           <span className={`text-xs ${
-            theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-600'
+            isDarkTheme ? 'text-gray-300' : 'text-gray-600'
           }`}>
             {name.charAt(0).toUpperCase() + name.slice(1)}
           </span>
@@ -191,7 +207,7 @@ const ImageEditor = ({ image, onSave, onBack }) => {
   );
 
   const renderAdjustments = () => (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-6">
       {Object.entries(adjustments).map(([name, value]) => {
         const getConfig = () => {
           switch (name) {
@@ -211,10 +227,10 @@ const ImageEditor = ({ image, onSave, onBack }) => {
         const { min, max, defaultValue } = getConfig();
 
         return (
-          <div key={name}>
-            <div className="flex justify-between mb-2">
-              <span className={`text-sm ${
-                theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-600'
+          <div key={name} className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className={`text-sm font-medium ${
+                isDarkTheme ? 'text-gray-300' : 'text-gray-700'
               }`}>
                 {name.charAt(0).toUpperCase() + name.slice(1)}
               </span>
@@ -223,7 +239,11 @@ const ImageEditor = ({ image, onSave, onBack }) => {
                   ...prev,
                   [name]: defaultValue
                 }))}
-                className="text-blue-500 text-sm"
+                className={`text-xs px-2 py-1 rounded ${
+                  isDarkTheme 
+                    ? 'text-blue-400 hover:bg-blue-500/10' 
+                    : 'text-blue-500 hover:bg-blue-50'
+                } transition-colors`}
               >
                 Reset
               </button>
@@ -236,6 +256,19 @@ const ImageEditor = ({ image, onSave, onBack }) => {
                 ...prev,
                 [name]: newValue
               }))}
+              sx={{
+                color: '#3b82f6',
+                '& .MuiSlider-thumb': {
+                  backgroundColor: '#fff',
+                  border: '2px solid #3b82f6',
+                },
+                '& .MuiSlider-track': {
+                  backgroundColor: '#3b82f6',
+                },
+                '& .MuiSlider-rail': {
+                  backgroundColor: isDarkTheme ? '#4b5563' : '#e5e7eb',
+                },
+              }}
             />
           </div>
         );
@@ -245,10 +278,10 @@ const ImageEditor = ({ image, onSave, onBack }) => {
 
   return (
     <div className={`flex flex-col h-full ${
-      theme === 'dark-theme' ? 'bg-black' : 'bg-white'
+      isDarkTheme ? 'bg-gray-900' : 'bg-white'
     }`}>
       {activeTab === 'crop' ? renderCropping() : (
-        <div className="relative aspect-square">
+        <div className="relative h-[calc(100vh-300px)] min-h-[400px]">
           <img
             src={image}
             alt="Preview"
@@ -259,15 +292,17 @@ const ImageEditor = ({ image, onSave, onBack }) => {
       )}
       
       {/* Tabs */}
-      <div className="flex justify-around p-2 border-b border-gray-200">
+      <div className={`flex justify-around p-2 border-b ${
+        isDarkTheme ? 'border-gray-800' : 'border-gray-200'
+      }`}>
         <button
           onClick={() => setActiveTab('crop')}
-          className={`flex items-center p-3 rounded-lg ${
+          className={`flex items-center p-3 rounded-lg transition-colors ${
             activeTab === 'crop' 
               ? 'bg-blue-500 text-white' 
-              : theme === 'dark-theme' 
-                ? 'text-gray-300'
-                : 'text-gray-700'
+              : isDarkTheme 
+                ? 'text-gray-300 hover:bg-gray-800' 
+                : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
           <CropRegular className="w-5 h-5 mr-2" />
@@ -276,12 +311,12 @@ const ImageEditor = ({ image, onSave, onBack }) => {
 
         <button
           onClick={() => setActiveTab('filter')}
-          className={`flex items-center p-3 rounded-lg ${
+          className={`flex items-center p-3 rounded-lg transition-colors ${
             activeTab === 'filter'
               ? 'bg-blue-500 text-white'
-              : theme === 'dark-theme'
-                ? 'text-gray-300'
-                : 'text-gray-700'
+              : isDarkTheme
+                ? 'text-gray-300 hover:bg-gray-800'
+                : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
           <FilterRegular className="w-5 h-5 mr-2" />
@@ -290,12 +325,12 @@ const ImageEditor = ({ image, onSave, onBack }) => {
 
         <button
           onClick={() => setActiveTab('adjust')}
-          className={`flex items-center p-3 rounded-lg ${
+          className={`flex items-center p-3 rounded-lg transition-colors ${
             activeTab === 'adjust'
               ? 'bg-blue-500 text-white'
-              : theme === 'dark-theme'
-                ? 'text-gray-300'
-                : 'text-gray-700'
+              : isDarkTheme
+                ? 'text-gray-300 hover:bg-gray-800'
+                : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
           <SelectObjectSkewEditRegular className="w-5 h-5 mr-2" />
@@ -314,21 +349,21 @@ const ImageEditor = ({ image, onSave, onBack }) => {
 
       {/* Action Buttons */}
       <div className={`flex justify-between p-4 border-t ${
-        theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
+        isDarkTheme ? 'border-gray-800' : 'border-gray-200'
       }`}>
         <button
           onClick={onBack}
-          className={`px-4 py-2 rounded-lg ${
-            theme === 'dark-theme'
-              ? 'bg-gray-800 text-white'
-              : 'bg-gray-100 text-gray-900'
+          className={`px-4 py-2 rounded-lg transition-colors ${
+            isDarkTheme
+              ? 'bg-gray-800 text-white hover:bg-gray-700'
+              : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
           }`}
         >
           Back
         </button>
         <button
           onClick={handleSave}
-          className="px-6 py-2 bg-blue-500 text-white rounded-lg"
+          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
         >
           Next
         </button>

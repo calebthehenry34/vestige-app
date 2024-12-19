@@ -1,7 +1,93 @@
 .onboardCard {
-    margin-top:40px;
-    padding:50px;
-    border-style: solid;
-    border-color:#262626;
-    border-width: 1px;
+  margin-top: 40px;
+  padding: 50px;
+  border-style: solid;
+  border-color: #262626;
+  border-width: 1px;
+}
+
+.profileImageContainer {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  margin: 0 auto;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #262626;
+  transition: background-color 0.2s ease;
+}
+
+.profileImageContainer:hover {
+  background-color: #333333;
+}
+
+.imageEditorContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+}
+
+.bioInput {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  background-color: #262626;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: white;
+  resize: none;
+  transition: all 0.2s ease;
+}
+
+.bioInput:focus {
+  outline: none;
+  border-color: #ae52e3;
+  box-shadow: 0 0 0 2px rgba(174, 82, 227, 0.2);
+}
+
+.characterCount {
+  text-align: right;
+  color: #a8a8a8;
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+
+.button {
+  width: 100%;
+  min-height: 60px;
+  border-radius: 5px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.primaryButton {
+  composes: button;
+  background-color: #ae52e3;
+  color: white;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background-color: #9a3dd0;
+}
+
+.secondaryButton {
+  composes: button;
+  background-color: transparent;
+  border: 1px solid #404040;
+  color: white;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

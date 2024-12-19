@@ -1,18 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Theme,
-  Button,
-  Checkbox,
-  Tile,
-} from '@carbon/react';
-import { ErrorFilled} from '@carbon/icons-react';
+import { Theme, Button, Checkbox, Tile } from '@carbon/react';
+import { ErrorFilled } from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
-import ReactCrop from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
-
-
+import ImageEditor from '../Post/ImageEditor';
 
 const OnboardingFlow = () => {
   const navigate = useNavigate();
@@ -27,6 +19,7 @@ const OnboardingFlow = () => {
     acceptedGuidelines: false
   });
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [showImageEditor, setShowImageEditor] = useState(false);
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
@@ -34,16 +27,32 @@ const OnboardingFlow = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result);
-        setShowCropper(true);
+        setShowImageEditor(true);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageSave = async ({ croppedImage }) => {
+    try {
+      // Convert base64 to blob for upload
+      const response = await fetch(croppedImage);
+      const blob = await response.blob();
+      const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
+      
+      setFormData(prev => ({ ...prev, profilePicture: file }));
+      setPreviewUrl(croppedImage);
+      setShowImageEditor(false);
+    } catch (error) {
+      console.error('Error saving cropped image:', error);
+      setError('Failed to process image');
     }
   };
 
   const handleNext = () => {
     if (step === 1) {
       if (!formData.profilePicture || !formData.bio) {
-        setError('All fields are required');
+        setError('Profile picture and bio are required');
         return;
       }
       
@@ -94,15 +103,13 @@ const OnboardingFlow = () => {
       const data = await response.json();
       console.log('Onboarding complete:', data);
   
-      // Update user context with all the new data
       await updateUser({ 
         ...user,
         bio: formData.bio,
-        profilePicture: data.user.profilePicture, // Use the filename from server response
+        profilePicture: data.user.profilePicture,
         onboardingComplete: true
       });
   
-      // Also update localStorage
       const currentUserData = JSON.parse(localStorage.getItem('user') || '{}');
       localStorage.setItem('user', JSON.stringify({
         ...currentUserData,
@@ -120,63 +127,12 @@ const OnboardingFlow = () => {
     }
   };
 
-
-  const handleCropComplete = async () => {
-    if (!imageRef || !crop.width || !crop.height) return;
-  
-    const canvas = document.createElement('canvas');
-    const scaleX = imageRef.naturalWidth / imageRef.width;
-    const scaleY = imageRef.naturalHeight / imageRef.height;
-    const pixelRatio = window.devicePixelRatio;
-  
-    canvas.width = crop.width * scaleX;
-    canvas.height = crop.height * scaleY;
-  
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-  
-    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    ctx.imageSmoothingQuality = 'high';
-  
-    ctx.drawImage(
-      imageRef,
-      crop.x * scaleX,
-      crop.y * scaleY,
-      crop.width * scaleX,
-      crop.height * scaleY,
-      0,
-      0,
-      crop.width * scaleX,
-      crop.height * scaleY
-    );
-  
-    const croppedImage = canvas.toDataURL('image/jpeg');
-    setPreviewUrl(croppedImage);
-    setShowCropper(false);
-  
-    // Convert base64 to blob for upload
-    const response = await fetch(croppedImage);
-    const blob = await response.blob();
-    const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
-    setFormData(prev => ({ ...prev, profilePicture: file }));
-  };
-  
-  const [crop, setCrop] = useState({
-    unit: '%',
-    width: 100,
-    aspect: 1 / 1
-  });
-  const [showCropper, setShowCropper] = useState(false);
-  const [imageRef, setImageRef] = useState(null);
-
-  
-  
   return (
     <Theme theme="g100">
       <div className="h-screen bg-black">
         {/* Progress Steps */}
         <div className="w-full bg-[#262626] px-4 py-3">
-          <div className="max-w-[250px] mx-auto "> 
+          <div className="max-w-[250px] mx-auto"> 
             <div className="flex items-center space-x-4 text-sm text-gray-400">
               <div className={`flex items-center ${step >= 1 ? 'text-white' : ''}`}>
                 <div className={`font-headlines w-2 h-2 rounded-full mr-2 ${step >= 1 ? 'bg-[#ae52e3]' : 'bg-gray-500'}`} />
@@ -195,83 +151,84 @@ const OnboardingFlow = () => {
         </div>
 
         {/* Content */}
-        <div className={`max-w-[400px] mx-auto px-4 py-8 rounded-lg onboard-card`}>
+        <div className="max-w-[400px] mx-auto px-4 py-8 rounded-lg onboard-card">
           {error && (
             <div className="text-white mb-6 p-4 flex items-start gap-3">
               <ErrorFilled className="text-[#da1e28] flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium">Error</p>
-                <p>Failed to complete onboarding</p>
+                <p>{error}</p>
               </div>
             </div>
           )}
 
-{step === 1 && (
-  <div className="space-y-6">
-    <h2 className="font-headlines text-2xl font-md text-center text-white mb-10">Set Up Your Profile</h2>
-    <label htmlFor="profile-upload" className="cursor-pointer">
-      <div className="w-100 h-100 mx-auto bg-[#262626] rounded-lg flex items-center justify-center hover:bg-[#333333] transition-colors">
-        {showCropper && previewUrl ? (
-          <ReactCrop
-            crop={crop}
-            onChange={newCrop => setCrop(newCrop)}
-            onComplete={handleCropComplete}
-            aspect={1}
-            circularCrop
-          >
-            <img
-              src={previewUrl}
-              onLoad={e => setImageRef(e.currentTarget)}
-              alt="Crop me"
-              className="max-h-[400px]"
-            />
-          </ReactCrop>
-        ) : previewUrl ? (
-          <img 
-            src={previewUrl} 
-            alt="Profile preview" 
-            className="w-full h-full object-cover rounded-lg"
-          />
-        ) : (
-          <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-              <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
-            </svg>
-          </div>
-        )}
-      </div>
-    </label>
+          {step === 1 && (
+            <div className="space-y-6">
+              <h2 className="font-headlines text-2xl font-md text-center text-white mb-10">Set Up Your Profile</h2>
+              
+              {showImageEditor && previewUrl ? (
+                <ImageEditor
+                  image={previewUrl}
+                  onSave={handleImageSave}
+                  onBack={() => setShowImageEditor(false)}
+                />
+              ) : (
+                <>
+                  <label htmlFor="profile-upload" className="cursor-pointer block">
+                    <div className="w-32 h-32 mx-auto bg-[#262626] rounded-full flex items-center justify-center hover:bg-[#333333] transition-colors overflow-hidden">
+                      {previewUrl ? (
+                        <img 
+                          src={previewUrl} 
+                          alt="Profile preview" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center">
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-center text-gray-400 mt-2">Click to upload profile picture</p>
+                  </label>
 
-    {showCropper && (
-      <div className="flex justify-center space-x-4">
-        <button
-          onClick={handleCropComplete}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Apply Crop
-        </button>
-        <button
-          onClick={() => setShowCropper(false)}
-          className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-        >
-          Cancel
-        </button>
-      </div>
-    )}
+                  <input
+                    type="file"
+                    id="profile-upload"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
 
-    <div className="space-y-1">
-      <p className="font-medium text-md text-gray-400 text-center">{formData.username}</p>
-    </div>
+                  <div className="space-y-4 mt-8">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-400">
+                        Username
+                      </label>
+                      <p className="text-white text-lg">{formData.username}</p>
+                    </div>
 
-    <input
-      type="file"
-      id="profile-upload"
-      accept=".jpg,.png,.gif"
-      onChange={handleImageUpload}
-      className="hidden"
-    />
-  </div>
-)}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-400">
+                        Bio
+                      </label>
+                      <textarea
+                        value={formData.bio}
+                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                        placeholder="Write a short bio..."
+                        className="w-full h-24 px-4 py-3 bg-[#262626] text-white rounded-lg resize-none focus:ring-2 focus:ring-[#ae52e3] focus:outline-none"
+                        maxLength={150}
+                      />
+                      <p className="text-sm text-gray-400 text-right">
+                        {formData.bio.length}/150
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           {step === 2 && (
             <div className="space-y-6">
@@ -303,7 +260,7 @@ const OnboardingFlow = () => {
             <div className="space-y-6">
               <h2 className="font-headlines text-center text-2xl font-md text-white">You're All Set!</h2>
               <Tile className="bg-[#262626] rounded-md p-6">
-                <div className="space-y-4 ">
+                <div className="space-y-4">
                   <p className="font-medium text-gray-200">
                     Welcome to Vestige beta! You currently have access to all features 
                     free of charge while we're in beta testing. <br></br><br></br>Please remember that features may not work as expected
@@ -314,49 +271,51 @@ const OnboardingFlow = () => {
             </div>
           )}
 
-          <div className="flex flex-col space-y-4 mt-8 text-white button-borderbutton-border">
-            {step < 3 ? (
-              <Button
-                onClick={handleNext}
-                disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
-                style={{
-                  width: '100%',
-                  backgroundColor: '#ae52e3',
-                  minHeight: '60px',
-                  borderRadius: '5px'
-                }}
-              >
-                Continue
-              </Button>
-            ) : (
-              <Button
-                onClick={handleComplete}
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  backgroundColor: '#ae52e3',
-                  minHeight: '60px',
-                  borderRadius: '5px'
-                }}
-              >
-                {loading ? 'Completing...' : 'Got It!'}
-              </Button>
-            )}
-            {step > 1 && (
-              <Button
-                kind="secondary"
-                onClick={handleBack}
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  minHeight: '60px',
-                  borderRadius: '5px'
-                }}
-              >
-                Back
-              </Button>
-            )}
-          </div>
+          {!showImageEditor && (
+            <div className="flex flex-col space-y-4 mt-8 text-white button-border">
+              {step < 3 ? (
+                <Button
+                  onClick={handleNext}
+                  disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#ae52e3',
+                    minHeight: '60px',
+                    borderRadius: '5px'
+                  }}
+                >
+                  Continue
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleComplete}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#ae52e3',
+                    minHeight: '60px',
+                    borderRadius: '5px'
+                  }}
+                >
+                  {loading ? 'Completing...' : 'Got It!'}
+                </Button>
+              )}
+              {step > 1 && (
+                <Button
+                  kind="secondary"
+                  onClick={handleBack}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    minHeight: '60px',
+                    borderRadius: '5px'
+                  }}
+                >
+                  Back
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </Theme>
