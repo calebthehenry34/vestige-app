@@ -241,7 +241,7 @@ const PostCreator = ({ isOpen, onClose }) => {
   };
 
   const renderTypeSelection = () => (
-    <div className="p-4">
+    <div className="p-4 min-h-screen">
       <div {...getRootProps()} className={`
         p-8 mb-4 rounded-lg border-2 border-dashed cursor-pointer
         transition-all hover:border-blue-500
