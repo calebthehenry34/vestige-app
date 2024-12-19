@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Theme, Button, Checkbox, Tile } from '@carbon/react';
-import { ErrorFilled, Upload } from '@carbon/icons-react';
+import { ErrorFilled, Add } from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
 import ProfileImageEditor from './ProfileImageEditor';
@@ -132,7 +132,7 @@ const OnboardingFlow = () => {
   return (
     <Theme theme="g100">
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="w-[90vw] h-[85vh] bg-[#262626] rounded-2xl flex flex-col">
+        <div className="w-[90vw] h-[80vh] bg-[#262626] rounded-2xl flex flex-col">
           {/* Progress Steps */}
           <div className="w-full px-4 py-3">
             <div className="max-w-[250px] mx-auto"> 
@@ -197,7 +197,7 @@ const OnboardingFlow = () => {
                       onChange={handleImageUpload}
                       className="hidden"
                     />
-                    <Upload className="w-8 h-8 text-white" />
+                    <Add className="w-8 h-8 text-white" />
                   </label>
 
                   {/* Gradient Overlay */}

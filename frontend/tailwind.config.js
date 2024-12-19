@@ -4,7 +4,7 @@ module.exports = {
   theme: {
     fontFamily: {
       'headlines': ['Roobert', 'sans-serif'],
-      'sans': ['Neue Montreal', 'sans-serif'], // Default font
+      'sans': ['Roobert', 'sans-serif'], // Default font
     },
     extend: {
       colors: {
