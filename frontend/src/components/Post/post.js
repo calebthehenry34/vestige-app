@@ -12,9 +12,11 @@ import {
   MoreHorizontalRegular,
   DeleteRegular,
   EditRegular,
-  FlagRegular
+  FlagRegular,
+  PersonRegular
 } from '@fluentui/react-icons';
 import { API_URL } from '../../config';
+import { getProfileImageUrl } from '../../utils/imageUtils';
 
 // Helper function to handle media URLs
 const getMediaUrl = (url) => {
@@ -29,17 +31,19 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
   const { user } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const isOwner = post.user._id === user.id;
+  const isOwner = post?.user?._id === user?.id;
 
   const handleDelete = async () => {
+    if (!post?._id) return;
+    
     try {
-      await fetch(API_URL + '/api/posts/' + post._id, {
+      await fetch(`${API_URL}/api/posts/${post._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      onDelete(post._id);
+      onDelete?.(post._id);
     } catch (error) {
       console.error('Error deleting post:', error);
     }
@@ -47,15 +51,17 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
   };
 
   const handleReport = async () => {
+    if (!post?._id) return;
+
     try {
-      await fetch(API_URL + '/api/posts' + post._id + '/report', {
+      await fetch(`${API_URL}/api/posts/${post._id}/report`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         }
       });
-      onReport(post._id);
+      onReport?.(post._id);
     } catch (error) {
       console.error('Error reporting post:', error);
     }
@@ -63,30 +69,36 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
   };
 
   const handleImageError = (e) => {
-    console.error('Image load error:', post.media);
+    console.error('Image load error:', post?.media);
     setImageError(true);
     // Attempt to reload the image once
     if (!e.target.dataset.retried) {
       e.target.dataset.retried = 'true';
-      e.target.src = getMediaUrl(post.media);
+      e.target.src = getMediaUrl(post?.media);
     }
   };
+
+  if (!post || !post.user) {
+    return null;
+  }
 
   return (
     <div className="bg-white rounded-lg shadow mb-6">
       {/* Post Header */}
       <div className="flex items-center justify-between p-4">
         <Link to={`/profile/${post.user.username}`} className="flex items-center">
-          <img
-            src={getMediaUrl(post.user.profilePicture)}
-            alt={post.user.username}
-            className="h-10 w-10 rounded-full object-cover"
-            onError={(e) => {
-              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username || 'User')}`;
-              e.target.onError = null;
-            }}
-          />
-          <span className="ml-3 text-xs font-medium">{post.user.username}</span>
+          {post.user ? (
+            <img
+              src={getProfileImageUrl(post.user.profilePicture, post.user.username)}
+              alt={post.user.username}
+              className="h-10 w-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+              <PersonRegular className="w-6 h-6 text-gray-400" />
+            </div>
+          )}
+          <span className="ml-3 text-xs font-medium">{post.user?.username || 'Unknown User'}</span>
         </Link>
         <button onClick={() => setShowMenu(!showMenu)} className="p-2">
           <MoreHorizontalRegular />
@@ -102,7 +114,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
                 <DeleteRegular className="mr-2" />
                 Delete Post
               </button>
-              <button onClick={() => { onEdit(post); setShowMenu(false); }} className="flex items-center w-full px-4 py-2 hover:bg-gray-100">
+              <button onClick={() => { onEdit?.(post); setShowMenu(false); }} className="flex items-center w-full px-4 py-2 hover:bg-gray-100">
                 <EditRegular className="mr-2" />
                 Edit Caption
               </button>
@@ -123,7 +135,10 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
             src={getMediaUrl(post.media)} 
             controls 
             className="w-full"
-            onError={(e) => console.error('Video load error:', post.media)}
+            onError={(e) => {
+              console.error('Video load error:', post.media);
+              setImageError(true);
+            }}
           />
         ) : (
           <Link to={`/post/${post._id}`}>
@@ -144,7 +159,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
         {/* Caption Preview */}
         <div className="absolute bottom-20 left-0 right-0 px-4 py-2 bg-black bg-opacity-50">
           <div className="text-white">
-            <span className="text-xs font-medium mr-2">{post.user.username}</span>
+            <span className="text-xs font-medium mr-2">{post.user?.username}</span>
             <span className="text-xs">
               {post.caption && (post.caption.length > 100 ? (
                 <>

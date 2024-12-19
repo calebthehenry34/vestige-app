@@ -5,6 +5,7 @@ import {
   SelectObjectSkewEditRegular,
   CropRegular,
   ResizeVideoRegular,
+  ErrorCircleRegular,
 } from '@fluentui/react-icons';
 import { ThemeContext } from '../../App';
 import Slider from '@mui/material/Slider';
@@ -36,42 +37,48 @@ const createImage = (url) =>
     const image = new Image();
     image.addEventListener('load', () => resolve(image));
     image.addEventListener('error', (error) => reject(error));
+    image.setAttribute('crossOrigin', 'anonymous');
     image.src = url;
   });
 
 const getCroppedImg = async (imageSrc, pixelCrop) => {
-  const image = await createImage(imageSrc);
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
+  try {
+    const image = await createImage(imageSrc);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
 
-  if (!ctx) {
-    return null;
+    if (!ctx) {
+      throw new Error('No 2d context');
+    }
+
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
+    );
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Canvas is empty'));
+          return;
+        }
+        resolve(URL.createObjectURL(blob));
+      }, 'image/jpeg', 1);
+    });
+  } catch (error) {
+    console.error('Error in getCroppedImg:', error);
+    throw error;
   }
-
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
-
-  ctx.drawImage(
-    image,
-    pixelCrop.x,
-    pixelCrop.y,
-    pixelCrop.width,
-    pixelCrop.height,
-    0,
-    0,
-    pixelCrop.width,
-    pixelCrop.height
-  );
-
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        console.error('Canvas is empty');
-        return;
-      }
-      resolve(URL.createObjectURL(blob));
-    }, 'image/jpeg', 1);
-  });
 };
 
 const ImageEditor = ({ image, onSave, onBack }) => {
@@ -92,6 +99,9 @@ const ImageEditor = ({ image, onSave, onBack }) => {
   const [zoom, setZoom] = useState(1);
   const [aspect, setAspect] = useState(ASPECT_RATIOS['4:5']);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -104,35 +114,65 @@ const ImageEditor = ({ image, onSave, onBack }) => {
   };
 
   const handleSave = async () => {
+    if (!croppedAreaPixels || !image) {
+      setError('Invalid crop area or image');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
     try {
       const croppedImage = await getCroppedImg(image, croppedAreaPixels);
-      onSave({
+      await onSave?.({
         croppedImage,
         filter: selectedFilter,
         adjustments,
         aspectRatio: aspect
       });
-    } catch (e) {
-      console.error('Error getting cropped image:', e);
+    } catch (err) {
+      console.error('Error saving image:', err);
+      setError('Failed to process image. Please try again.');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+    setError('Failed to load image');
   };
 
   const renderCropping = () => (
     <div className="relative h-[calc(100vh-300px)] min-h-[400px]">
-      <Cropper
-        image={image}
-        crop={crop}
-        zoom={zoom}
-        aspect={aspect}
-        onCropChange={setCrop}
-        onZoomChange={setZoom}
-        onCropComplete={onCropComplete}
-        objectFit="contain"
-        classes={{
-          containerClassName: 'h-full',
-          mediaClassName: isDarkTheme ? 'brightness-100' : '',
-        }}
-      />
+      {!imageError ? (
+        <Cropper
+          image={image}
+          crop={crop}
+          zoom={zoom}
+          aspect={aspect}
+          onCropChange={setCrop}
+          onZoomChange={setZoom}
+          onCropComplete={onCropComplete}
+          objectFit="contain"
+          classes={{
+            containerClassName: 'h-full',
+            mediaClassName: isDarkTheme ? 'brightness-100' : '',
+          }}
+          onError={handleImageError}
+        />
+      ) : (
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center">
+            <ErrorCircleRegular className={`w-12 h-12 mx-auto mb-2 ${
+              isDarkTheme ? 'text-red-400' : 'text-red-500'
+            }`} />
+            <p className={isDarkTheme ? 'text-gray-300' : 'text-gray-700'}>
+              Failed to load image
+            </p>
+          </div>
+        </div>
+      )}
       <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-4 bg-black/60 backdrop-blur-sm p-4 rounded-lg">
         <div>
           <p className="text-white text-sm mb-2">Zoom</p>
@@ -185,7 +225,9 @@ const ImageEditor = ({ image, onSave, onBack }) => {
           className={`flex flex-col items-center p-1 rounded-lg transition-all ${
             selectedFilter === name 
               ? 'ring-2 ring-blue-500 bg-blue-500/10' 
-              : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              : isDarkTheme
+                ? 'hover:bg-gray-800'
+                : 'hover:bg-gray-100'
           }`}
         >
           <div className="w-full aspect-square mb-2 rounded-lg overflow-hidden">
@@ -194,6 +236,7 @@ const ImageEditor = ({ image, onSave, onBack }) => {
               alt={name}
               className="w-full h-full object-cover"
               style={{ filter: value }}
+              onError={handleImageError}
             />
           </div>
           <span className={`text-xs ${
@@ -287,10 +330,23 @@ const ImageEditor = ({ image, onSave, onBack }) => {
             alt="Preview"
             className="w-full h-full object-contain"
             style={{ filter: getPreviewStyle() }}
+            onError={handleImageError}
           />
         </div>
       )}
       
+      {/* Error Message */}
+      {error && (
+        <div className={`p-4 ${
+          isDarkTheme ? 'bg-red-900/50 text-red-200' : 'bg-red-50 text-red-500'
+        }`}>
+          <div className="flex items-center">
+            <ErrorCircleRegular className="w-5 h-5 mr-2" />
+            {error}
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className={`flex justify-around p-2 border-b ${
         isDarkTheme ? 'border-gray-800' : 'border-gray-200'
@@ -353,19 +409,25 @@ const ImageEditor = ({ image, onSave, onBack }) => {
       }`}>
         <button
           onClick={onBack}
+          disabled={loading}
           className={`px-4 py-2 rounded-lg transition-colors ${
             isDarkTheme
               ? 'bg-gray-800 text-white hover:bg-gray-700'
               : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-          }`}
+          } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           Back
         </button>
         <button
           onClick={handleSave}
-          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          disabled={loading || imageError}
+          className={`px-6 py-2 bg-blue-500 text-white rounded-lg transition-colors ${
+            loading || imageError
+              ? 'opacity-50 cursor-not-allowed'
+              : 'hover:bg-blue-600'
+          }`}
         >
-          Next
+          {loading ? 'Processing...' : 'Next'}
         </button>
       </div>
     </div>

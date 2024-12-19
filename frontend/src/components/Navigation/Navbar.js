@@ -175,18 +175,20 @@ const Navbar = () => {
           theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
         }`}>
           <div className="flex items-center space-x-3">
-            <img
-              src={getProfileImageUrl(user?.profilePicture, user?.username)}
-              alt={user?.username || 'Profile'}
-              className="h-10 w-10 rounded-full object-cover"
-              onError={(e) => {
-                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
-                e.target.onError = null;
-              }}
-            />
+            {user ? (
+              <img
+                src={user.profilePicture ? getProfileImageUrl(user.profilePicture, user.username) : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username || 'User')}`}
+                alt={user.username || 'Profile'}
+                className="h-10 w-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                <PersonRegular className="w-6 h-6 text-gray-400" />
+              </div>
+            )}
             <div>
               <div className={`font-medium ${theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`}>
-                {user?.username || 'User'}
+                {user?.username || 'Guest'}
               </div>
             </div>
           </div>
@@ -334,15 +336,17 @@ const Navbar = () => {
                 : 'hover:bg-gray-100'
             }`}
           >
-            <img
-              src={getProfileImageUrl(user?.profilePicture, user?.username)}
-              alt={user?.username || 'Profile'}
-              className="w-8 h-8 rounded-md object-cover"
-              onError={(e) => {
-                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
-                e.target.onError = null;
-              }}
-            />
+            {user ? (
+              <img
+                src={user.profilePicture ? getProfileImageUrl(user.profilePicture, user.username) : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username || 'User')}`}
+                alt={user.username || 'Profile'}
+                className="w-8 h-8 rounded-md object-cover"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-md bg-gray-200 flex items-center justify-center">
+                <PersonRegular className="w-5 h-5 text-gray-400" />
+              </div>
+            )}
           </button>
         </div>
       </div>
