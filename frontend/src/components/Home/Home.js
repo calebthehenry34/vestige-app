@@ -11,16 +11,20 @@ import {
   EditRegular,
   DeleteRegular,
   FlagRegular,
+  PersonRegular,
 } from '@fluentui/react-icons';
 import PostComments from '../Post/PostComments';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config';
+import { getProfileImageUrl } from '../../utils/imageUtils';
 
 const Home = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activePostMenu, setActivePostMenu] = useState(null);
   const [showComments, setShowComments] = useState({});
   const [showShareModal, setShowShareModal] = useState(false);
@@ -30,8 +34,6 @@ const Home = () => {
   const fetchPosts = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      console.log('Fetching posts with token:', token ? 'Present' : 'Missing');
-      
       if (!token) {
         console.error('No auth token found');
         navigate('/login');
@@ -39,20 +41,14 @@ const Home = () => {
       }
   
       const response = await fetch(`${API_URL}/api/posts`, {
-        method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
   
-      console.log('Response status:', response.status);
-      const data = await response.json();
-      console.log('Received posts data:', data);
-  
       if (!response.ok) {
-        const errorData = data;
-        console.error('API Error:', errorData);
+        const errorData = await response.json();
         if (response.status === 401) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
@@ -61,20 +57,16 @@ const Home = () => {
         }
         throw new Error(errorData.error || 'Failed to fetch posts');
       }
-  
-      if (Array.isArray(data)) {
-        console.log('Setting posts array of length:', data.length);
-        setPosts(data);
-      } else if (data && typeof data === 'object' && Array.isArray(data.posts)) {
-        console.log('Setting posts from data.posts, length:', data.posts.length);
-        setPosts(data.posts);
-      } else {
-        console.log('Received data is not in expected format:', typeof data);
-        setPosts([]);
-      }
+
+      const data = await response.json();
+      setPosts(Array.isArray(data) ? data : Array.isArray(data.posts) ? data.posts : []);
+      setError(null);
     } catch (error) {
       console.error('Error fetching posts:', error);
+      setError('Failed to load posts');
       setPosts([]);
+    } finally {
+      setLoading(false);
     }
   }, [navigate]);
   
@@ -105,6 +97,8 @@ const Home = () => {
   };
 
   const handleLike = async (postId) => {
+    if (!user?.id || !postId) return;
+
     try {
       setPosts(prevPosts => prevPosts.map(post => {
         if (post._id === postId) {
@@ -114,7 +108,7 @@ const Home = () => {
             liked: newLiked,
             likes: newLiked 
               ? [...(post.likes || []), user.id]
-              : post.likes.filter(id => id !== user.id)
+              : (post.likes || []).filter(id => id !== user.id)
           };
         }
         return post;
@@ -132,7 +126,7 @@ const Home = () => {
       }
   
       const post = posts.find(p => p._id === postId);
-      if (post && post.user._id !== user.id) {
+      if (post?.user?._id && post.user._id !== user.id) {
         await fetch(`${API_URL}/api/notifications`, {
           method: 'POST',
           headers: {
@@ -148,6 +142,7 @@ const Home = () => {
       }
     } catch (error) {
       console.error('Error liking post:', error);
+      // Revert the optimistic update
       setPosts(prevPosts => prevPosts.map(post => {
         if (post._id === postId) {
           const newLiked = !post.liked;
@@ -155,7 +150,7 @@ const Home = () => {
             ...post,
             liked: newLiked,
             likes: newLiked 
-              ? post.likes.filter(id => id !== user.id)
+              ? (post.likes || []).filter(id => id !== user.id)
               : [...(post.likes || []), user.id]
           };
         }
@@ -165,6 +160,8 @@ const Home = () => {
   };
 
   const handleSave = async (postId) => {
+    if (!postId) return;
+
     try {
       setPosts(prevPosts => prevPosts.map(post => {
         if (post._id === postId) {
@@ -202,6 +199,7 @@ const Home = () => {
   
     } catch (error) {
       console.error('Error saving post:', error);
+      // Revert the optimistic update
       setPosts(prevPosts => prevPosts.map(post => {
         if (post._id === postId) {
           return {
@@ -215,6 +213,8 @@ const Home = () => {
   };
 
   const handleDeletePost = async (postId) => {
+    if (!postId) return;
+
     try {
       const response = await fetch(`${API_URL}/api/posts/${postId}`, {
         method: 'DELETE',
@@ -238,6 +238,8 @@ const Home = () => {
   };
 
   const handleReportPost = async (postId) => {
+    if (!postId) return;
+
     try {
       const response = await fetch(`${API_URL}/api/posts/${postId}/report`, {
         method: 'POST',
@@ -264,9 +266,9 @@ const Home = () => {
   };
 
   const handleComment = async (postId, text) => {
+    if (!postId || !text?.trim()) return;
+
     try {
-      console.log('Sending comment:', { postId, text });
-  
       const response = await fetch(`${API_URL}/api/posts/${postId}/comment`, {
         method: 'POST',
         headers: {
@@ -293,7 +295,7 @@ const Home = () => {
       }));
   
       const post = posts.find(p => p._id === postId);
-      if (post && post.user._id !== user.id) {
+      if (post?.user?._id && post.user._id !== user?.id) {
         try {
           await fetch(`${API_URL}/api/notifications`, {
             method: 'POST',
@@ -319,6 +321,8 @@ const Home = () => {
   };
 
   const handleReply = async (postId, commentId, text) => {
+    if (!postId || !commentId || !text?.trim()) return;
+
     try {
       const response = await fetch(
         `${API_URL}/api/posts/${postId}/comments/${commentId}/reply`,
@@ -350,13 +354,28 @@ const Home = () => {
     setShowShareModal(true);
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-xl mx-auto p-4 m-50">
       <div className="space-y-6">
         {Array.isArray(posts) && posts.map((post) => (
           <div key={post._id} className="bg-white rounded-lg shadow-md overflow-hidden">
             <Link to={`/post/${post._id}`} className="block relative" onClick={(e) => {
-              // Prevent navigation if clicking interactive elements
               if (e.target.closest('button')) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -367,18 +386,20 @@ const Home = () => {
                 <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-black/50 to-transparent flex justify-between items-center">
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center">
-                      <img
-                        src={post.user.profilePicture?.startsWith('http') 
-                          ? post.user.profilePicture 
-                          : `${API_URL}/uploads/${post.user.profilePicture}`}
-                        alt={post.user.username}
-                        className="h-6 w-6 rounded-md object-cover"
-                        onError={(e) => {
-                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username || 'User')}`;
-                          e.target.onError = null;
-                        }}
-                      />
-                      <span className="ml-2 font-medium text-white text-sm">{post.user?.username}</span>
+                      {post.user ? (
+                        <img
+                          src={getProfileImageUrl(post.user.profilePicture, post.user.username)}
+                          alt={post.user.username}
+                          className="h-6 w-6 rounded-md object-cover"
+                        />
+                      ) : (
+                        <div className="h-6 w-6 rounded-md bg-gray-200 flex items-center justify-center">
+                          <PersonRegular className="w-4 h-4 text-gray-400" />
+                        </div>
+                      )}
+                      <span className="ml-2 font-medium text-white text-sm">
+                        {post.user?.username || 'Unknown User'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -389,18 +410,23 @@ const Home = () => {
                     src={post.media}
                     controls
                     className="w-full h-auto"
-                  />
-                ) : (
-                  <img
-                    src={post.media.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`}
-                    alt="Post content"
-                    className="w-full h-auto"
                     onError={(e) => {
-                      console.log('Image load error for:', post.media);
-                      e.target.src = '/api/placeholder/400/400';
-                      e.target.onError = null;
+                      console.error('Video load error:', post.media);
+                      e.target.style.display = 'none';
                     }}
                   />
+                ) : (
+                  <div className="relative">
+                    <img
+                      src={post.media?.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`}
+                      alt="Post content"
+                      className="w-full h-auto"
+                      onError={(e) => {
+                        console.error('Image load error:', post.media);
+                        e.target.src = '/api/placeholder/400/400';
+                      }}
+                    />
+                  </div>
                 )}
 
                 {/* Post Menu Button */}
@@ -417,7 +443,7 @@ const Home = () => {
 
                 {activePostMenu === post._id && (
                   <div className="absolute right-4 top-12 w-48 bg-white rounded-lg shadow-lg z-20 py-1">
-                    {post.user._id === user.id ? (
+                    {post.user?._id === user?.id ? (
                       <>
                         <button
                           onClick={(e) => {
@@ -523,6 +549,8 @@ const Home = () => {
           </div>
         ))}
       </div>
+
+      {/* Share Modal */}
       {showShareModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-4 w-80">
