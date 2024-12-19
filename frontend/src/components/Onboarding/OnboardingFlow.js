@@ -21,6 +21,7 @@ const OnboardingFlow = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showImageEditor, setShowImageEditor] = useState(false);
   const [showBioInput, setShowBioInput] = useState(false);
+  const [tempBio, setTempBio] = useState('');
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
@@ -47,6 +48,21 @@ const OnboardingFlow = () => {
       console.error('Error saving cropped image:', error);
       setError('Failed to process image');
     }
+  };
+
+  const handleBioEdit = () => {
+    setTempBio(formData.bio);
+    setShowBioInput(true);
+  };
+
+  const handleBioSave = () => {
+    setFormData(prev => ({ ...prev, bio: tempBio }));
+    setShowBioInput(false);
+  };
+
+  const handleBioCancel = () => {
+    setTempBio(formData.bio);
+    setShowBioInput(false);
   };
 
   const handleNext = () => {
@@ -163,25 +179,26 @@ const OnboardingFlow = () => {
                 <div className="w-full max-w-lg bg-[#262626] rounded-lg p-6">
                   <h3 className="text-xl text-white mb-4">Edit Bio</h3>
                   <textarea
-                    value={formData.bio}
-                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                    value={tempBio}
+                    onChange={(e) => setTempBio(e.target.value)}
                     placeholder="Write a short bio..."
                     className="w-full h-32 px-4 py-3 bg-black/50 text-white rounded-lg resize-none focus:ring-2 focus:ring-[#ae52e3] focus:outline-none"
                     maxLength={150}
+                    autoFocus
                   />
                   <div className="flex justify-between items-center mt-4">
                     <p className="text-sm text-gray-400">
-                      {formData.bio.length}/150
+                      {tempBio.length}/150
                     </p>
                     <div className="space-x-4">
                       <button
-                        onClick={() => setShowBioInput(false)}
+                        onClick={handleBioCancel}
                         className="px-4 py-2 text-white hover:bg-white/10 rounded-lg transition-colors"
                       >
                         Cancel
                       </button>
                       <button
-                        onClick={() => setShowBioInput(false)}
+                        onClick={handleBioSave}
                         className="px-4 py-2 bg-[#ae52e3] text-white rounded-lg hover:bg-[#9a3dd0] transition-colors"
                       >
                         Save
@@ -223,7 +240,7 @@ const OnboardingFlow = () => {
                     <h1 className="text-2xl font-bold text-white">{formData.username}</h1>
                   </div>
                   <div 
-                    onClick={() => setShowBioInput(true)}
+                    onClick={handleBioEdit}
                     className="mt-4 cursor-pointer hover:bg-white/10 rounded-lg p-2 -m-2 transition-colors"
                   >
                     {formData.bio ? (

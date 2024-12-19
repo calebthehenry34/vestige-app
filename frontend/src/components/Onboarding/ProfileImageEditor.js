@@ -75,7 +75,7 @@ const ProfileImageEditor = ({ image, onSave, onBack }) => {
           onCropComplete={onCropComplete}
           showGrid={true}
           cropShape="rect"
-          objectFit="vertical-cover"
+          objectFit="contain"
         />
       </div>
       
