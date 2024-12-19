@@ -175,8 +175,8 @@ const OnboardingFlow = () => {
               ) : (
                 <>
                   <label htmlFor="profile-upload" className="cursor-pointer block">
-                    <div className="w-full h-full mx-auto bg-[#262626] flex items-center justify-center hover:bg-[#333333] transition-colors overflow-hidden">
-                      {previewUrl ? (
+                  <div className="relative w-full aspect-[4/5] overflow-hidden mb-0">                     
+                   {previewUrl ? (
                         <img 
                           src={previewUrl} 
                           alt="Profile preview" 
@@ -190,7 +190,7 @@ const OnboardingFlow = () => {
                         </div>
                       )}
                     </div>
-                    <p className="text-center text-gray-400 mt-2">Click to upload profile picture</p>
+                    <p className="text-center text-gray-400 mt-2">helper?</p>
                   </label>
 
                   <input
