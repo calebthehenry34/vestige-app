@@ -1,22 +1,18 @@
 import React, { useState, useContext, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import {
   ImageRegular,
   SparkleRegular,
   ArrowLeftRegular,
   DismissRegular,
-  PersonRegular,
-  LocationRegular,
-  NumberSymbolSquareRegular
 } from '@fluentui/react-icons';
 import { ThemeContext } from '../../App';
 import ImageEditor from './ImageEditor';
-import LocationAutocomplete from '../Common/LocationAutocomplete';
-import UserSearch from '../Common/UserSearch';
 import axios from 'axios';
 import { API_URL } from '../../config';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 const PostCreator = ({ isOpen, onClose }) => {
   const { theme } = useContext(ThemeContext);
@@ -30,6 +26,47 @@ const PostCreator = ({ isOpen, onClose }) => {
   const [taggedUsers, setTaggedUsers] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState(null);
+  
+  // Helper component for styled caption
+
+  const StyledCaption = ({ text }) => {
+    if (!text) return null;
+  
+    const parts = text.split(/(#[\w]+|@[\w]+)/g);
+  
+    return (
+      <div>
+        {parts.map((part, index) => {
+          if (part.startsWith('#')) {
+            return (
+              <Link 
+                key={index}
+                to={`/explore/tags/${part.slice(1)}`}
+                className="text-blue-500 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {part}
+              </Link>
+            );
+          }
+          if (part.startsWith('@')) {
+            return (
+              <Link
+                key={index}
+                to={`/profile/${part.slice(1)}`}
+                className="text-blue-500 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {part}
+              </Link>
+            );
+          }
+          return <span key={index}>{part}</span>;
+        })}
+      </div>
+    );
+  }; 
+
 
   const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
     setError(null);
@@ -65,6 +102,21 @@ const PostCreator = ({ isOpen, onClose }) => {
     multiple: false
   });
 
+
+  // Handlers
+  const handleCaptionChange = (e) => {
+    const newValue = e.target.value;
+    setCaption(newValue);
+
+    // Extract hashtags and mentions
+    const hashtagMatches = newValue.match(/#[\w]+/g) || [];
+    const mentionMatches = newValue.match(/@[\w]+/g) || [];
+
+    // Update hashtags and mentions state
+    setHashtags(hashtagMatches.map(tag => tag.slice(1)));
+    setTaggedUsers(mentionMatches.map(mention => mention.slice(1)));
+  };
+
   const handleEditComplete = async ({ croppedImage, filter, adjustments, aspectRatio }) => {
     setEditedMedia({
       url: croppedImage,
@@ -78,30 +130,7 @@ const PostCreator = ({ isOpen, onClose }) => {
     setStep('details');
   };
 
-  const handleHashtagInput = (e) => {
-    if (e.key === 'Enter' && e.target.value.trim()) {
-      const newHashtag = e.target.value.trim().replace(/^#/, '');
-      if (!hashtags.includes(newHashtag)) {
-        setHashtags([...hashtags, newHashtag]);
-      }
-      e.target.value = '';
-    }
-  };
-
-  const handleCaptionChange = (e) => {
-    const text = e.target.value;
-    setCaption(text);
-
-    // Auto-detect hashtags
-    const hashtagRegex = /#(\w+)/g;
-    const matches = text.match(hashtagRegex);
-    if (matches) {
-      const newTags = matches.map(tag => tag.slice(1));
-      const uniqueTags = [...new Set([...hashtags, ...newTags])];
-      setHashtags(uniqueTags);
-    }
-  };
-
+  
   const processImage = async (imageUrl) => {
     // Create a canvas to apply filters and get the processed image
     const img = new Image();
@@ -268,6 +297,7 @@ const PostCreator = ({ isOpen, onClose }) => {
     </div>
   );
 
+  
   const renderDetails = () => (
     <div className="flex flex-col h-screen">
       <div className="flex-1 overflow-y-auto">
@@ -277,7 +307,6 @@ const PostCreator = ({ isOpen, onClose }) => {
               className="relative w-full"
               style={{
                 paddingBottom: `${(1 / editedMedia.aspectRatio) * 100}%`,
-                maxHeight: '60vh',
                 overflow: 'hidden'
               }}
             >
@@ -293,83 +322,35 @@ const PostCreator = ({ isOpen, onClose }) => {
           </div>
         )}
         
-        <div className="p-4 space-y-4">
+        {/* Caption Section */}
+        <div className="p-4">
           <div className="relative">
             <textarea
-              placeholder="Write a caption..."
+              placeholder="Write a caption... Use # for hashtags and @ to tag people"
               value={caption}
               onChange={handleCaptionChange}
               className={`w-full p-3 rounded-lg resize-none border ${
                 theme === 'dark-theme'
-                  ? 'bg-gray-900 border-gray-800 text-white'
-                  : 'bg-white border-gray-200 text-gray-900'
+                  ? 'bg-gray-900 border-gray-800 text-white placeholder-gray-500'
+                  : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'
               }`}
               rows={4}
             />
-            <div className="absolute right-3 bottom-3 flex space-x-2">
-              <button
-                onClick={() => document.getElementById('hashtag-input').focus()}
-                className="text-blue-500 hover:text-blue-600"
-              >
-                <NumberSymbolSquareRegular className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => document.getElementById('user-search').focus()}
-                className="text-blue-500 hover:text-blue-600"
-              >
-                <PersonRegular className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <LocationRegular className={`w-5 h-5 ${
+            {caption && (
+              <div className="mt-2">
+                <StyledCaption text={caption} />
+              </div>
+            )}
+            <div className={`mt-2 text-sm ${
               theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
-            }`} />
-            <LocationAutocomplete onSelectLocation={setLocation} />
-          </div>
-
-          <div className="relative">
-            <input
-              id="hashtag-input"
-              type="text"
-              placeholder="Add hashtags (press Enter to add)"
-              onKeyPress={handleHashtagInput}
-              className={`w-full p-3 rounded-lg border ${
-                theme === 'dark-theme'
-                  ? 'bg-gray-900 border-gray-800 text-white'
-                  : 'bg-white border-gray-200 text-gray-900'
-              }`}
-            />
-            <div className="flex flex-wrap gap-2 mt-2">
-              {hashtags.map((tag, index) => (
-                <span 
-                  key={index} 
-                  className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm flex items-center"
-                >
-                  #{tag}
-                  <button
-                    onClick={() => setHashtags(hashtags.filter((_, i) => i !== index))}
-                    className="ml-2 text-blue-600 hover:text-blue-800"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
+            }`}>
+              Use # to add topics and @ to mention people
             </div>
-          </div>
-
-          <div className="relative">
-            <UserSearch
-              id="user-search"
-              onTagUser={(user) => setTaggedUsers([...taggedUsers, user])}
-              onRemoveTag={(userId) => setTaggedUsers(taggedUsers.filter(u => u.id !== userId))}
-              taggedUsers={taggedUsers}
-            />
           </div>
         </div>
       </div>
-
+  
+      {/* Upload Progress and Share Button */}
       <div className={`p-4 border-t ${
         theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
       }`}>
@@ -397,11 +378,12 @@ const PostCreator = ({ isOpen, onClose }) => {
       </div>
     </div>
   );
+  
 
   if (!isOpen) return null;
-
+  
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 sm:p-8 overflow-auto">
+    <div className="min-h-screen fixed inset-0 z-[100] flex items-start justify-center p-4 sm:p-8 overflow-auto">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div
         className={`relative w-full max-w-lg rounded-xl overflow-hidden shadow-xl ${
