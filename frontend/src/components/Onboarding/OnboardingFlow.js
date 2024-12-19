@@ -22,6 +22,7 @@ const OnboardingFlow = () => {
   const [showImageEditor, setShowImageEditor] = useState(false);
 
   const handleImageUpload = (e) => {
+    e.stopPropagation(); // Prevent event bubbling
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -31,6 +32,11 @@ const OnboardingFlow = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleUploadClick = (e) => {
+    e.stopPropagation(); // Prevent event bubbling
+    document.getElementById('profile-upload')?.click();
   };
 
   const handleImageSave = async ({ croppedImage }) => {
@@ -155,7 +161,7 @@ const OnboardingFlow = () => {
 
           {/* Content */}
           {step === 1 && (
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col font-headlines">
               {showImageEditor && previewUrl ? (
                 <ProfileImageEditor
                   image={previewUrl}
@@ -163,7 +169,7 @@ const OnboardingFlow = () => {
                   onBack={() => setShowImageEditor(false)}
                 />
               ) : (
-                <div className="relative flex-1 overflow-hidden">
+                <div className="font-headlines relative flex-1 overflow-hidden">
                   {/* Background Image Layer */}
                   <div className="absolute inset-0">
                     {previewUrl ? (
@@ -185,20 +191,23 @@ const OnboardingFlow = () => {
                     )}
                   </div>
 
-                  {/* Upload Button */}
-                  <label 
-                    htmlFor="profile-upload"
-                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 cursor-pointer transition-colors flex items-center justify-center"
-                  >
+                  {/* Upload Button - Modified for better event handling */}
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30">
                     <input
                       type="file"
                       id="profile-upload"
                       accept="image/*"
                       onChange={handleImageUpload}
+                      onClick={(e) => e.stopPropagation()}
                       className="hidden"
                     />
-                    <Add className="w-8 h-8 text-white" />
-                  </label>
+                    <button 
+                      onClick={handleUploadClick}
+                      className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 cursor-pointer transition-colors flex items-center justify-center"
+                    >
+                      <Add className="w-8 h-8 text-white" />
+                    </button>
+                  </div>
 
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 pointer-events-none" />
