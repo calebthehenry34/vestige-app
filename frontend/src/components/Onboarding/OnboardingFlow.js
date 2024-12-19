@@ -20,7 +20,7 @@ const OnboardingFlow = () => {
   });
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showImageEditor, setShowImageEditor] = useState(false);
-  const [showBioInput, setShowBioInput] = useState(false);
+  const [isEditingBio, setIsEditingBio] = useState(false);
   const [tempBio, setTempBio] = useState('');
 
   const handleImageUpload = (e) => {
@@ -52,17 +52,17 @@ const OnboardingFlow = () => {
 
   const handleBioEdit = () => {
     setTempBio(formData.bio);
-    setShowBioInput(true);
+    setIsEditingBio(true);
   };
 
   const handleBioSave = () => {
     setFormData(prev => ({ ...prev, bio: tempBio }));
-    setShowBioInput(false);
+    setIsEditingBio(false);
   };
 
   const handleBioCancel = () => {
     setTempBio(formData.bio);
-    setShowBioInput(false);
+    setIsEditingBio(false);
   };
 
   const handleNext = () => {
@@ -174,39 +174,6 @@ const OnboardingFlow = () => {
                 onSave={handleImageSave}
                 onBack={() => setShowImageEditor(false)}
               />
-            ) : showBioInput ? (
-              <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
-                <div className="w-full max-w-lg bg-[#262626] rounded-lg p-6">
-                  <h3 className="text-xl text-white mb-4">Edit Bio</h3>
-                  <textarea
-                    value={tempBio}
-                    onChange={(e) => setTempBio(e.target.value)}
-                    placeholder="Write a short bio..."
-                    className="w-full h-32 px-4 py-3 bg-black/50 text-white rounded-lg resize-none focus:ring-2 focus:ring-[#ae52e3] focus:outline-none"
-                    maxLength={150}
-                    autoFocus
-                  />
-                  <div className="flex justify-between items-center mt-4">
-                    <p className="text-sm text-gray-400">
-                      {tempBio.length}/150
-                    </p>
-                    <div className="space-x-4">
-                      <button
-                        onClick={handleBioCancel}
-                        className="px-4 py-2 text-white hover:bg-white/10 rounded-lg transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleBioSave}
-                        className="px-4 py-2 bg-[#ae52e3] text-white rounded-lg hover:bg-[#9a3dd0] transition-colors"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
             ) : (
               <div className="relative w-full aspect-[4/5] overflow-hidden mb-0">
                 {/* Background Image Layer */}
@@ -239,22 +206,54 @@ const OnboardingFlow = () => {
                   <div className="flex justify-between items-start">
                     <h1 className="text-2xl font-bold text-white">{formData.username}</h1>
                   </div>
-                  <div 
-                    onClick={handleBioEdit}
-                    className="mt-4 cursor-pointer hover:bg-white/10 rounded-lg p-2 -m-2 transition-colors"
-                  >
-                    {formData.bio ? (
-                      <p className="text-md text-white/80">{formData.bio}</p>
-                    ) : (
-                      <p className="text-md text-white/50">Tap to add a bio...</p>
-                    )}
-                  </div>
+                  {isEditingBio ? (
+                    <div className="mt-4 bg-black/50 backdrop-blur-sm rounded-lg p-4">
+                      <textarea
+                        value={tempBio}
+                        onChange={(e) => setTempBio(e.target.value)}
+                        placeholder="Write a short bio..."
+                        className="w-full h-24 px-3 py-2 bg-white/10 text-white rounded-lg resize-none focus:ring-2 focus:ring-[#ae52e3] focus:outline-none"
+                        maxLength={150}
+                        autoFocus
+                      />
+                      <div className="flex justify-between items-center mt-2">
+                        <p className="text-sm text-gray-400">
+                          {tempBio.length}/150
+                        </p>
+                        <div className="space-x-3">
+                          <button
+                            onClick={handleBioCancel}
+                            className="px-3 py-1.5 text-white hover:bg-white/10 rounded-lg transition-colors text-sm"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleBioSave}
+                            className="px-3 py-1.5 bg-[#ae52e3] text-white rounded-lg hover:bg-[#9a3dd0] transition-colors text-sm"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div 
+                      onClick={handleBioEdit}
+                      className="mt-4 cursor-pointer hover:bg-white/10 rounded-lg p-2 -m-2 transition-colors"
+                    >
+                      {formData.bio ? (
+                        <p className="text-md text-white/80">{formData.bio}</p>
+                      ) : (
+                        <p className="text-md text-white/50">Tap to add a bio...</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Clickable Area for Image Upload */}
                 <label 
                   htmlFor="profile-upload" 
-                  className="absolute inset-0 z-30 cursor-pointer"
+                  className={`absolute inset-0 z-30 cursor-pointer ${isEditingBio ? 'pointer-events-none' : ''}`}
                 >
                   <input
                     type="file"
@@ -267,7 +266,7 @@ const OnboardingFlow = () => {
               </div>
             )}
 
-            {!showImageEditor && !showBioInput && (
+            {!showImageEditor && (
               <div className="max-w-[400px] mx-auto px-4 mt-8">
                 <Button
                   onClick={handleNext}
