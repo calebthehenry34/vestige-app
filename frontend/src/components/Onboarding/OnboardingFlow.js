@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Theme, Button, Checkbox, Tile } from '@carbon/react';
-import { ErrorFilled } from '@carbon/icons-react';
+import { ErrorFilled, Upload } from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
 import ProfileImageEditor from './ProfileImageEditor';
@@ -192,11 +192,25 @@ const OnboardingFlow = () => {
                             <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
                           </svg>
                         </div>
-                        <p className="text-white/50">Tap to add profile picture</p>
                       </div>
                     </div>
                   )}
                 </div>
+
+                {/* Upload Button */}
+                <label 
+                  htmlFor="profile-upload"
+                  className="absolute top-4 right-4 z-30 p-3 rounded-lg bg-black/50 hover:bg-black/70 cursor-pointer transition-colors"
+                >
+                  <input
+                    type="file"
+                    id="profile-upload"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <Upload className="w-6 h-6 text-white" />
+                </label>
 
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/50 to-transparent pointer-events-none" />
@@ -249,20 +263,6 @@ const OnboardingFlow = () => {
                     </div>
                   )}
                 </div>
-
-                {/* Clickable Area for Image Upload */}
-                <label 
-                  htmlFor="profile-upload" 
-                  className={`absolute inset-0 z-30 cursor-pointer ${isEditingBio ? 'pointer-events-none' : ''}`}
-                >
-                  <input
-                    type="file"
-                    id="profile-upload"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
               </div>
             )}
 
