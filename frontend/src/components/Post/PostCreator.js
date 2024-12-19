@@ -230,13 +230,12 @@ const PostCreator = ({ isOpen, onClose }) => {
             theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
           }`}>
             {isDragActive
-              ? 'Drop your image here'
-              : 'Drag & drop your image here, or click to select'}
+              ? 'Add a photo'
+              : 'Add a photo'}
           </p>
           <p className={`mt-2 text-sm ${
             theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
           }`}>
-            Supports JPEG or PNG up to 10MB
           </p>
         </div>
       </div>
@@ -255,8 +254,7 @@ const PostCreator = ({ isOpen, onClose }) => {
           theme === 'dark-theme'
             ? 'border-gray-800 hover:border-blue-500 bg-gray-900'
             : 'border-gray-200 hover:border-blue-500 bg-white'
-        }`}
-      >
+        }`}><p>Videos that disappear in 24 hours</p>
         <div className="flex items-center justify-center">
           <SparkleRegular className={`w-8 h-8 ${
             theme === 'dark-theme' ? 'text-blue-400' : 'text-blue-500'
@@ -270,7 +268,7 @@ const PostCreator = ({ isOpen, onClose }) => {
   );
 
   const renderDetails = () => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col max-h-screen">
       <div className="flex-1 overflow-y-auto">
         {editedMedia && (
           <div className="relative w-full max-h-[60vh] flex items-center justify-center bg-black">

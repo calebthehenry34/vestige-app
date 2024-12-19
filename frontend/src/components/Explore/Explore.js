@@ -65,9 +65,14 @@ const Explore = () => {
     );
   }
 
+  
+
+
   if (!posts.length) {
     return (
-      <div className="min-h-screen bg-gray-50 px-4 flex items-center justify-center">
+      <div className={`min-h-screen bg-gray-50 px-4 flex items-center justify-center ${
+        theme === 'dark-theme' ? 'bg-black' : 'bg-gray-50'
+      } px-4`}>
         <div className="text-gray-500">No posts to explore yet.</div>
       </div>
     );
