@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Theme, Button, Checkbox } from '@carbon/react';
+import { Theme, Button, Checkbox, Tile } from '@carbon/react';
 import { ErrorFilled, Add } from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
@@ -8,8 +8,8 @@ import ProfileImageEditor from './ProfileImageEditor';
 import styles from './OnboardingFlow.module.css';
 
 const StepIndicator = ({ step, label }) => (
-  <div className="absolute top-0 left-0 right-0 p-4 z-10">
-    <div className="bg-black/30 backdrop-blur-sm rounded-lg px-4 py-2 inline-block">
+  <div className="flex-1 text-center">
+    <div className="px-4 py-2">
       <span className="text-white/60 text-sm">Step {step}:</span>
       <span className="text-white ml-1 text-sm font-medium">{label}</span>
     </div>
@@ -31,6 +31,14 @@ const OnboardingFlow = () => {
   });
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showImageEditor, setShowImageEditor] = useState(false);
+
+  // Prevent scrolling
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const handleImageUpload = (e) => {
     e.stopPropagation();
@@ -83,7 +91,7 @@ const OnboardingFlow = () => {
     }
     
     setError('');
-    if (step < 3) {
+    if (step < 4) {
       setSlideDirection(styles.slideLeft);
       setTimeout(() => {
         setStep(step + 1);
@@ -158,30 +166,45 @@ const OnboardingFlow = () => {
     }
   };
 
+  const getStepLabel = () => {
+    switch (step) {
+      case 1: return "Setup Profile";
+      case 2: return "Community Guidelines";
+      case 3: return "Choose Plan";
+      case 4: return "Complete Setup";
+      default: return "";
+    }
+  };
+
   const renderNavigation = () => (
-    <div className="p-4 border-b border-[#333333] flex justify-between items-center">
+    <div className="p-6 border-b border-[#333333] flex items-center gap-4">
       {step > 1 && (
         <Button
           kind="secondary"
           onClick={handleBack}
           disabled={loading}
           style={{
-            minHeight: '40px',
-            borderRadius: '5px'
+            minHeight: '44px',
+            borderRadius: '5px',
+            minWidth: '100px'
           }}
         >
           Back
         </Button>
       )}
-      {step < 3 ? (
+      
+      <StepIndicator step={step} label={getStepLabel()} />
+      
+      {step < 4 ? (
         <Button
           onClick={handleNext}
           disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
           style={{
             backgroundColor: '#ae52e3',
-            minHeight: '40px',
+            minHeight: '44px',
             borderRadius: '5px',
-            marginLeft: 'auto'
+            minWidth: '140px',
+            padding: '0 24px'
           }}
         >
           Continue
@@ -192,11 +215,10 @@ const OnboardingFlow = () => {
           disabled={loading}
           style={{
             backgroundColor: '#ae52e3',
-            minHeight: '40px',
+            minHeight: '44px',
             borderRadius: '5px',
-            marginLeft: 'auto',
-            paddingLeft: '10px;',
-            paddingRight:'10px',
+            minWidth: '140px',
+            padding: '0 24px'
           }}
         >
           {loading ? 'Completing...' : 'Got It!'}
@@ -211,7 +233,6 @@ const OnboardingFlow = () => {
     if (step === 1) {
       return (
         <div className={cardClass}>
-          <StepIndicator step={1} label="Setup Profile" />
           {showImageEditor && previewUrl ? (
             <ProfileImageEditor
               image={previewUrl}
@@ -289,7 +310,6 @@ const OnboardingFlow = () => {
     if (step === 2) {
       return (
         <div className={cardClass}>
-          <StepIndicator step={2} label="Community Guidelines" />
           <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6">
             <div className="h-full flex flex-col">
               <div className="flex-1 flex items-center">
@@ -324,9 +344,55 @@ const OnboardingFlow = () => {
       );
     }
 
+    if (step === 3) {
+      return (
+        <div className={cardClass}>
+          <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6">
+            <div className="h-full flex flex-col">
+              <div className="flex-1 flex items-center">
+                <div className="w-full max-w-md mx-auto space-y-6">
+                  <div className="text-center mb-8">
+                    <h2 className="text-2xl font-headlines text-white mb-2">Free Beta Access</h2>
+                    <p className="text-gray-400">Get early access to all features during our beta period</p>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
+                          </svg>
+                        </div>
+                        <span className="text-white">Full access to all features</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
+                          </svg>
+                        </div>
+                        <span className="text-white">Early adopter benefits</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
+                          </svg>
+                        </div>
+                        <span className="text-white">Help shape the future</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className={cardClass}>
-        <StepIndicator step={3} label="Complete Setup" />
         <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6">
           <div className="h-full flex flex-col">
             <div className="flex-1 flex items-center">
@@ -352,10 +418,10 @@ const OnboardingFlow = () => {
 
   return (
     <Theme theme="g100">
-      <div className="min-h-screen bg-black flex items-center justify-center p-4 font-headlines">
+      <div className="min-h-screen bg-black flex items-center justify-center p-4 font-headlines overflow-hidden">
         <div className="w-[85vw] h-[80vh] bg-[#262626] rounded-2xl flex flex-col">
           {renderNavigation()}
-          <div className={styles.cardContainer}>
+          <div className={`${styles.cardContainer} overflow-hidden`}>
             {renderCard()}
           </div>
 

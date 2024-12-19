@@ -2,7 +2,6 @@ import React, { useState, useCallback, useContext } from 'react';
 import Cropper from 'react-easy-crop';
 import { ThemeContext } from '../../App';
 import { ErrorCircleRegular } from '@fluentui/react-icons';
-import Slider from '@mui/material/Slider';
 
 const createImage = (url) =>
   new Promise((resolve, reject) => {
@@ -116,7 +115,8 @@ const ProfileImageEditor = ({ image, onSave, onBack }) => {
             }}
             onError={handleImageError}
             zoomWithScroll={true}  // Enable pinch zoom
-            zoomSlider={false}     // Hide the zoom slider
+            minZoom={1}
+            maxZoom={3}
           />
         ) : (
           <div className="h-full flex items-center justify-center">
@@ -130,32 +130,6 @@ const ProfileImageEditor = ({ image, onSave, onBack }) => {
             </div>
           </div>
         )}
-
-        {/* Zoom Control */}
-        <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm p-4 rounded-lg">
-          <div>
-            <p className="text-white text-sm mb-2">Zoom</p>
-            <Slider
-              value={zoom}
-              min={1}
-              max={3}
-              step={0.1}
-              onChange={(_, value) => setZoom(value)}
-              sx={{
-                color: '#ae52e3',
-                '& .MuiSlider-thumb': {
-                  backgroundColor: '#fff',
-                },
-                '& .MuiSlider-track': {
-                  backgroundColor: '#ae52e3',
-                },
-                '& .MuiSlider-rail': {
-                  backgroundColor: '#9ca3af',
-                },
-              }}
-            />
-          </div>
-        </div>
       </div>
 
       {/* Error Message */}
