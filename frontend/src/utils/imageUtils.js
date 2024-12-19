@@ -8,12 +8,24 @@ export const getProfileImageUrl = (profilePicture, username) => {
       return `https://ui-avatars.com/api/?name=${encodeURIComponent(username || 'User')}`;
     }
 
-    // Return the appropriate URL based on whether it's a full URL or a relative path
-    return profilePicture.startsWith('http') 
-      ? profilePicture 
-      : `${API_URL}/uploads/${profilePicture}`;
+    // If it's already a full URL, return it as is
+    if (profilePicture.startsWith('http')) {
+      return profilePicture;
+    }
+
+    // Remove any leading slashes from the profile picture path
+    const cleanPath = profilePicture.replace(/^\/+/, '');
+
+    // If it starts with 'uploads/', remove it as the API endpoint already includes it
+    const finalPath = cleanPath.startsWith('uploads/') 
+      ? cleanPath.substring(8) 
+      : cleanPath;
+
+    // Construct the full URL
+    return `${API_URL}/uploads/${finalPath}`;
       
   } catch (error) {
+    console.error('Error constructing profile image URL:', error);
     // If anything fails, return default avatar
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(username || 'User')}`;
   }
