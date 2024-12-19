@@ -5,11 +5,14 @@ import {
   Button,
   Checkbox,
   Tile,
-  TextArea
 } from '@carbon/react';
 import { ErrorFilled} from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
+import ReactCrop from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
+
+
 
 const OnboardingFlow = () => {
   const navigate = useNavigate();
@@ -26,10 +29,14 @@ const OnboardingFlow = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
 
   const handleImageUpload = (e) => {
-    const file = e.target?.files?.[0];
+    const file = e.target.files?.[0];
     if (file) {
-      setFormData({ ...formData, profilePicture: file });
-      setPreviewUrl(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+        setShowCropper(true);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -113,6 +120,57 @@ const OnboardingFlow = () => {
     }
   };
 
+
+  const handleCropComplete = async () => {
+    if (!imageRef || !crop.width || !crop.height) return;
+  
+    const canvas = document.createElement('canvas');
+    const scaleX = imageRef.naturalWidth / imageRef.width;
+    const scaleY = imageRef.naturalHeight / imageRef.height;
+    const pixelRatio = window.devicePixelRatio;
+  
+    canvas.width = crop.width * scaleX;
+    canvas.height = crop.height * scaleY;
+  
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+  
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    ctx.imageSmoothingQuality = 'high';
+  
+    ctx.drawImage(
+      imageRef,
+      crop.x * scaleX,
+      crop.y * scaleY,
+      crop.width * scaleX,
+      crop.height * scaleY,
+      0,
+      0,
+      crop.width * scaleX,
+      crop.height * scaleY
+    );
+  
+    const croppedImage = canvas.toDataURL('image/jpeg');
+    setPreviewUrl(croppedImage);
+    setShowCropper(false);
+  
+    // Convert base64 to blob for upload
+    const response = await fetch(croppedImage);
+    const blob = await response.blob();
+    const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
+    setFormData(prev => ({ ...prev, profilePicture: file }));
+  };
+  
+  const [crop, setCrop] = useState({
+    unit: '%',
+    width: 100,
+    aspect: 1 / 1
+  });
+  const [showCropper, setShowCropper] = useState(false);
+  const [imageRef, setImageRef] = useState(null);
+
+  
+  
   return (
     <Theme theme="g100">
       <div className="h-screen bg-black">
@@ -148,60 +206,72 @@ const OnboardingFlow = () => {
             </div>
           )}
 
-          {step === 1 && (
-            <div className="space-y-6">
-              <h2 className="font-headlines text-2xl font-md text-center text-white mb-10">Set Up Your Profile</h2>
-              <label htmlFor="profile-upload" className="cursor-pointer">
-                <div className="w-64 h-64 mx-auto bg-[#262626] rounded-lg flex items-center justify-center hover:bg-[#333333] transition-colors">
-                  {previewUrl ? (
-                    <img 
-                      src={previewUrl} 
-                      alt="Profile preview" 
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center">
-                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              </label>
-              <div className="space-y-1">
-                <p className="font-medium text-md text-gray-400 text-center">{formData.username}</p>
-              </div>
+{step === 1 && (
+  <div className="space-y-6">
+    <h2 className="font-headlines text-2xl font-md text-center text-white mb-10">Set Up Your Profile</h2>
+    <label htmlFor="profile-upload" className="cursor-pointer">
+      <div className="w-100 h-100 mx-auto bg-[#262626] rounded-lg flex items-center justify-center hover:bg-[#333333] transition-colors">
+        {showCropper && previewUrl ? (
+          <ReactCrop
+            crop={crop}
+            onChange={newCrop => setCrop(newCrop)}
+            onComplete={handleCropComplete}
+            aspect={1}
+            circularCrop
+          >
+            <img
+              src={previewUrl}
+              onLoad={e => setImageRef(e.currentTarget)}
+              alt="Crop me"
+              className="max-h-[400px]"
+            />
+          </ReactCrop>
+        ) : previewUrl ? (
+          <img 
+            src={previewUrl} 
+            alt="Profile preview" 
+            className="w-full h-full object-cover rounded-lg"
+          />
+        ) : (
+          <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+              <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
+            </svg>
+          </div>
+        )}
+      </div>
+    </label>
 
-              <input
-                type="file"
-                id="profile-upload"
-                accept=".jpg,.png,.gif"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
+    {showCropper && (
+      <div className="flex justify-center space-x-4">
+        <button
+          onClick={handleCropComplete}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Apply Crop
+        </button>
+        <button
+          onClick={() => setShowCropper(false)}
+          className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+        >
+          Cancel
+        </button>
+      </div>
+    )}
 
-              <TextArea
-                id="bio"
-                labelText="Introduce yourself"
-                value={formData.bio}
-                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                style={{
-                  backgroundColor: '#000',
-                  borderBottom: '1px solid #525252',
-                  color: 'white',
-                  minHeight: '100px',
-                  marginTop:'10px',
-                  paddingTop: '10px',
-                  paddingBottom: '5px',
-                  paddingLeft: '3px',
-                }}
-                placeholder="Less is more. In this case, use less than 150 words."
-                maxLength={150}
-                enableCounter={true}
-                required
-              />
-            </div>
-          )}
+    <div className="space-y-1">
+      <p className="font-medium text-md text-gray-400 text-center">{formData.username}</p>
+    </div>
+
+    <input
+      type="file"
+      id="profile-upload"
+      accept=".jpg,.png,.gif"
+      onChange={handleImageUpload}
+      className="hidden"
+    />
+  </div>
+)}
 
           {step === 2 && (
             <div className="space-y-6">
