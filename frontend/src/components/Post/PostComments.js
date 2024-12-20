@@ -19,11 +19,14 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
   const { user } = useAuth();
   const [activeCommentMenu, setActiveCommentMenu] = useState(null);
   const [optimisticComments, setOptimisticComments] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const trimmedComment = newComment.trim();
-    if (!trimmedComment || !post?._id) return;
+    if (!trimmedComment || !post?._id || isSubmitting) return;
+
+    setIsSubmitting(true);
 
     // Create optimistic comment
     const optimisticComment = {
@@ -69,7 +72,8 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
         setReplyTo(null);
       } else {
         // Add optimistic comment
-        setOptimisticComments([...post.comments, optimisticComment]);
+        const newComments = [...(post.comments || []), optimisticComment];
+        setOptimisticComments(newComments);
 
         const response = await fetch(`${API_URL}/api/posts/${post._id}/comments`, {
           method: 'POST',
@@ -83,13 +87,16 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
 
         if (!response.ok) throw new Error('Failed to add comment');
         const updatedPost = await response.json();
+        // Only update if the response is successful
         onComment?.(updatedPost);
       }
       setNewComment('');
     } catch (error) {
       console.error('Error submitting comment/reply:', error);
-      // Remove optimistic comment on error
-      setOptimisticComments(post.comments);
+      // Revert to original comments on error
+      setOptimisticComments(post.comments || []);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -134,8 +141,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
   const handleReply = (comment) => {
     if (!comment?.user?._id || !user?.id || comment.user._id === user.id) return;
     setReplyTo(comment);
-    const input = document.querySelector('input[name="comment"]');
-    if (input) input.focus();
+    // Removed auto-focus behavior
   };
 
   const handleLikeComment = async (commentId) => {
@@ -197,10 +203,12 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [activeCommentMenu]);
 
-  // Reset optimistic comments when post comments update
+  // Only update optimistic comments when post comments change and we're not submitting
   useEffect(() => {
-    setOptimisticComments(post?.comments || []);
-  }, [post?.comments]);
+    if (!isSubmitting) {
+      setOptimisticComments(post?.comments || []);
+    }
+  }, [post?.comments, isSubmitting]);
 
   if (!post) return null;
 
@@ -403,9 +411,9 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
           />
           <button
             type="submit"
-            disabled={!newComment.trim()}
+            disabled={!newComment.trim() || isSubmitting}
             className={`${styles.postButton} ${
-              newComment.trim()
+              newComment.trim() && !isSubmitting
                 ? theme === 'dark-theme'
                   ? 'text-blue-400 hover:text-blue-300'
                   : 'text-blue-500 hover:text-blue-600'
@@ -414,7 +422,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
                   : 'text-gray-400 cursor-not-allowed'
             }`}
           >
-            Post
+            {isSubmitting ? 'Posting...' : 'Post'}
           </button>
         </form>
       </div>

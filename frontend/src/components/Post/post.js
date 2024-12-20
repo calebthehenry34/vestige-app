@@ -31,19 +31,41 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
   const { user } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const isOwner = post?.user?._id === user?.id;
+  const [localPost, setLocalPost] = useState(post);
+  const isOwner = localPost?.user?._id === user?.id;
+  const isLiked = localPost?.likes?.some(like => like._id === user?.id);
+
+  const handleLike = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/posts/${localPost._id}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to like post');
+      }
+
+      const updatedPost = await response.json();
+      setLocalPost(updatedPost);
+    } catch (error) {
+      console.error('Error liking post:', error);
+    }
+  };
 
   const handleDelete = async () => {
-    if (!post?._id) return;
+    if (!localPost?._id) return;
     
     try {
-      await fetch(`${API_URL}/api/posts/${post._id}`, {
+      await fetch(`${API_URL}/api/posts/${localPost._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      onDelete?.(post._id);
+      onDelete?.(localPost._id);
     } catch (error) {
       console.error('Error deleting post:', error);
     }
@@ -51,17 +73,17 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
   };
 
   const handleReport = async () => {
-    if (!post?._id) return;
+    if (!localPost?._id) return;
 
     try {
-      await fetch(`${API_URL}/api/posts/${post._id}/report`, {
+      await fetch(`${API_URL}/api/posts/${localPost._id}/report`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         }
       });
-      onReport?.(post._id);
+      onReport?.(localPost._id);
     } catch (error) {
       console.error('Error reporting post:', error);
     }
@@ -69,16 +91,16 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
   };
 
   const handleImageError = (e) => {
-    console.error('Image load error:', post?.media);
+    console.error('Image load error:', localPost?.media);
     setImageError(true);
     // Attempt to reload the image once
     if (!e.target.dataset.retried) {
       e.target.dataset.retried = 'true';
-      e.target.src = getMediaUrl(post?.media);
+      e.target.src = getMediaUrl(localPost?.media);
     }
   };
 
-  if (!post || !post.user) {
+  if (!localPost || !localPost.user) {
     return null;
   }
 
@@ -86,11 +108,11 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
     <div className="bg-white rounded-lg shadow mb-6">
       {/* Post Header */}
       <div className="flex items-center justify-between p-4">
-        <Link to={`/profile/${post.user.username}`} className="flex items-center">
-          {post.user ? (
+        <Link to={`/profile/${localPost.user.username}`} className="flex items-center">
+          {localPost.user ? (
             <img
-              src={getProfileImageUrl(post.user.profilePicture, post.user.username)}
-              alt={post.user.username}
+              src={getProfileImageUrl(localPost.user.profilePicture, localPost.user.username)}
+              alt={localPost.user.username}
               className="h-10 w-10 rounded-full object-cover"
             />
           ) : (
@@ -98,7 +120,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
               <PersonRegular className="w-6 h-6 text-gray-400" />
             </div>
           )}
-          <span className="ml-3 text-xs font-medium">{post.user?.username || 'Unknown User'}</span>
+          <span className="ml-3 text-xs font-medium">{localPost.user?.username || 'Unknown User'}</span>
         </Link>
         <button onClick={() => setShowMenu(!showMenu)} className="p-2">
           <MoreHorizontalRegular />
@@ -114,7 +136,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
                 <DeleteRegular className="mr-2" />
                 Delete Post
               </button>
-              <button onClick={() => { onEdit?.(post); setShowMenu(false); }} className="flex items-center w-full px-4 py-2 hover:bg-gray-100">
+              <button onClick={() => { onEdit?.(localPost); setShowMenu(false); }} className="flex items-center w-full px-4 py-2 hover:bg-gray-100">
                 <EditRegular className="mr-2" />
                 Edit Caption
               </button>
@@ -130,20 +152,20 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
 
       {/* Post Content */}
       <div className="relative">
-        {post.mediaType === 'video' ? (
+        {localPost.mediaType === 'video' ? (
           <video 
-            src={getMediaUrl(post.media)} 
+            src={getMediaUrl(localPost.media)} 
             controls 
             className="w-full"
             onError={(e) => {
-              console.error('Video load error:', post.media);
+              console.error('Video load error:', localPost.media);
               setImageError(true);
             }}
           />
         ) : (
-          <Link to={`/post/${post._id}`}>
+          <Link to={`/post/${localPost._id}`}>
             <img
-              src={getMediaUrl(post.media)}
+              src={getMediaUrl(localPost.media)}
               alt="Post content"
               className={`w-full ${imageError ? 'opacity-50' : ''}`}
               onError={handleImageError}
@@ -159,16 +181,16 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
         {/* Caption Preview */}
         <div className="absolute bottom-20 left-0 right-0 px-4 py-2 bg-black bg-opacity-50">
           <div className="text-white">
-            <span className="text-xs font-medium mr-2">{post.user?.username}</span>
+            <span className="text-xs font-medium mr-2">{localPost.user?.username}</span>
             <span className="text-xs">
-              {post.caption && (post.caption.length > 100 ? (
+              {localPost.caption && (localPost.caption.length > 100 ? (
                 <>
-                  {post.caption.slice(0, 100)}...{' '}
-                  <Link to={`/post/${post._id}`} className="text-white hover:underline">
+                  {localPost.caption.slice(0, 100)}...{' '}
+                  <Link to={`/post/${localPost._id}`} className="text-white hover:underline">
                     read caption
                   </Link>
                 </>
-              ) : post.caption)}
+              ) : localPost.caption)}
             </span>
           </div>
         </div>
@@ -177,14 +199,14 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4">
           <div className="flex justify-between items-center text-white">
             <div className="flex space-x-4">
-              <button className="transform hover:scale-110 transition-transform">
-                {post.liked ? (
+              <button onClick={handleLike} className="transform hover:scale-110 transition-transform">
+                {isLiked ? (
                   <HeartFilled className="w-6 h-6 text-red-500" />
                 ) : (
                   <HeartRegular className="w-6 h-6" />
                 )}
               </button>
-              <Link to={`/post/${post._id}`}>
+              <Link to={`/post/${localPost._id}`}>
                 <ArrowExpandAllFilled className="w-6 h-6" />
               </Link>
               <button>
@@ -192,7 +214,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
               </button>
             </div>
             <button>
-              {post.saved ? (
+              {localPost.saved ? (
                 <BookmarkFilled className="w-6 h-6" />
               ) : (
                 <BookmarkRegular className="w-6 h-6" />
@@ -206,17 +228,17 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
       <div className="p-4">
         <div className="flex justify-between items-center mb-4">
           <div className="font-medium text-sm">
-            {post.likes?.length || 0} likes
+            {localPost.likes?.length || 0} likes
           </div>
           <div className="text-xs text-gray-500">
-            {new Date(post.createdAt).toLocaleDateString()}
+            {new Date(localPost.createdAt).toLocaleDateString()}
           </div>
         </div>
 
         {/* Comments */}
-        {post.comments?.length > 0 && (
-          <Link to={`/post/${post._id}`} className="block text-gray-500 mt-2">
-            View all {post.comments.length} comments
+        {localPost.comments?.length > 0 && (
+          <Link to={`/post/${localPost._id}`} className="block text-gray-500 mt-2">
+            View all {localPost.comments.length} comments
           </Link>
         )}
       </div>

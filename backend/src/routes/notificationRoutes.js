@@ -1,6 +1,7 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
 import Notification from '../models/notification.js';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
@@ -12,35 +13,33 @@ router.get('/', auth, async (req, res) => {
     const notifications = await Notification.find({ recipient: req.user.userId })
       .sort({ createdAt: -1 })
       .populate('sender', 'username profilePicture')
-      .populate({
-        path: 'post',
-        select: 'media caption comments',
-        populate: {
-          path: 'comments',
-          select: 'text'
-        }
-      });
+      .populate('post', 'media caption');
 
-    // Process notifications to handle potentially missing comments
-    const processedNotifications = notifications.map(notification => {
+    // Process notifications to include comment data
+    const processedNotifications = await Promise.all(notifications.map(async notification => {
       const notificationObj = notification.toObject();
       
-      // If this notification involves a comment and has a post
       if (notificationObj.comment && notificationObj.post) {
-        // Find the matching comment in the post's comments array
-        const comment = notificationObj.post.comments?.find(
-          c => c._id.toString() === notificationObj.comment.toString()
-        );
-        
-        // If comment exists, include it, otherwise set to null
-        notificationObj.commentData = comment || null;
-        
-        // Remove the comments array from the post to avoid sending unnecessary data
-        delete notificationObj.post.comments;
+        try {
+          // Find the post and get the specific comment
+          const post = await mongoose.model('Post').findById(notificationObj.post._id);
+          if (post && post.comments) {
+            const comment = post.comments.id(notificationObj.comment);
+            if (comment) {
+              notificationObj.commentData = {
+                _id: comment._id,
+                text: comment.text
+              };
+            }
+          }
+        } catch (err) {
+          console.error('Error processing comment:', err);
+          notificationObj.commentData = null;
+        }
       }
       
       return notificationObj;
-    });
+    }));
 
     console.log('Successfully processed notifications');
     res.json(processedNotifications);
@@ -71,23 +70,26 @@ router.post('/', auth, async (req, res) => {
 
     const populatedNotification = await Notification.findById(notification._id)
       .populate('sender', 'username profilePicture')
-      .populate({
-        path: 'post',
-        select: 'media caption comments',
-        populate: {
-          path: 'comments',
-          select: 'text'
-        }
-      });
+      .populate('post', 'media caption');
 
-    // Process notification to handle comment data
+    // Process notification to include comment data
     const processedNotification = populatedNotification.toObject();
     if (processedNotification.comment && processedNotification.post) {
-      const comment = processedNotification.post.comments?.find(
-        c => c._id.toString() === processedNotification.comment.toString()
-      );
-      processedNotification.commentData = comment || null;
-      delete processedNotification.post.comments;
+      try {
+        const post = await mongoose.model('Post').findById(processedNotification.post._id);
+        if (post && post.comments) {
+          const comment = post.comments.id(processedNotification.comment);
+          if (comment) {
+            processedNotification.commentData = {
+              _id: comment._id,
+              text: comment.text
+            };
+          }
+        }
+      } catch (err) {
+        console.error('Error processing comment:', err);
+        processedNotification.commentData = null;
+      }
     }
     
     res.status(201).json(processedNotification);
@@ -106,27 +108,30 @@ router.patch('/:id/read', auth, async (req, res) => {
       { new: true }
     )
     .populate('sender', 'username profilePicture')
-    .populate({
-      path: 'post',
-      select: 'media caption comments',
-      populate: {
-        path: 'comments',
-        select: 'text'
-      }
-    });
+    .populate('post', 'media caption');
 
     if (!notification) {
       return res.status(404).json({ error: 'Notification not found' });
     }
 
-    // Process notification to handle comment data
+    // Process notification to include comment data
     const processedNotification = notification.toObject();
     if (processedNotification.comment && processedNotification.post) {
-      const comment = processedNotification.post.comments?.find(
-        c => c._id.toString() === processedNotification.comment.toString()
-      );
-      processedNotification.commentData = comment || null;
-      delete processedNotification.post.comments;
+      try {
+        const post = await mongoose.model('Post').findById(processedNotification.post._id);
+        if (post && post.comments) {
+          const comment = post.comments.id(processedNotification.comment);
+          if (comment) {
+            processedNotification.commentData = {
+              _id: comment._id,
+              text: comment.text
+            };
+          }
+        }
+      } catch (err) {
+        console.error('Error processing comment:', err);
+        processedNotification.commentData = null;
+      }
     }
 
     res.json(processedNotification);

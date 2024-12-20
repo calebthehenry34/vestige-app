@@ -146,7 +146,7 @@ const ActivityFeed = () => {
 
   if (loading) {
     return (
-      <div className={`max-w-2xl mx-auto px-4 py-8 text-center ${
+      <div className={`mb-50 max-w-2xl mx-auto px-4 py-8 text-center ${
         theme === 'dark-theme' ? 'text-white' : 'text-black'
       }`}>
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
