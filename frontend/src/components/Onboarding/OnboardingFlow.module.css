@@ -1,5 +1,5 @@
 .cardContainer {
-  position: absolute; /* or absolute depending on your needs */
+  position: relative; /* or absolute depending on your needs */
   width: 100vw;
   height: 100vh;
   display: flex;
@@ -9,7 +9,7 @@
 }
 
 .card {
-  position: relative; /* Changed from absolute */
+  position: absolute; /* Changed from absolute */
   width: 90%; /* Or your desired card width */
   max-width: 500px; /* Or your desired max width */
   height: auto; /* Or your desired height */
@@ -33,33 +33,33 @@
 
 @keyframes slideLeft {
   from {
-    transform: translate3d(0, 0, 0) rotate(0);
+    transform: translateX(0) rotate(0);
     opacity: 1;
   }
   to {
-    transform: translate3d(-120%, 0, 0) rotate(-5deg);
+    transform: translateX(-120%) rotate(-5deg);
     opacity: 0;
   }
 }
 
 @keyframes slideRight {
   from {
-    transform: translate3d(0, 0, 0) rotate(0);
+    transform: translateX(0) rotate(0);
     opacity: 1;
   }
   to {
-    transform: translate3d(120%, 0, 0) rotate(5deg);
+    transform: translateX(120%) rotate(5deg);
     opacity: 0;
   }
 }
 
 @keyframes slideCurrent {
   from {
-    transform: translate3d(120%, 0, 0) rotate(5deg);
+    transform: translateX(120%) rotate(5deg);
     opacity: 0;
   }
   to {
-    transform: translate3d(0, 0, 0) rotate(0);
+    transform: translateX(0) rotate(0);
     opacity: 1;
   }
 }
