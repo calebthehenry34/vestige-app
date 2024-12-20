@@ -24,6 +24,7 @@ import {
   WeatherSunnyRegular,
   DocumentRegular,
   AddRegular,
+  HomeRegular,
 } from '@fluentui/react-icons';
 import { useAuth } from '../../context/AuthContext';
 import { ThemeContext } from '../../App';
@@ -84,9 +85,9 @@ const Navbar = () => {
 
   const navigationItems = [
     { 
-      action: () => setShowFeedMenu(prev => !prev),
-      icon: <ImageMultipleRegular className="w-6 h-6" />, 
-      label: 'Feed' 
+      action: () => handleNavigation('/'),
+      icon: <HomeRegular className="w-6 h-6" />, 
+      label: 'Home' 
     },
     { 
       action: () => handleNavigation('/explore'),
@@ -96,7 +97,8 @@ const Navbar = () => {
     {
       action: () => setShowPostCreator(true),
       icon: <AddRegular className="w-6 h-6" />,
-      label: 'Create'
+      label: 'Create',
+      className: 'bg-white border-2 border-purple-500 rounded-full p-3 -mt-8 shadow-lg'
     },
     { 
       action: () => handleNavigation('/activity'),
@@ -368,18 +370,18 @@ const Navbar = () => {
 
       {/* Floating Mobile Navigation */}
       {!isSettingsPage && (
-        <div className="md:hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[90] w-50">
+        <div className="md:hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[90] w-64">
           <div className={`rounded-xl shadow-lg ${
             theme === 'dark-theme'
               ? 'bg-gray-900 border-gray-800'
               : 'bg-white border-gray-200'
           } border px-2`}>
-            <div className="flex items-center h-14">
+            <div className="flex items-center justify-between h-14 relative">
               {navigationItems.map((item, index) => (
-                <div key={index} className="px-2">
+                <div key={index} className={`${index === 2 ? 'absolute left-1/2 transform -translate-x-1/2' : ''}`}>
                   <button
                     onClick={item.action}
-                    className={`p-2 rounded-full transition-colors ${
+                    className={`p-2 transition-colors ${item.className || 'rounded-lg'} ${
                       theme === 'dark-theme'
                         ? 'text-white hover:bg-gray-800'
                         : 'text-gray-700 hover:bg-gray-100'
