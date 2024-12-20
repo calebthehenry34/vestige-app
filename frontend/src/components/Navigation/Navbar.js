@@ -25,6 +25,7 @@ import {
   DocumentRegular,
   AddRegular,
   HomeRegular,
+  ChatRegular,
 } from '@fluentui/react-icons';
 import { useAuth } from '../../context/AuthContext';
 import { ThemeContext } from '../../App';
@@ -37,17 +38,15 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showDrawer, setShowDrawer] = useState(false);
-  const [showFeedMenu, setShowFeedMenu] = useState(false);
-  const [hasNotifications] = useState(true);
+  const [showPostCreator, setShowPostCreator] = useState(false);
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const [visible, setVisible] = useState(true);
   const [expandedSection, setExpandedSection] = useState(null);
-  const [showPostCreator, setShowPostCreator] = useState(false);
 
   const isSettingsPage = location.pathname === '/settings';
 
   useEffect(() => {
-    if (showFeedMenu || showDrawer) {
+    if (showDrawer) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -56,7 +55,7 @@ const Navbar = () => {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [showFeedMenu, showDrawer]);
+  }, [showDrawer]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -73,7 +72,6 @@ const Navbar = () => {
 
   const handleNavigation = (path) => {
     setShowDrawer(false);
-    setShowFeedMenu(false);
     navigate(path);
   };
 
@@ -101,9 +99,15 @@ const Navbar = () => {
       className: 'bg-white border-2 border-purple-500 rounded-full p-3 -mt-8 shadow-lg'
     },
     { 
-      action: () => handleNavigation('/activity'),
+      action: () => handleNavigation('/notifications'),
       icon: <HeartRegular className="w-6 h-6" />,
-      label: 'Activity' 
+      label: 'Notifications' 
+    },
+    {
+      action: () => {},
+      icon: <ChatRegular className="w-6 h-6" />,
+      label: 'Chat',
+      className: 'opacity-50 cursor-not-allowed'
     }
   ];
 
@@ -113,7 +117,7 @@ const Navbar = () => {
       label: 'Account',
       items: [
         { icon: <PersonRegular />, label: 'Profile', action: () => user?.username && handleNavigation(`/profile/${user.username}`) },
-        { icon: <HeartRegular />, label: 'Notifications', action: () => handleNavigation('/activity'), hasIndicator: hasNotifications },
+        { icon: <HeartRegular />, label: 'Notifications', action: () => handleNavigation('/notifications') },
         { icon: <SettingsRegular />, label: 'Settings', action: () => handleNavigation('/settings') },
       ]
     },
@@ -155,7 +159,6 @@ const Navbar = () => {
 
   const renderDrawer = () => (
     <>
-      {/* Backdrop */}
       {showDrawer && (
         <div 
           className="fixed inset-0 bg-black/50 z-[150] transition-opacity duration-300"
@@ -163,7 +166,6 @@ const Navbar = () => {
         />
       )}
       
-      {/* Drawer */}
       <div 
         className={`fixed top-0 right-0 h-full w-80 ${
           theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
@@ -171,7 +173,6 @@ const Navbar = () => {
           showDrawer ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        {/* Header */}
         <div className={`flex items-center justify-between p-4 border-b ${
           theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
         }`}>
@@ -182,10 +183,6 @@ const Navbar = () => {
              alt={user?.username}
              className="w-6 h-6 rounded-md object-cover"
              onError={(e) => {
-               console.log('Navbar profile image error:', {
-                 originalSrc: e.target.src,
-                 user: user
-               });
                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
                e.target.onError = null;
              }}
@@ -213,7 +210,6 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* Theme Toggle */}
         <div className={`p-4 border-b ${
           theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
         }`}>
@@ -251,7 +247,6 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Settings Sections */}
         <div className="overflow-y-auto h-[calc(100%-180px)] hide-scrollbar">
           {settingsSections.map((section) => (
             <div 
@@ -293,9 +288,6 @@ const Navbar = () => {
                       <span className="mr-3">{item.icon}</span>
                       <span>{item.label}</span>
                     </div>
-                    {item.hasIndicator && (
-                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    )}
                   </button>
                 ))}
               </div>
@@ -303,7 +295,6 @@ const Navbar = () => {
           ))}
         </div>
 
-        {/* Logout Button */}
         <button
           onClick={handleLogout}
           className={`absolute bottom-0 left-0 right-0 flex items-center justify-center w-full p-4 transition-colors ${
@@ -351,10 +342,6 @@ const Navbar = () => {
              alt={user?.username}
              className="w-6 h-6 rounded-md object-cover"
              onError={(e) => {
-               console.log('Navbar profile image error:', {
-                 originalSrc: e.target.src,
-                 user: user
-               });
                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
                e.target.onError = null;
              }}
@@ -370,7 +357,7 @@ const Navbar = () => {
 
       {/* Floating Mobile Navigation */}
       {!isSettingsPage && (
-        <div className="md:hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[90] w-64">
+        <div className="md:hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[90] w-80">
           <div className={`rounded-xl shadow-lg ${
             theme === 'dark-theme'
               ? 'bg-gray-900 border-gray-800'
@@ -386,6 +373,7 @@ const Navbar = () => {
                         ? 'text-white hover:bg-gray-800'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
+                    disabled={item.className?.includes('cursor-not-allowed')}
                   >
                     {item.icon}
                   </button>
@@ -396,70 +384,12 @@ const Navbar = () => {
         </div>
       )}
 
-      {/* Feed Selection Menu */}
-      {showFeedMenu && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-[95] md:hidden flex items-end justify-center mb-5"
-          onClick={() => setShowFeedMenu(false)}
-        >
-          <div 
-            className="w-60 rounded-t-xl overflow-hidden transform transition-all duration-500 ease-in-out"
-            style={{marginBottom: "calc(3rem + 8px)"}}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className={`p-4 border-b ${
-              theme === 'dark-theme' ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-white'
-            }`}>
-              <h3 className={`text-sm font-semibold ${
-                theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
-              }`}>Explore Feeds</h3>
-            </div>
-            <div className={`p-2 ${
-              theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
-            }`}>
-              <button 
-                onClick={() => handleNavigation('/')}
-                className={`flex items-center w-full p-3 rounded-lg ${
-                  theme === 'dark-theme'
-                    ? 'hover:bg-gray-800 text-white'
-                    : 'hover:bg-gray-100 text-gray-900'
-                }`}
-              >
-                <ImageMultipleRegular className="w-6 h-6 mr-3" />
-                <span>Photos</span>
-              </button>
-              <button 
-                onClick={() => handleNavigation('/videos')}
-                className={`flex items-center w-full p-3 rounded-lg ${
-                  theme === 'dark-theme'
-                    ? 'hover:bg-gray-800 text-white'
-                    : 'hover:bg-gray-100 text-gray-900'
-                }`}
-              >
-                <VideoPersonPulseRegular className="w-6 h-6 mr-3" />
-                <span>Moments</span>
-              </button>
-              <div 
-                className={`flex items-center p-3 rounded-lg opacity-50 cursor-not-allowed ${
-                  theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
-                }`}
-              >
-                <SparkleRegular className="w-6 h-6 mr-3" />
-                <span>Videos (Soon)</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Post Creator Modal */}
       <PostCreator
         isOpen={showPostCreator}
         onClose={() => setShowPostCreator(false)}
         onPostCreated={() => setShowPostCreator(false)}
       />
 
-      {/* Drawer */}
       {renderDrawer()}
     </>
   );
