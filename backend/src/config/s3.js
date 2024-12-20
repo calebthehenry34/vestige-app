@@ -73,7 +73,7 @@ if (validateS3Credentials()) {
       accessKeyIdPresent: !!credentials.accessKeyId,
       accessKeyIdLength: credentials.accessKeyId?.length,
       secretAccessKeyPresent: !!credentials.secretAccessKey,
-      secretAccessKeyLength: credentials.secretAccessKey?.length,
+      secretKeyLength: credentials.secretAccessKey?.length,
       region: process.env.AWS_REGION
     });
 
@@ -85,7 +85,7 @@ if (validateS3Credentials()) {
         secretAccessKey: credentials.secretAccessKey
       },
       endpoint: `https://s3.${process.env.AWS_REGION.trim()}.amazonaws.com`,
-      forcePathStyle: false, // Use virtual hosted-style URLs
+      forcePathStyle: false,
       maxAttempts: 3,
       requestHandler: {
         abortSignal: {
