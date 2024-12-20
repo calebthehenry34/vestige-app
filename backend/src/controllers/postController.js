@@ -1,7 +1,8 @@
 import Post from '../models/Post.js';
 import User from '../models/User.js';
-import s3, { isS3Available, getCredentials } from '../config/s3.js';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import s3, { isS3Available, getCredentials, getS3BucketName } from '../config/s3.js';
+import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
@@ -23,22 +24,50 @@ const storeFileLocally = async (buffer, filename) => {
   }
 };
 
+// Helper function to generate pre-signed URL
+const generatePresignedUrl = async (key) => {
+  const command = new GetObjectCommand({
+    Bucket: getS3BucketName(),
+    Key: key
+  });
+  return await getSignedUrl(s3, command, { expiresIn: 3600 }); // URL expires in 1 hour
+};
+
+// Helper function to process posts with pre-signed URLs
+const processPostsWithPresignedUrls = async (posts) => {
+  if (!Array.isArray(posts)) {
+    posts = [posts];
+  }
+
+  const processedPosts = await Promise.all(posts.map(async (post) => {
+    const postObj = post.toObject ? post.toObject() : post;
+    if (postObj.mediaKey && isS3Available()) {
+      try {
+        postObj.media = await generatePresignedUrl(postObj.mediaKey);
+      } catch (error) {
+        console.error('Error generating pre-signed URL:', error);
+        // Keep the original media URL as fallback
+      }
+    }
+    return postObj;
+  }));
+
+  return Array.isArray(posts) ? processedPosts : processedPosts[0];
+};
+
 export const getExplorePosts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
     const skip = (page - 1) * limit;
 
-    // Get user's following list to exclude their posts
     const user = await User.findById(req.user.userId);
     const following = user.following || [];
 
-    // Find posts not from users the current user is following
-    // Sort by popularity (likes count and comments count)
     const posts = await Post.aggregate([
       {
         $match: {
-          user: { $nin: [user._id, ...following] } // Exclude own posts and following
+          user: { $nin: [user._id, ...following] }
         }
       },
       {
@@ -48,7 +77,7 @@ export const getExplorePosts = async (req, res) => {
           popularity: {
             $add: [
               { $size: { $ifNull: ["$likes", []] } },
-              { $multiply: [{ $size: { $ifNull: ["$comments", []] } }, 2] } // Comments weighted more
+              { $multiply: [{ $size: { $ifNull: ["$comments", []] } }, 2] }
             ]
           }
         }
@@ -64,18 +93,19 @@ export const getExplorePosts = async (req, res) => {
       }
     ]);
 
-    // Populate user details after aggregation
     await Post.populate(posts, [
       { path: 'user', select: 'username profilePicture' },
       { path: 'taggedUsers', select: 'username profilePicture' }
     ]);
+
+    const processedPosts = await processPostsWithPresignedUrls(posts);
 
     const total = await Post.countDocuments({
       user: { $nin: [user._id, ...following] }
     });
 
     res.json({
-      posts,
+      posts: processedPosts,
       currentPage: page,
       totalPages: Math.ceil(total / limit),
       totalPosts: total
@@ -89,7 +119,6 @@ export const getExplorePosts = async (req, res) => {
 export const createPost = async (req, res) => {
   console.log('Starting createPost');
   try {
-    // Log the request file and body
     console.log('Request file:', req.file ? {
       ...req.file,
       buffer: req.file.buffer ? 'Buffer present' : 'Buffer missing'
@@ -115,7 +144,6 @@ export const createPost = async (req, res) => {
     let mediaUrl = null;
     let key = null;
 
-    // Parse JSON strings with error handling
     let hashtags = [];
     let taggedUsers = [];
 
@@ -127,7 +155,6 @@ export const createPost = async (req, res) => {
       return res.status(400).json({ error: 'Invalid JSON data in request' });
     }
 
-    // Validate tagged users exist
     if (taggedUsers.length > 0) {
       const users = await User.find({ _id: { $in: taggedUsers } });
       if (users.length !== taggedUsers.length) {
@@ -136,16 +163,13 @@ export const createPost = async (req, res) => {
     }
 
     try {
-      // Generate unique filename
       const filename = `${crypto.randomUUID()}.jpg`;
 
       if (isS3Available()) {
         console.log('Uploading to S3...');
         try {
-          // Get fresh credentials
           const credentials = getCredentials();
           
-          // Log credential state before upload
           console.log('S3 Upload Credentials Check:', {
             hasAccessKey: !!credentials.accessKeyId,
             accessKeyLength: credentials.accessKeyId?.length,
@@ -154,14 +178,14 @@ export const createPost = async (req, res) => {
             region: process.env.AWS_REGION
           });
 
-          // Upload to S3
           key = `posts/${filename}`;
 
           const command = new PutObjectCommand({
-            Bucket: process.env.AWS_BUCKET_NAME,
+            Bucket: getS3BucketName(),
             Key: key,
             Body: req.file.buffer,
-            ContentType: 'image/jpeg'
+            ContentType: 'image/jpeg',
+            CacheControl: 'max-age=31536000'
           });
 
           const result = await s3.send(command);
@@ -171,7 +195,8 @@ export const createPost = async (req, res) => {
             totalTime: result.$metadata?.totalTime
           });
 
-          mediaUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+          // Generate pre-signed URL for immediate use
+          mediaUrl = await generatePresignedUrl(key);
           console.log('S3 upload successful');
         } catch (s3Error) {
           console.error('Detailed S3 upload error:', {
@@ -185,7 +210,6 @@ export const createPost = async (req, res) => {
         }
       } else {
         console.log('Storing file locally...');
-        // Fall back to local storage
         mediaUrl = await storeFileLocally(req.file.buffer, filename);
         key = filename;
         console.log('Local storage successful');
@@ -205,13 +229,13 @@ export const createPost = async (req, res) => {
       await post.save();
       console.log('Post saved successfully');
       
-      // Populate user details and tagged users
       await post.populate([
         { path: 'user', select: 'username profilePicture' },
         { path: 'taggedUsers', select: 'username profilePicture' }
       ]);
       
-      res.status(201).json(post);
+      const processedPost = await processPostsWithPresignedUrls(post);
+      res.status(201).json(processedPost);
     } catch (processError) {
       console.error('Error in file upload or storage:', processError);
       return res.status(500).json({ error: processError.message });
@@ -230,21 +254,18 @@ export const deletePost = async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    // Check if user owns the post
     if (post.user.toString() !== req.user.userId) {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    // Delete media if exists
-    if (post.media && post.mediaKey) {
+    if (post.mediaKey) {
       try {
         if (isS3Available()) {
-          await s3.send(new PutObjectCommand({
-            Bucket: process.env.AWS_BUCKET_NAME,
+          await s3.send(new DeleteObjectCommand({
+            Bucket: getS3BucketName(),
             Key: post.mediaKey
           }));
         } else {
-          // Delete local file
           const filePath = path.join(process.cwd(), 'uploads', post.mediaKey);
           if (fs.existsSync(filePath)) {
             await fs.promises.unlink(filePath);
@@ -252,7 +273,6 @@ export const deletePost = async (req, res) => {
         }
       } catch (deleteError) {
         console.error('Error deleting media:', deleteError);
-        // Continue with post deletion even if media deletion fails
       }
     }
 
@@ -277,10 +297,12 @@ export const getPosts = async (req, res) => {
       .populate('user', 'username profilePicture')
       .populate('taggedUsers', 'username profilePicture');
 
+    const processedPosts = await processPostsWithPresignedUrls(posts);
+
     const total = await Post.countDocuments();
     
     res.json({
-      posts,
+      posts: processedPosts,
       currentPage: page,
       totalPages: Math.ceil(total / limit),
       totalPosts: total
@@ -305,10 +327,12 @@ export const getUserPosts = async (req, res) => {
       .populate('user', 'username profilePicture')
       .populate('taggedUsers', 'username profilePicture');
 
+    const processedPosts = await processPostsWithPresignedUrls(posts);
+
     const total = await Post.countDocuments({ user: userId });
     
     res.json({
-      posts,
+      posts: processedPosts,
       currentPage: page,
       totalPages: Math.ceil(total / limit),
       totalPosts: total
@@ -332,7 +356,6 @@ export const updatePost = async (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    // Validate tagged users if they're being updated
     if (taggedUsers && taggedUsers.length > 0) {
       const users = await User.find({ _id: { $in: taggedUsers } });
       if (users.length !== taggedUsers.length) {
@@ -340,7 +363,6 @@ export const updatePost = async (req, res) => {
       }
     }
 
-    // Update fields if provided
     if (caption !== undefined) post.caption = caption;
     if (location !== undefined) post.location = location;
     if (hashtags !== undefined) post.hashtags = hashtags;
@@ -348,13 +370,13 @@ export const updatePost = async (req, res) => {
 
     await post.save();
 
-    // Populate user details and tagged users
     await post.populate([
       { path: 'user', select: 'username profilePicture' },
       { path: 'taggedUsers', select: 'username profilePicture' }
     ]);
 
-    res.json(post);
+    const processedPost = await processPostsWithPresignedUrls(post);
+    res.json(processedPost);
   } catch (error) {
     console.error('Update post error:', error);
     res.status(500).json({ error: 'Error updating post' });
@@ -379,13 +401,13 @@ export const likePost = async (req, res) => {
 
     await post.save();
     
-    // Populate user details and tagged users
     await post.populate([
       { path: 'user', select: 'username profilePicture' },
       { path: 'taggedUsers', select: 'username profilePicture' }
     ]);
 
-    res.json(post);
+    const processedPost = await processPostsWithPresignedUrls(post);
+    res.json(processedPost);
   } catch (error) {
     console.error('Like post error:', error);
     res.status(500).json({ error: 'Error liking post' });
@@ -406,10 +428,12 @@ export const getPostsByHashtag = async (req, res) => {
       .populate('user', 'username profilePicture')
       .populate('taggedUsers', 'username profilePicture');
 
+    const processedPosts = await processPostsWithPresignedUrls(posts);
+
     const total = await Post.countDocuments({ hashtags: hashtag });
     
     res.json({
-      posts,
+      posts: processedPosts,
       currentPage: page,
       totalPages: Math.ceil(total / limit),
       totalPosts: total

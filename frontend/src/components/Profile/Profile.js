@@ -131,7 +131,7 @@ const Profile = () => {
       <div className="relative w-full aspect-[4/5] overflow-hidden mb-0">
         {/* Profile Photo Section - Clickable only if own profile */}
         <div 
-          className={`relative w-full h-3/4 ${isOwnProfile ? 'cursor-pointer' : ''}`}
+          className={`relative w-full h-4/5 ${isOwnProfile ? 'cursor-pointer' : ''}`}
           onClick={handleProfilePhotoClick}
         >
          <img
