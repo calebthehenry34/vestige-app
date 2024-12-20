@@ -15,22 +15,31 @@ router.get('/', auth, async (req, res) => {
       .populate('sender', 'username profilePicture')
       .populate('post', 'media caption');
 
-    // Process notifications to include comment data
+    console.log('Found notifications:', notifications);
+
     const processedNotifications = await Promise.all(notifications.map(async notification => {
       const notificationObj = notification.toObject();
       
-      if (notificationObj.comment && notificationObj.post) {
+      // Only process if both comment and post exist
+      if (notificationObj.comment && notificationObj.post?._id) {
         try {
-          // Find the post and get the specific comment
+          console.log('Processing notification with comment:', notificationObj.comment);
           const post = await mongoose.model('Post').findById(notificationObj.post._id);
-          if (post && post.comments) {
+          console.log('Found post:', post?.id);
+          
+          // Check if post exists and has comments array
+          if (post && Array.isArray(post.comments)) {
             const comment = post.comments.id(notificationObj.comment);
+            console.log('Found comment:', comment?.id);
             if (comment) {
               notificationObj.commentData = {
                 _id: comment._id,
                 text: comment.text
               };
             }
+          } else {
+            // If post or comments don't exist, set commentData to null
+            notificationObj.commentData = null;
           }
         } catch (err) {
           console.error('Error processing comment:', err);
@@ -41,10 +50,10 @@ router.get('/', auth, async (req, res) => {
       return notificationObj;
     }));
 
-    console.log('Successfully processed notifications');
     res.json(processedNotifications);
   } catch (error) {
-    console.error('Notification fetch error:', error);
+    console.error('Full error object:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ error: 'Failed to fetch notifications', details: error.message });
   }
 });
@@ -74,10 +83,10 @@ router.post('/', auth, async (req, res) => {
 
     // Process notification to include comment data
     const processedNotification = populatedNotification.toObject();
-    if (processedNotification.comment && processedNotification.post) {
+    if (processedNotification.comment && processedNotification.post?._id) {
       try {
         const post = await mongoose.model('Post').findById(processedNotification.post._id);
-        if (post && post.comments) {
+        if (post && Array.isArray(post.comments)) {
           const comment = post.comments.id(processedNotification.comment);
           if (comment) {
             processedNotification.commentData = {
@@ -116,10 +125,10 @@ router.patch('/:id/read', auth, async (req, res) => {
 
     // Process notification to include comment data
     const processedNotification = notification.toObject();
-    if (processedNotification.comment && processedNotification.post) {
+    if (processedNotification.comment && processedNotification.post?._id) {
       try {
         const post = await mongoose.model('Post').findById(processedNotification.post._id);
-        if (post && post.comments) {
+        if (post && Array.isArray(post.comments)) {
           const comment = post.comments.id(processedNotification.comment);
           if (comment) {
             processedNotification.commentData = {
