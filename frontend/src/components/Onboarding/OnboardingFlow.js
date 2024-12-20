@@ -8,7 +8,7 @@ import ProfileImageEditor from './ProfileImageEditor';
 import styles from './OnboardingFlow.module.css';
 
 const StepIndicator = ({ label }) => (
-  <div className="text-gray-800 text-sm font-medium">
+  <div className="text-gray-200 text-sm font-medium">
     {label}
   </div>
 );
@@ -189,7 +189,7 @@ const OnboardingFlow = () => {
           disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
           className="w-7 h-7 rounded-md border-2 border-white bg-transparent hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
         >
-          <ArrowRight className="w-6 h-6 text-white" />
+          <ArrowRight className="w-2 h-2 text-white" />
         </button>
       </div>
     </div>

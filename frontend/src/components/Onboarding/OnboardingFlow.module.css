@@ -1,5 +1,5 @@
 .cardContainer {
-  position: fixed; /* or absolute depending on your needs */
+  position: absolute; /* or absolute depending on your needs */
   width: 100vw;
   height: 100vh;
   display: flex;
