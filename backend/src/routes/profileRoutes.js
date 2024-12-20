@@ -60,8 +60,8 @@ router.post('/complete-onboarding',
             Body: buffer,
             ContentType: req.file.mimetype,
             ContentEncoding: 'base64',
-            ACL: 'public-read',
             CacheControl: 'max-age=31536000'
+            // Removed ACL parameter as the bucket doesn't allow it
           };
 
           console.log('Attempting S3 upload with params:', {
