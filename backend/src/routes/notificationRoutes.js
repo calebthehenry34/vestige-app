@@ -7,31 +7,41 @@ const router = express.Router();
 // Get user's notifications
 router.get('/', auth, async (req, res) => {
   try {
+    console.log('Fetching notifications for user:', req.user.userId);
+    
     const notifications = await Notification.find({ recipient: req.user.userId })
       .sort({ createdAt: -1 })
       .populate('sender', 'username profilePicture')
-      .populate('post', 'media caption')
-      .populate({
-        path: 'comment',
-        select: 'text user replies',
-        populate: [
-          {
-            path: 'user',
-            select: 'username profilePicture'
-          },
-          {
-            path: 'replies',
-            populate: {
-              path: 'user',
-              select: 'username profilePicture'
-            }
-          }
-        ]
-      });
+      .populate('post', 'media caption comments');
 
-    res.json(notifications);
+    // Process notifications to handle potentially missing comments
+    const processedNotifications = notifications.map(notification => {
+      const notificationObj = notification.toObject();
+      
+      // If this notification involves a comment and has a post
+      if (notificationObj.comment && notificationObj.post?.comments) {
+        // Find the matching comment in the post's comments array
+        const comment = notificationObj.post.comments.find(
+          c => c._id.toString() === notificationObj.comment.toString()
+        );
+        
+        // If comment exists, include it, otherwise set to null
+        notificationObj.comment = comment || null;
+        
+        // Remove the comments array from the post to avoid sending unnecessary data
+        if (notificationObj.post) {
+          delete notificationObj.post.comments;
+        }
+      }
+      
+      return notificationObj;
+    });
+
+    console.log('Successfully processed notifications');
+    res.json(processedNotifications);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch notifications' });
+    console.error('Notification fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch notifications', details: error.message });
   }
 });
 
@@ -56,28 +66,21 @@ router.post('/', auth, async (req, res) => {
 
     const populatedNotification = await Notification.findById(notification._id)
       .populate('sender', 'username profilePicture')
-      .populate('post', 'media caption')
-      .populate({
-        path: 'comment',
-        select: 'text user replies',
-        populate: [
-          {
-            path: 'user',
-            select: 'username profilePicture'
-          },
-          {
-            path: 'replies',
-            populate: {
-              path: 'user',
-              select: 'username profilePicture'
-            }
-          }
-        ]
-      });
+      .populate('post', 'media caption');
+
+    // Process notification to handle comment data
+    const processedNotification = populatedNotification.toObject();
+    if (processedNotification.comment && processedNotification.post) {
+      const comment = processedNotification.post.comments?.find(
+        c => c._id.toString() === processedNotification.comment.toString()
+      );
+      processedNotification.comment = comment || null;
+    }
     
-    res.status(201).json(populatedNotification);
+    res.status(201).json(processedNotification);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create notification' });
+    console.error('Notification creation error:', error);
+    res.status(500).json({ error: 'Failed to create notification', details: error.message });
   }
 });
 
@@ -90,32 +93,25 @@ router.patch('/:id/read', auth, async (req, res) => {
       { new: true }
     )
     .populate('sender', 'username profilePicture')
-    .populate('post', 'media caption')
-    .populate({
-      path: 'comment',
-      select: 'text user replies',
-      populate: [
-        {
-          path: 'user',
-          select: 'username profilePicture'
-        },
-        {
-          path: 'replies',
-          populate: {
-            path: 'user',
-            select: 'username profilePicture'
-          }
-        }
-      ]
-    });
+    .populate('post', 'media caption');
 
     if (!notification) {
       return res.status(404).json({ error: 'Notification not found' });
     }
 
-    res.json(notification);
+    // Process notification to handle comment data
+    const processedNotification = notification.toObject();
+    if (processedNotification.comment && processedNotification.post) {
+      const comment = processedNotification.post.comments?.find(
+        c => c._id.toString() === processedNotification.comment.toString()
+      );
+      processedNotification.comment = comment || null;
+    }
+
+    res.json(processedNotification);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update notification' });
+    console.error('Notification update error:', error);
+    res.status(500).json({ error: 'Failed to update notification', details: error.message });
   }
 });
 
@@ -129,7 +125,8 @@ router.patch('/read-all', auth, async (req, res) => {
 
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update notifications' });
+    console.error('Mark all read error:', error);
+    res.status(500).json({ error: 'Failed to update notifications', details: error.message });
   }
 });
 
@@ -147,7 +144,8 @@ router.delete('/:id', auth, async (req, res) => {
 
     res.json({ message: 'Notification deleted' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete notification' });
+    console.error('Notification deletion error:', error);
+    res.status(500).json({ error: 'Failed to delete notification', details: error.message });
   }
 });
 
@@ -161,7 +159,8 @@ router.get('/unread-count', auth, async (req, res) => {
 
     res.json({ count });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch unread count' });
+    console.error('Unread count error:', error);
+    res.status(500).json({ error: 'Failed to fetch unread count', details: error.message });
   }
 });
 
@@ -175,7 +174,8 @@ router.delete('/post/:postId', auth, async (req, res) => {
 
     res.json({ message: 'Post notifications deleted' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete notifications' });
+    console.error('Post notifications deletion error:', error);
+    res.status(500).json({ error: 'Failed to delete notifications', details: error.message });
   }
 });
 
@@ -189,7 +189,8 @@ router.delete('/comment/:commentId', auth, async (req, res) => {
 
     res.json({ message: 'Comment notifications deleted' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete notifications' });
+    console.error('Comment notifications deletion error:', error);
+    res.status(500).json({ error: 'Failed to delete notifications', details: error.message });
   }
 });
 

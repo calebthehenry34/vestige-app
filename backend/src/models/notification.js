@@ -10,7 +10,7 @@ const notificationSchema = new mongoose.Schema({
     required: true 
   },
   post: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' },
-  comment: { type: mongoose.Schema.Types.ObjectId },
+  comment: { type: mongoose.Schema.Types.ObjectId }, // Store just the comment's ObjectId since it's embedded in post
   read: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });

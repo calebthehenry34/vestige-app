@@ -273,90 +273,6 @@ const Home = () => {
     }));
   };
 
-  const handleComment = async (postId, text) => {
-    if (!postId || !text?.trim()) return;
-
-    try {
-      const response = await fetch(`${API_URL}/api/posts/${postId}/comments`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ text: text.trim() })
-      });
-  
-      const data = await response.json();
-  
-      if (!response.ok) {
-        throw new Error(data.details || data.error || 'Failed to post comment');
-      }
-  
-      setPosts(prevPosts => prevPosts.map(post => {
-        if (post._id === postId) {
-          return data; // Use the updated post from the server
-        }
-        return post;
-      }));
-  
-      const post = posts.find(p => p._id === postId);
-      if (post?.user?._id && post.user._id !== user?.id) {
-        try {
-          await fetch(`${API_URL}/api/notifications`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              recipientId: post.user._id,
-              type: 'comment',
-              postId: postId
-            })
-          });
-        } catch (notificationError) {
-          console.error('Error creating notification:', notificationError);
-        }
-      }
-    } catch (error) {
-      console.error('Error posting comment:', error);
-    }
-  };
-
-  const handleReply = async (postId, commentId, text) => {
-    if (!postId || !commentId || !text?.trim()) return;
-
-    try {
-      const response = await fetch(
-        `${API_URL}/api/posts/${postId}/comments/${commentId}/replies`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ text: text.trim() })
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error('Reply error:', data);
-        throw new Error(data.error || 'Failed to post reply');
-      }
-
-      setPosts(prevPosts => prevPosts.map(post => {
-        if (post._id === postId) {
-          return data; // Use the updated post from the server
-        }
-        return post;
-      }));
-    } catch (error) {
-      console.error('Error posting reply:', error);
-    }
-  };
-
   const handleShare = (postId) => {
     setSharePostId(postId);
     setShowShareModal(true);
@@ -560,15 +476,75 @@ const Home = () => {
             <PostComments
               post={post}
               isOpen={showComments[post._id]}
-              onComment={(updatedPost) => {
-                setPosts(prevPosts => prevPosts.map(p => 
-                  p._id === post._id ? updatedPost : p
-                ));
+              onComment={(text) => {
+                if (!post._id || !text?.trim()) return;
+              
+                fetch(`${API_URL}/api/posts/${post._id}/comments`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ text: text.trim() })
+                })
+                .then(response => {
+                  if (!response.ok) {
+                    return response.json().then(data => {
+                      throw new Error(data.details || data.error || 'Failed to post comment');
+                    });
+                  }
+                  return response.json();
+                })
+                .then(data => {
+                  setPosts(prevPosts => prevPosts.map(p => 
+                    p._id === post._id ? data : p
+                  ));
+              
+                  if (post?.user?._id && post.user._id !== user?.id) {
+                    return fetch(`${API_URL}/api/notifications`, {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        recipientId: post.user._id,
+                        type: 'comment',
+                        postId: post._id
+                      })
+                    });
+                  }
+                })
+                .catch(error => console.error('Error posting comment:', error));
               }}
-              onReply={(updatedPost) => {
-                setPosts(prevPosts => prevPosts.map(p => 
-                  p._id === post._id ? updatedPost : p
-                ));
+              onReply={(commentId, text) => {
+                if (!post._id || !commentId || !text?.trim()) return;
+              
+                fetch(
+                  `${API_URL}/api/posts/${post._id}/comments/${commentId}/replies`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: text.trim() })
+                  }
+                )
+                .then(response => {
+                  if (!response.ok) {
+                    return response.json().then(data => {
+                      throw new Error(data.error || 'Failed to post reply');
+                    });
+                  }
+                  return response.json();
+                })
+                .then(data => {
+                  setPosts(prevPosts => prevPosts.map(p => 
+                    p._id === post._id ? data : p
+                  ));
+                })
+                .catch(error => console.error('Error posting reply:', error));
               }}
             />
           </div>
