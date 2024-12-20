@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   CompassNorthwestRegular, 
@@ -43,6 +43,9 @@ const Navbar = () => {
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const [visible, setVisible] = useState(true);
   const [expandedSection, setExpandedSection] = useState(null);
+  const [startY, setStartY] = useState(null);
+  const [currentY, setCurrentY] = useState(0);
+  const mobileNavRef = useRef(null);
 
   const isSettingsPage = location.pathname === '/settings';
 
@@ -70,6 +73,33 @@ const Navbar = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [prevScrollPos]);
+
+  const handleTouchStart = (e) => {
+    setStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!startY) return;
+    
+    const deltaY = startY - e.touches[0].clientY;
+    if (deltaY > 0 && visible) {
+      // Swiping up while visible
+      setCurrentY(Math.min(deltaY, 100));
+    } else if (deltaY < 0 && !visible) {
+      // Swiping down while hidden
+      setCurrentY(Math.max(deltaY, -100));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (currentY > 50) {
+      setVisible(false);
+    } else if (currentY < -50) {
+      setVisible(true);
+    }
+    setStartY(null);
+    setCurrentY(0);
+  };
 
   const handleNavigation = (path) => {
     setShowDrawer(false);
@@ -356,47 +386,60 @@ const Navbar = () => {
           </button>
         </div>
       </div>
-{/* Floating Mobile Navigation */}
-{!isSettingsPage && (
-  <div className="md:hidden fixed bottom-6 left-4 right-4 z-[90]">
-    <div className="max-w-sm mx-auto relative"> {/* Added relative positioning */}
-      <div className={`${
-        theme === 'dark-theme'
-          ? 'bg-gray-900'
-          : 'bg-white'
-      } rounded-xl shadow-lg px-4 py-3`}>
-        <div className="grid grid-cols-5 items-center">
-          {navigationItems.map((item, index) => (
-            <div key={index} className="col-span-1 flex justify-center items-center">
-              <button
-                onClick={item.action}
-                className={`p-2 transition-colors ${
-                  // Special styling for the Add button (assuming it's the middle item)
-                  index === 2 
-                    ? `absolute left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex items-center justify-center ${
-                      theme === 'dark-theme'
-                        ? 'bg-gray-900 text-white hover:bg-gray-800'
-                        : 'bg-white text-gray-700 hover:bg-gray-100'
-                      } shadow-lg border-4 ${
-                        theme === 'dark-theme' ? 'border-gray-800' : 'border-white'
-                      }`
-                    : 'rounded-lg'
-                } ${
-                  theme === 'dark-theme'
-                    ? 'text-white hover:bg-gray-800'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-                disabled={item.className?.includes('cursor-not-allowed')}
-              >
-                {item.icon}
-              </button>
+
+      {/* Floating Mobile Navigation */}
+      {!isSettingsPage && (
+        <div 
+          ref={mobileNavRef}
+          className={`md:hidden fixed z-[90] left-4 right-4 transition-all duration-300 ease-in-out ${
+            visible ? 'bottom-6' : 'translate-y-full bottom-[-100px]'
+          }`}
+          style={{
+            transform: `translateY(${currentY}px)`,
+            touchAction: 'none'
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="max-w-sm mx-auto relative">
+            <div className={`${
+              theme === 'dark-theme'
+                ? 'bg-gray-900'
+                : 'bg-white'
+            } rounded-xl shadow-lg px-4 py-3`}>
+              <div className="grid grid-cols-5 items-center">
+                {navigationItems.map((item, index) => (
+                  <div key={index} className="col-span-1 flex justify-center items-center">
+                    <button
+                      onClick={item.action}
+                      className={`p-2 transition-colors ${
+                        index === 2 
+                          ? `absolute left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex items-center justify-center ${
+                            theme === 'dark-theme'
+                              ? 'bg-gray-900 text-white hover:bg-gray-800'
+                              : 'bg-white text-gray-700 hover:bg-gray-100'
+                            } shadow-lg border-4 ${
+                              theme === 'dark-theme' ? 'border-gray-800' : 'border-white'
+                            }`
+                          : 'rounded-lg'
+                      } ${
+                        theme === 'dark-theme'
+                          ? 'text-white hover:bg-gray-800'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                      disabled={item.className?.includes('cursor-not-allowed')}
+                    >
+                      {item.icon}
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
+
       {/* Feed Selection Menu */}
       {showFeedMenu && (
         <div 
