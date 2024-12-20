@@ -23,10 +23,12 @@ import {
   WeatherMoonRegular,
   WeatherSunnyRegular,
   DocumentRegular,
+  AddRegular,
 } from '@fluentui/react-icons';
 import { useAuth } from '../../context/AuthContext';
 import { ThemeContext } from '../../App';
 import { getProfileImageUrl } from '../../utils/imageUtils';
+import PostCreator from '../Post/PostCreator';
 
 const Navbar = () => {
   const { theme, toggleTheme } = useContext(ThemeContext);
@@ -39,6 +41,7 @@ const Navbar = () => {
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const [visible, setVisible] = useState(true);
   const [expandedSection, setExpandedSection] = useState(null);
+  const [showPostCreator, setShowPostCreator] = useState(false);
 
   const isSettingsPage = location.pathname === '/settings';
 
@@ -89,6 +92,11 @@ const Navbar = () => {
       action: () => handleNavigation('/explore'),
       icon: <CompassNorthwestRegular className="w-6 h-6" />,
       label: 'Explore' 
+    },
+    {
+      action: () => setShowPostCreator(true),
+      icon: <AddRegular className="w-6 h-6" />,
+      label: 'Create'
     },
     { 
       action: () => handleNavigation('/activity'),
@@ -440,6 +448,11 @@ const Navbar = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Post Creator Modal */}
+      {showPostCreator && (
+        <PostCreator onClose={() => setShowPostCreator(false)} />
       )}
 
       {/* Drawer */}
