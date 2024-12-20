@@ -20,7 +20,7 @@ const OnboardingFlow = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [slideDirection, setSlideDirection] = useState('');
-  const [nextStep, setNextStep] = useState(null);
+  const [ setNextStep] = useState(null);
   const [formData, setFormData] = useState({
     profilePicture: null,
     username: user?.username || '',

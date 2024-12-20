@@ -16,7 +16,6 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const PostCreator = ({ isOpen, onClose }) => {
   const [step, setStep] = useState('type');
   const [slideDirection, setSlideDirection] = useState('');
-  const [postType, setPostType] = useState('photo');
   const [media, setMedia] = useState(null);
   const [editedMedia, setEditedMedia] = useState(null);
   const [caption, setCaption] = useState('');
@@ -153,11 +152,8 @@ const PostCreator = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleTypeSelect = (type) => {
-    setPostType(type);
-    if (type === 'moment') {
-      setError('Moments feature coming soon!');
-    }
+  const handleMomentClick = () => {
+    setError('Moments feature coming soon!');
   };
 
   const renderNavigation = () => (
@@ -198,7 +194,7 @@ const PostCreator = ({ isOpen, onClose }) => {
         </div>
 
         <button
-          onClick={() => handleTypeSelect('moment')}
+          onClick={handleMomentClick}
           className="w-full p-6 rounded-lg border-2 transition-all border-gray-800 hover:border-[#ae52e3] bg-[#1a1a1a]"
         >
           <div className="flex items-center justify-center">
