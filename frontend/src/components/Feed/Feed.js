@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   HeartRegular,
-  HeartFilled,
   CommentRegular,
   ShareRegular,
   BookmarkRegular,
-  BookmarkFilled,
   ImageRegular,
 } from '@fluentui/react-icons';
 import axios from 'axios';
