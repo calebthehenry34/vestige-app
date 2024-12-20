@@ -134,7 +134,6 @@ const OnboardingFlow = () => {
       }
 
       console.log('Sending onboarding request to:', `${API_URL}/api/profile/complete-onboarding`);
-      console.log('Token:', token);
       
       const response = await fetch(`${API_URL}/api/profile/complete-onboarding`, {
         method: 'POST',
@@ -142,7 +141,8 @@ const OnboardingFlow = () => {
           'Authorization': `Bearer ${token}`
         },
         credentials: 'include',
-        body: formDataToSend
+        body: formDataToSend,
+        mode: 'cors'
       });
 
       console.log('Response status:', response.status);
