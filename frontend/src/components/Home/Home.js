@@ -1,3 +1,4 @@
+// frontend/src/components/Home/Home.js
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { 
@@ -276,13 +277,13 @@ const Home = () => {
     if (!postId || !text?.trim()) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/posts/${postId}/comment`, {
+      const response = await fetch(`${API_URL}/api/posts/${postId}/comments`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text: text.trim() })
       });
   
       const data = await response.json();
@@ -293,10 +294,7 @@ const Home = () => {
   
       setPosts(prevPosts => prevPosts.map(post => {
         if (post._id === postId) {
-          return {
-            ...post,
-            comments: [...(post.comments || []), data]
-          };
+          return data; // Use the updated post from the server
         }
         return post;
       }));
@@ -320,8 +318,6 @@ const Home = () => {
           console.error('Error creating notification:', notificationError);
         }
       }
-  
-      await fetchPosts();
     } catch (error) {
       console.error('Error posting comment:', error);
     }
@@ -332,14 +328,14 @@ const Home = () => {
 
     try {
       const response = await fetch(
-        `${API_URL}/api/posts/${postId}/comments/${commentId}/reply`,
+        `${API_URL}/api/posts/${postId}/comments/${commentId}/replies`,
         {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ text })
+          body: JSON.stringify({ text: text.trim() })
         }
       );
 
@@ -350,7 +346,12 @@ const Home = () => {
         throw new Error(data.error || 'Failed to post reply');
       }
 
-      await fetchPosts();
+      setPosts(prevPosts => prevPosts.map(post => {
+        if (post._id === postId) {
+          return data; // Use the updated post from the server
+        }
+        return post;
+      }));
     } catch (error) {
       console.error('Error posting reply:', error);
     }
@@ -559,8 +560,16 @@ const Home = () => {
             <PostComments
               post={post}
               isOpen={showComments[post._id]}
-              onComment={(text) => handleComment(post._id, text)}
-              onReply={handleReply}
+              onComment={(updatedPost) => {
+                setPosts(prevPosts => prevPosts.map(p => 
+                  p._id === post._id ? updatedPost : p
+                ));
+              }}
+              onReply={(updatedPost) => {
+                setPosts(prevPosts => prevPosts.map(p => 
+                  p._id === post._id ? updatedPost : p
+                ));
+              }}
             />
           </div>
         ))}
