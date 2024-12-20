@@ -12,7 +12,6 @@ import {
   DeleteRegular,
   FlagRegular,
   PersonRegular,
-  AddRegular,
 } from '@fluentui/react-icons';
 import PostComments from '../Post/PostComments';
 import PostCreator from '../Post/PostCreator';

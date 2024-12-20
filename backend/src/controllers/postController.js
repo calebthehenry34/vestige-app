@@ -6,6 +6,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
+import mongoose from 'mongoose';
 
 // Helper function to store file locally when S3 is not available
 const storeFileLocally = async (buffer, filename) => {
@@ -57,7 +58,21 @@ const processPostsWithPresignedUrls = async (posts) => {
 
 export const getSinglePost = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id)
+    const { id } = req.params;
+    
+    // Log the received ID
+    console.log('Received post ID:', id);
+    
+    // Validate if the ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.error('Invalid post ID format:', id);
+      return res.status(400).json({ error: 'Invalid post ID format' });
+    }
+
+    // Log that we're attempting to find the post
+    console.log('Attempting to find post with ID:', id);
+    
+    const post = await Post.findById(id)
       .populate('user', 'username profilePicture')
       .populate('taggedUsers', 'username profilePicture')
       .populate({
@@ -69,14 +84,18 @@ export const getSinglePost = async (req, res) => {
       });
 
     if (!post) {
+      console.error('Post not found with ID:', id);
       return res.status(404).json({ error: 'Post not found' });
     }
+
+    // Log that we found the post
+    console.log('Found post:', post._id);
 
     const processedPost = await processPostsWithPresignedUrls(post);
     res.json(processedPost);
   } catch (error) {
     console.error('Get single post error:', error);
-    res.status(500).json({ error: 'Error fetching post' });
+    res.status(500).json({ error: 'Error fetching post', details: error.message });
   }
 };
 

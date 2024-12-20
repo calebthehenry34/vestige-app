@@ -51,12 +51,15 @@ const SinglePost = () => {
         const token = localStorage.getItem('token');
         const response = await fetch(`${API_URL}/api/posts/${id}`, {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include' // Add this line
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch post');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch post');
         }
 
         const data = await response.json();
@@ -241,7 +244,7 @@ const SinglePost = () => {
       <div className={`w-full h-screen flex items-center justify-center ${
         theme === 'dark-theme' ? 'bg-black' : 'bg-gray-50'
       }`}>
-        <div className="text-red-500">Error loading post</div>
+        <div className="text-red-500">Error loading post: {error}</div>
       </div>
     );
   }

@@ -451,9 +451,11 @@ const Navbar = () => {
       )}
 
       {/* Post Creator Modal */}
-      {showPostCreator && (
-        <PostCreator onClose={() => setShowPostCreator(false)} />
-      )}
+      <PostCreator
+        isOpen={showPostCreator}
+        onClose={() => setShowPostCreator(false)}
+        onPostCreated={() => setShowPostCreator(false)}
+      />
 
       {/* Drawer */}
       {renderDrawer()}
