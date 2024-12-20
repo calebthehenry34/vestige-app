@@ -181,8 +181,8 @@ const OnboardingFlow = () => {
   };
 
   const renderNavigation = () => (
-    <div className="p-6 border-b border-[#333333] grid grid-cols-3 items-center">
-      <div className="flex items-center">
+    <div className="p-6 border-b border-[#f1f1f2] grid grid-cols-3 items-center">
+      <div className="card-header flex items-center">
         <img src="/logos/logo.svg" alt="Vestige" className="h-8" />
       </div>
       <div className="flex text-xs justify-center">
