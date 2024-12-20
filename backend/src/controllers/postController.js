@@ -76,12 +76,19 @@ export const getSinglePost = async (req, res) => {
     const post = await Post.findById(id)
       .populate('user', 'username profilePicture')
       .populate('taggedUsers', 'username profilePicture')
+      .populate('likes', 'username profilePicture') // Add this line to populate likes
       .populate({
         path: 'comments',
-        populate: {
-          path: 'user',
-          select: 'username profilePicture'
-        }
+        populate: [
+          {
+            path: 'user',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'likes',
+            select: 'username profilePicture'
+          }
+        ]
       });
 
     if (!post) {
@@ -140,7 +147,8 @@ export const getExplorePosts = async (req, res) => {
 
     await Post.populate(posts, [
       { path: 'user', select: 'username profilePicture' },
-      { path: 'taggedUsers', select: 'username profilePicture' }
+      { path: 'taggedUsers', select: 'username profilePicture' },
+      { path: 'likes', select: 'username profilePicture' }
     ]);
 
     const processedPosts = await processPostsWithPresignedUrls(posts);
@@ -351,7 +359,8 @@ export const getPosts = async (req, res) => {
       .skip(skip)
       .limit(limit)
       .populate('user', 'username profilePicture')
-      .populate('taggedUsers', 'username profilePicture');
+      .populate('taggedUsers', 'username profilePicture')
+      .populate('likes', 'username profilePicture'); // Add this line to populate likes
 
     const processedPosts = await processPostsWithPresignedUrls(posts);
 
@@ -381,7 +390,8 @@ export const getUserPosts = async (req, res) => {
       .skip(skip)
       .limit(limit)
       .populate('user', 'username profilePicture')
-      .populate('taggedUsers', 'username profilePicture');
+      .populate('taggedUsers', 'username profilePicture')
+      .populate('likes', 'username profilePicture'); // Add this line to populate likes
 
     const processedPosts = await processPostsWithPresignedUrls(posts);
 
@@ -428,7 +438,8 @@ export const updatePost = async (req, res) => {
 
     await post.populate([
       { path: 'user', select: 'username profilePicture' },
-      { path: 'taggedUsers', select: 'username profilePicture' }
+      { path: 'taggedUsers', select: 'username profilePicture' },
+      { path: 'likes', select: 'username profilePicture' }
     ]);
 
     const processedPost = await processPostsWithPresignedUrls(post);
@@ -475,7 +486,8 @@ export const likePost = async (req, res) => {
     
     await post.populate([
       { path: 'user', select: 'username profilePicture' },
-      { path: 'taggedUsers', select: 'username profilePicture' }
+      { path: 'taggedUsers', select: 'username profilePicture' },
+      { path: 'likes', select: 'username profilePicture' }
     ]);
 
     const processedPost = await processPostsWithPresignedUrls(post);
@@ -498,7 +510,8 @@ export const getPostsByHashtag = async (req, res) => {
       .skip(skip)
       .limit(limit)
       .populate('user', 'username profilePicture')
-      .populate('taggedUsers', 'username profilePicture');
+      .populate('taggedUsers', 'username profilePicture')
+      .populate('likes', 'username profilePicture'); // Add this line to populate likes
 
     const processedPosts = await processPostsWithPresignedUrls(posts);
 
