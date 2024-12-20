@@ -38,6 +38,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showDrawer, setShowDrawer] = useState(false);
+  const [showFeedMenu, setShowFeedMenu] = useState(false);
   const [showPostCreator, setShowPostCreator] = useState(false);
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const [visible, setVisible] = useState(true);
@@ -46,7 +47,7 @@ const Navbar = () => {
   const isSettingsPage = location.pathname === '/settings';
 
   useEffect(() => {
-    if (showDrawer) {
+    if (showDrawer || showFeedMenu) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -55,7 +56,7 @@ const Navbar = () => {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [showDrawer]);
+  }, [showDrawer, showFeedMenu]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -72,6 +73,7 @@ const Navbar = () => {
 
   const handleNavigation = (path) => {
     setShowDrawer(false);
+    setShowFeedMenu(false);
     navigate(path);
   };
 
@@ -83,29 +85,29 @@ const Navbar = () => {
 
   const navigationItems = [
     { 
-      action: () => handleNavigation('/'),
-      icon: <HomeRegular className="w-6 h-6" />, 
+      action: () => setShowFeedMenu(true),
+      icon: <HomeRegular className="w-7 h-7" />, 
       label: 'Home' 
     },
     { 
       action: () => handleNavigation('/explore'),
-      icon: <CompassNorthwestRegular className="w-6 h-6" />,
+      icon: <CompassNorthwestRegular className="w-7 h-7" />,
       label: 'Explore' 
     },
     {
       action: () => setShowPostCreator(true),
-      icon: <AddRegular className="w-6 h-6" />,
+      icon: <AddRegular className="w-8 h-8" />,
       label: 'Create',
-      className: 'bg-white border-2 border-purple-500 rounded-full p-3 -mt-8 shadow-lg'
+      className: `${theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'} border-2 border-purple-500 rounded-full p-5 -mt-10`
     },
     { 
       action: () => handleNavigation('/notifications'),
-      icon: <HeartRegular className="w-6 h-6" />,
+      icon: <HeartRegular className="w-7 h-7" />,
       label: 'Notifications' 
     },
     {
       action: () => {},
-      icon: <ChatRegular className="w-6 h-6" />,
+      icon: <ChatRegular className="w-7 h-7" />,
       label: 'Chat',
       className: 'opacity-50 cursor-not-allowed'
     }
@@ -357,15 +359,15 @@ const Navbar = () => {
 
       {/* Floating Mobile Navigation */}
       {!isSettingsPage && (
-        <div className="md:hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[90] w-80">
-          <div className={`rounded-xl shadow-lg ${
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-[90]">
+          <div className={`${
             theme === 'dark-theme'
-              ? 'bg-gray-900 border-gray-800'
-              : 'bg-white border-gray-200'
-          } border px-2`}>
-            <div className="flex items-center justify-between h-14 relative">
+              ? 'bg-gray-900 border-t border-gray-800'
+              : 'bg-white border-t border-gray-200'
+          } px-6 pb-6 pt-2`}>
+            <div className="flex items-center justify-between relative">
               {navigationItems.map((item, index) => (
-                <div key={index} className={`${index === 2 ? 'absolute left-1/2 transform -translate-x-1/2' : ''}`}>
+                <div key={index} className={`${index === 2 ? 'absolute left-1/2 transform -translate-x-1/2' : ''} flex-1 flex justify-center`}>
                   <button
                     onClick={item.action}
                     className={`p-2 transition-colors ${item.className || 'rounded-lg'} ${
@@ -379,6 +381,61 @@ const Navbar = () => {
                   </button>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Feed Selection Menu */}
+      {showFeedMenu && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-[91] md:hidden flex items-end justify-center"
+          onClick={() => setShowFeedMenu(false)}
+        >
+          <div 
+            className={`w-full rounded-t-xl overflow-hidden transform transition-all duration-500 ease-in-out ${
+              theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
+            }`}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className={`p-4 border-b ${
+              theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
+            }`}>
+              <h3 className={`text-sm font-semibold ${
+                theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
+              }`}>Select Feed</h3>
+            </div>
+            <div className="p-2">
+              <button 
+                onClick={() => handleNavigation('/')}
+                className={`flex items-center w-full p-4 rounded-lg ${
+                  theme === 'dark-theme'
+                    ? 'hover:bg-gray-800 text-white'
+                    : 'hover:bg-gray-100 text-gray-900'
+                }`}
+              >
+                <ImageMultipleRegular className="w-6 h-6 mr-3" />
+                <span>Photos</span>
+              </button>
+              <button 
+                onClick={() => handleNavigation('/videos')}
+                className={`flex items-center w-full p-4 rounded-lg ${
+                  theme === 'dark-theme'
+                    ? 'hover:bg-gray-800 text-white'
+                    : 'hover:bg-gray-100 text-gray-900'
+                }`}
+              >
+                <VideoPersonPulseRegular className="w-6 h-6 mr-3" />
+                <span>Moments</span>
+              </button>
+              <div 
+                className={`flex items-center p-4 rounded-lg opacity-50 cursor-not-allowed ${
+                  theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
+                }`}
+              >
+                <SparkleRegular className="w-6 h-6 mr-3" />
+                <span>Videos (Soon)</span>
+              </div>
             </div>
           </div>
         </div>
