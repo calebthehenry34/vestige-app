@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Theme, Button, Checkbox, Tile } from '@carbon/react';
+import { Theme, Button, Checkbox, } from '@carbon/react';
 import { ErrorFilled, Add } from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
