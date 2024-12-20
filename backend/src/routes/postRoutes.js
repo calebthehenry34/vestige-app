@@ -9,6 +9,7 @@ const router = express.Router();
 router.get('/', auth, postController.getPosts);
 router.get('/explore', auth, postController.getExplorePosts);
 router.get('/user/:userId', auth, postController.getUserPosts);
+router.get('/:id', auth, postController.getSinglePost); // Added route for getting a single post
 router.post('/', auth, upload.handleUpload('media'), postController.createPost);
 router.put('/:id', auth, postController.updatePost);
 router.delete('/:id', auth, postController.deletePost);

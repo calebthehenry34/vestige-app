@@ -55,6 +55,31 @@ const processPostsWithPresignedUrls = async (posts) => {
   return Array.isArray(posts) ? processedPosts : processedPosts[0];
 };
 
+export const getSinglePost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id)
+      .populate('user', 'username profilePicture')
+      .populate('taggedUsers', 'username profilePicture')
+      .populate({
+        path: 'comments',
+        populate: {
+          path: 'user',
+          select: 'username profilePicture'
+        }
+      });
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const processedPost = await processPostsWithPresignedUrls(post);
+    res.json(processedPost);
+  } catch (error) {
+    console.error('Get single post error:', error);
+    res.status(500).json({ error: 'Error fetching post' });
+  }
+};
+
 export const getExplorePosts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;

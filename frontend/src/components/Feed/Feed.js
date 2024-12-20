@@ -4,7 +4,6 @@ import {
   CommentRegular,
   ShareRegular,
   BookmarkRegular,
-  ImageRegular,
 } from '@fluentui/react-icons';
 import axios from 'axios';
 import { API_URL } from '../../config';

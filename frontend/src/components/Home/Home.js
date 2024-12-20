@@ -380,14 +380,6 @@ const Home = () => {
 
   return (
     <div className="max-w-xl mx-auto p-4 m-50">
-      {/* Create Post Button */}
-      <button
-        onClick={() => setShowPostCreator(true)}
-        className="fixed bottom-4 right-4 bg-[#ae52e3] text-white p-4 rounded-full shadow-lg hover:bg-[#9a3dd0] transition-colors z-50"
-      >
-        <AddRegular className="w-6 h-6" />
-      </button>
-
       {/* Post Creator Modal */}
       <PostCreator
         isOpen={showPostCreator}
