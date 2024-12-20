@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Theme, Button, Checkbox, } from '@carbon/react';
-import { ErrorFilled, Add } from '@carbon/icons-react';
+import { Theme, Button, Checkbox, Tile } from '@carbon/react';
+import { ErrorFilled, Add, ArrowRight } from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
 import ProfileImageEditor from './ProfileImageEditor';
 import styles from './OnboardingFlow.module.css';
 
-const StepIndicator = ({ step, label }) => (
-  <div className="flex-1 text-center">
-    <div className="px-4 py-2">
-      <span className="text-white/60 text-sm">Step {step}:</span>
-      <span className="text-white ml-1 text-sm font-medium">{label}</span>
-    </div>
+const StepIndicator = ({ label }) => (
+  <div className="text-white/60 text-sm">
+    {label}
   </div>
 );
 
@@ -32,7 +29,6 @@ const OnboardingFlow = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showImageEditor, setShowImageEditor] = useState(false);
 
-  // Auto-dismiss error after 3 seconds
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
@@ -103,6 +99,16 @@ const OnboardingFlow = () => {
     }
   };
 
+  const handleBack = () => {
+    if (step > 1) {
+      setSlideDirection(styles.slideRight);
+      setTimeout(() => {
+        setStep(step - 1);
+        setSlideDirection(styles.slideCurrent);
+      }, 300);
+    }
+  };
+
   const handleComplete = async () => {
     try {
       setLoading(true);
@@ -159,25 +165,6 @@ const OnboardingFlow = () => {
     }
   };
 
-  const renderNavigation = () => (
-    <div className="p-6 border-b border-[#333333] flex items-center gap-4">
-      <StepIndicator step={step} label={getStepLabel()} />
-      <Button
-        onClick={step < 4 ? handleNext : handleComplete}
-        disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
-        style={{
-          backgroundColor: '#ae52e3',
-          minHeight: '44px',
-          borderRadius: '5px',
-          minWidth: '140px',
-          padding: '0 24px'
-        }}
-      >
-        {step < 4 ? 'Continue' : (loading ? 'Completing...' : 'Got It!')}
-      </Button>
-    </div>
-  );
-
   const getStepLabel = () => {
     switch (step) {
       case 1: return "Setup Profile";
@@ -186,6 +173,37 @@ const OnboardingFlow = () => {
       case 4: return "Complete Setup";
       default: return "";
     }
+  };
+
+  const renderNavigation = () => (
+    <div className="p-6 border-b border-[#333333] flex items-center">
+      <div className="flex items-center gap-4">
+        <img src="/logos/logo.svg" alt="Vestige" className="h-8" />
+        <StepIndicator label={getStepLabel()} />
+      </div>
+      <div className="ml-auto">
+        <button
+          onClick={step < 4 ? handleNext : handleComplete}
+          disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
+          className="w-12 h-12 rounded-full bg-[#ae52e3] hover:bg-[#9a3dd0] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+        >
+          <ArrowRight className="w-6 h-6 text-white" />
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderBackButton = () => {
+    if (step === 1) return null;
+    
+    return (
+      <button
+        onClick={handleBack}
+        className="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-white/60 hover:text-white transition-colors"
+      >
+        Back
+      </button>
+    );
   };
 
   const renderCard = () => {
@@ -296,6 +314,7 @@ const OnboardingFlow = () => {
                 </div>
               </div>
             </div>
+            {renderBackButton()}
           </div>
         </div>
       );
@@ -341,6 +360,7 @@ const OnboardingFlow = () => {
                 </div>
               </div>
             </div>
+            {renderBackButton()}
           </div>
         </div>
       );
@@ -364,6 +384,7 @@ const OnboardingFlow = () => {
               </div>
             </div>
           </div>
+          {renderBackButton()}
         </div>
       </div>
     );
