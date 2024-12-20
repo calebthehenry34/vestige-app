@@ -135,18 +135,13 @@ const Profile = () => {
           onClick={handleProfilePhotoClick}
         >
          <img
-  src={(() => {
-    const imageUrl = getProfileImageUrl(profileData?.profilePicture, profileData?.username);
-    console.log('Profile component image URL:', imageUrl);
-    return imageUrl;
-  })()}
-  alt={profileData?.username || 'Profile'}
+  src={getProfileImageUrl(profileData?.profilePicture, profileData?.username)}
+  alt={profileData?.username}
   className="w-full h-full object-cover"
   onError={(e) => {
-    console.log('Image load error:', {
+    console.log('Profile image error:', {
       originalSrc: e.target.src,
-      profilePicture: profileData?.profilePicture,
-      username: profileData?.username
+      profileData: profileData
     });
     e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`;
     e.target.onError = null;

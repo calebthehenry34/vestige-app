@@ -176,11 +176,19 @@ const Navbar = () => {
         }`}>
           <div className="flex items-center space-x-3">
             {user ? (
-              <img
-                src={user.profilePicture ? getProfileImageUrl(user.profilePicture, user.username) : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username || 'User')}`}
-                alt={user.username || 'Profile'}
-                className="h-10 w-10 rounded-full object-cover"
-              />
+             <img
+             src={getProfileImageUrl(user?.profilePicture, user?.username)}
+             alt={user?.username}
+             className="w-6 h-6 rounded-md object-cover"
+             onError={(e) => {
+               console.log('Navbar profile image error:', {
+                 originalSrc: e.target.src,
+                 user: user
+               });
+               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
+               e.target.onError = null;
+             }}
+           />
             ) : (
               <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                 <PersonRegular className="w-6 h-6 text-gray-400" />
@@ -337,11 +345,19 @@ const Navbar = () => {
             }`}
           >
             {user ? (
-              <img
-                src={user.profilePicture ? getProfileImageUrl(user.profilePicture, user.username) : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username || 'User')}`}
-                alt={user.username || 'Profile'}
-                className="w-8 h-8 rounded-md object-cover"
-              />
+             <img
+             src={getProfileImageUrl(user?.profilePicture, user?.username)}
+             alt={user?.username}
+             className="w-6 h-6 rounded-md object-cover"
+             onError={(e) => {
+               console.log('Navbar profile image error:', {
+                 originalSrc: e.target.src,
+                 user: user
+               });
+               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
+               e.target.onError = null;
+             }}
+           />
             ) : (
               <div className="w-8 h-8 rounded-md bg-gray-200 flex items-center justify-center">
                 <PersonRegular className="w-5 h-5 text-gray-400" />

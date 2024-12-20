@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Theme, Checkbox } from '@carbon/react';
-import { ErrorFilled, Add, ArrowRight } from '@carbon/icons-react';
+import { ErrorFilled, Add, ArrowRight, Reset } from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
 import ProfileImageEditor from './ProfileImageEditor';
@@ -209,10 +209,12 @@ const OnboardingFlow = () => {
   };
 
   const renderCard = () => {
-    const cardClass = `${styles.card} ${slideDirection} rounded-2xl`;
+    const containerClass = `${styles.cardContainer} ${slideDirection}`;
+    const cardClass = `${styles.card} rounded-2xl`;
 
     if (step === 1) {
       return (
+        <div className={containerClass}> 
         <div className={cardClass}>
           {showImageEditor && previewUrl ? (
             <ProfileImageEditor
@@ -255,7 +257,11 @@ const OnboardingFlow = () => {
                   onClick={handleUploadClick}
                   className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 cursor-pointer transition-colors flex items-center justify-center"
                 >
-                  <Add className="w-8 h-8 text-white" />
+                  {previewUrl ? (
+                    <Reset className="w-8 h-8 text-white" />
+                  ) : (
+                    <Add className="w-8 h-8 text-white" />
+                  )}
                 </button>
               </div>
 
@@ -283,7 +289,9 @@ const OnboardingFlow = () => {
             </div>
           )}
         </div>
+        </div>
       );
+      
     }
 
     if (step === 2) {

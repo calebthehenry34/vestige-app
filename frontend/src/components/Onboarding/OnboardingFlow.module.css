@@ -1,17 +1,22 @@
 .cardContainer {
-  position: relative;
-  width: 100%;
-  height: 100%;
+  position: fixed; /* or absolute depending on your needs */
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1000px; /* Adds depth to the rotation */
 }
 
 .card {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  position: relative; /* Changed from absolute */
+  width: 90%; /* Or your desired card width */
+  max-width: 500px; /* Or your desired max width */
+  height: auto; /* Or your desired height */
   background: #262626;
-  transition: transform 0.3s ease-in-out;
+  border-radius: 12px; /* Optional */
+  transform-origin: center center;
+  will-change: transform, opacity; /* Optimizes animations */
 }
 
 .slideLeft {
@@ -28,33 +33,33 @@
 
 @keyframes slideLeft {
   from {
-    transform: translateX(0) rotate(0);
+    transform: translate3d(0, 0, 0) rotate(0);
     opacity: 1;
   }
   to {
-    transform: translateX(-120%) rotate(-5deg);
+    transform: translate3d(-120%, 0, 0) rotate(-5deg);
     opacity: 0;
   }
 }
 
 @keyframes slideRight {
   from {
-    transform: translateX(0) rotate(0);
+    transform: translate3d(0, 0, 0) rotate(0);
     opacity: 1;
   }
   to {
-    transform: translateX(120%) rotate(5deg);
+    transform: translate3d(120%, 0, 0) rotate(5deg);
     opacity: 0;
   }
 }
 
 @keyframes slideCurrent {
   from {
-    transform: translateX(120%) rotate(5deg);
+    transform: translate3d(120%, 0, 0) rotate(5deg);
     opacity: 0;
   }
   to {
-    transform: translateX(0) rotate(0);
+    transform: translate3d(0, 0, 0) rotate(0);
     opacity: 1;
   }
 }
