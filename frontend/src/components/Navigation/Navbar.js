@@ -98,7 +98,7 @@ const Navbar = () => {
       action: () => setShowPostCreator(true),
       icon: <AddRegular className="w-6 h-6" />,
       label: 'Create',
-      className: `${theme === 'dark-theme' ? 'bg-gray-800' : 'bg-gray-100'} border-2 border-purple-500 rounded-full p-4 -mt-8`
+      className: `${theme === 'dark-theme' ? 'bg-gray-800' : 'bg-gray-100'} border-2 border-purple-500 p-4 flex items-center justify-center`
     },
     { 
       action: () => handleNavigation('/notifications'),
@@ -360,6 +360,7 @@ const Navbar = () => {
       {/* Floating Mobile Navigation */}
       {!isSettingsPage && (
         <div className="md:hidden fixed bottom-6 left-4 right-4 z-[90]">
+          <div className="max-w-sm mx-auto">
           <div className={`${
             theme === 'dark-theme'
               ? 'bg-gray-900'
@@ -367,10 +368,10 @@ const Navbar = () => {
           } rounded-2xl shadow-lg px-4 py-3`}>
             <div className="grid grid-cols-5 items-center relative">
               {navigationItems.map((item, index) => (
-                <div key={index} className={`${index === 2 ? 'col-span-1 flex justify-center' : 'col-span-1 flex justify-center'}`}>
+                <div key={index} className="col-span-1 flex justify-center items-center">
                   <button
                     onClick={item.action}
-                    className={`p-2 transition-colors ${item.className || 'rounded-lg'} ${
+                    className={`p-2 transition-colors ${item.className || ''} ${
                       theme === 'dark-theme'
                         ? 'text-white hover:bg-gray-800'
                         : 'text-gray-700 hover:bg-gray-100'
@@ -384,6 +385,7 @@ const Navbar = () => {
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* Feed Selection Menu */}

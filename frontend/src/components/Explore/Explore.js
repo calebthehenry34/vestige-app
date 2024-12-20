@@ -76,7 +76,7 @@ const Explore = () => {
   }
 
   return (
-    <div className={`min-h-screen m-50 mb-50 p-10 ${
+    <div className={`min-h-screen mb-50  ${
       theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'
     } px-4`}>
       <div className="max-w-6xl mx-auto px-4 py-6">
