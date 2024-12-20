@@ -4,11 +4,13 @@ import { ArrowLeft, ArrowRight } from '@carbon/icons-react';
 import { ChevronDownRegular, ChevronUpRegular } from '@fluentui/react-icons';
 import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
+import { debounce } from 'lodash';
 
 const UserSuggestions = () => {
   const { theme } = useContext(ThemeContext);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
@@ -21,14 +23,43 @@ const UserSuggestions = () => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
+      if (!response.ok) {
+        throw new Error('Failed to fetch suggestions');
+      }
       const data = await response.json();
       const formattedUsers = Array.isArray(data) ? data : data.users || [];
       setUsers(formattedUsers);
+      setError(null);
     } catch (error) {
       console.error('Error fetching users:', error);
+      setError(error.message);
       setUsers([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFollow = async (userId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/users/${userId}/follow`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to follow user');
+      }
+      
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user._id === userId 
+            ? { ...user, isFollowing: !user.isFollowing }
+            : user
+        )
+      );
+    } catch (error) {
+      console.error('Error following user:', error);
     }
   };
 
@@ -47,15 +78,22 @@ const UserSuggestions = () => {
   useEffect(() => {
     const container = containerRef.current;
     if (container) {
-      container.addEventListener('scroll', checkScrollPosition);
+      const debouncedCheck = debounce(() => checkScrollPosition(), 100);
+      container.addEventListener('scroll', debouncedCheck);
+      checkScrollPosition();
+      return () => {
+        container.removeEventListener('scroll', debouncedCheck);
+        debouncedCheck.cancel();
+      };
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isExpanded && containerRef.current) {
+      containerRef.current.scrollLeft = 0;
       checkScrollPosition();
     }
-    return () => {
-      if (container) {
-        container.removeEventListener('scroll', checkScrollPosition);
-      }
-    };
-  }, []);
+  }, [isExpanded]);
 
   const handleScroll = (direction) => {
     if (containerRef.current) {
@@ -69,14 +107,44 @@ const UserSuggestions = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center p-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+      <div className={`rounded-lg shadow-lg mb-6 ${
+        theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
+      }`}>
+        <div className="p-4 border-b border-gray-200">
+          <div className="h-6 bg-gray-300 rounded w-1/4 animate-pulse"></div>
+        </div>
+        <div className="p-4">
+          <div className="flex space-x-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse flex-none w-48">
+                <div className={`aspect-square rounded-lg ${
+                  theme === 'dark-theme' ? 'bg-gray-800' : 'bg-gray-300'
+                }`}></div>
+                <div className="mt-2 h-4 bg-gray-300 rounded w-3/4"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-red-500 bg-red-100 rounded-lg">
+        Failed to load suggestions: {error}
       </div>
     );
   }
 
   if (!users.length) {
-    return null;
+    return (
+      <div className={`p-6 text-center rounded-lg shadow-lg ${
+        theme === 'dark-theme' ? 'bg-gray-900 text-gray-400' : 'bg-white text-gray-500'
+      }`}>
+        <p>No suggestions available right now</p>
+      </div>
+    );
   }
 
   return (
@@ -154,6 +222,23 @@ const UserSuggestions = () => {
                     )}
                   </div>
                 </Link>
+                <div className="px-3 pb-3">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleFollow(user._id);
+                    }}
+                    className={`w-full py-2 rounded-lg font-medium ${
+                      user.isFollowing
+                        ? theme === 'dark-theme'
+                          ? 'bg-gray-700 text-white'
+                          : 'bg-gray-100 text-gray-800'
+                        : 'bg-blue-500 text-white'
+                    }`}
+                  >
+                    {user.isFollowing ? 'Following' : 'Follow'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

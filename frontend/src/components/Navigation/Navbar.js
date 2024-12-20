@@ -356,38 +356,47 @@ const Navbar = () => {
           </button>
         </div>
       </div>
-
-      {/* Floating Mobile Navigation */}
-      {!isSettingsPage && (
-        <div className="md:hidden fixed bottom-6 left-4 right-4 z-[90]">
-          <div className="max-w-sm mx-auto">
-          <div className={`${
-            theme === 'dark-theme'
-              ? 'bg-gray-900'
-              : 'bg-white'
-          } rounded-2xl shadow-lg px-4 py-3`}>
-            <div className="grid grid-cols-5 items-center relative">
-              {navigationItems.map((item, index) => (
-                <div key={index} className="col-span-1 flex justify-center items-center">
-                  <button
-                    onClick={item.action}
-                    className={`p-2 transition-colors ${item.className || ''} ${
+{/* Floating Mobile Navigation */}
+{!isSettingsPage && (
+  <div className="md:hidden fixed bottom-6 left-4 right-4 z-[90]">
+    <div className="max-w-sm mx-auto relative"> {/* Added relative positioning */}
+      <div className={`${
+        theme === 'dark-theme'
+          ? 'bg-gray-900'
+          : 'bg-white'
+      } rounded-xl shadow-lg px-4 py-3`}>
+        <div className="grid grid-cols-5 items-center">
+          {navigationItems.map((item, index) => (
+            <div key={index} className="col-span-1 flex justify-center items-center">
+              <button
+                onClick={item.action}
+                className={`p-2 transition-colors ${
+                  // Special styling for the Add button (assuming it's the middle item)
+                  index === 2 
+                    ? `absolute -top-5 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex items-center justify-center ${
                       theme === 'dark-theme'
-                        ? 'text-white hover:bg-gray-800'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                    disabled={item.className?.includes('cursor-not-allowed')}
-                  >
-                    {item.icon}
-                  </button>
-                </div>
-              ))}
+                        ? 'bg-gray-900 text-white hover:bg-gray-800'
+                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                      } shadow-lg border-4 ${
+                        theme === 'dark-theme' ? 'border-gray-800' : 'border-white'
+                      }`
+                    : 'rounded-lg'
+                } ${
+                  theme === 'dark-theme'
+                    ? 'text-white hover:bg-gray-800'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+                disabled={item.className?.includes('cursor-not-allowed')}
+              >
+                {item.icon}
+              </button>
             </div>
-          </div>
+          ))}
         </div>
       </div>
-      )}
-
+    </div>
+  </div>
+)}
       {/* Feed Selection Menu */}
       {showFeedMenu && (
         <div 
