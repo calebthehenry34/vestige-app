@@ -23,7 +23,6 @@ import auth from './middleware/auth.js';
 dotenv.config();
 startEmailQueue();
 
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.join(__dirname, '..');
@@ -40,7 +39,6 @@ const uploadsDir = path.join(rootDir, 'uploads');
 const app = express();
 
 app.set('trust proxy', 'loopback, linklocal, uniquelocal');
-
 
 // Security middleware
 app.use(helmet({
@@ -61,8 +59,30 @@ const apiLimiter = rateLimit({
   message: 'Too many API requests, please try again later.'
 });
 
+// CORS configuration
+const allowedOrigins = [
+  'https://gleeful-starburst-18884e.netlify.app',
+  'http://localhost:3000',
+  'http://localhost:3001'
+];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // Basic middleware
-app.use(cors());
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -89,7 +109,7 @@ app.use('/uploads', auth, uploadsLimiter, (req, res, next) => {
   maxAge: '1d', // Cache for 1 day
   etag: true,
   lastModified: true,
-  setHeaders: (res, path) => {
+  setHeaders: (res, path, stat) => {
     // Set security headers
     res.setHeader('X-Content-Type-Options', 'nosniff');
     
@@ -97,11 +117,6 @@ app.use('/uploads', auth, uploadsLimiter, (req, res, next) => {
     if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png') || path.endsWith('.gif')) {
       res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 day
     }
-
-    // Add CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Authorization');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
   }
 }));
 
@@ -112,8 +127,6 @@ if (process.env.NODE_ENV !== 'production') {
     next();
   });
 }
-
-
 
 // API routes with rate limiting
 app.use('/api', apiLimiter);
