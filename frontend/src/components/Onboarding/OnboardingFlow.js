@@ -181,8 +181,8 @@ const OnboardingFlow = () => {
   };
 
   const renderNavigation = () => (
-    <div className="p-6 border-b border-[#f1f1f2] grid grid-cols-3 items-center">
-      <div className="card-header flex items-center">
+    <div className=" card-header p-6 border-b border-[#262626] grid grid-cols-3 items-center">
+      <div className="flex items-center">
         <img src="/logos/logo.svg" alt="Vestige" className="h-8" />
       </div>
       <div className="flex text-xs justify-center">
@@ -192,7 +192,7 @@ const OnboardingFlow = () => {
         <button
           onClick={step < 4 ? handleNext : handleComplete}
           disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
-          className="w-10 h-10 rounded-md border-2 border-gray bg-transparent hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+          className="w-10 h-10 rounded-md border-2 border-[#262626] bg-transparent hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
         >
           <ArrowRight className="w-5 h-5 text-gray" />
         </button>
