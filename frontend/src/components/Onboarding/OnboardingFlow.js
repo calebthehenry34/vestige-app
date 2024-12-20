@@ -8,7 +8,7 @@ import ProfileImageEditor from './ProfileImageEditor';
 import styles from './OnboardingFlow.module.css';
 
 const StepIndicator = ({ label }) => (
-  <div className="text-white font-medium">
+  <div className="text-gray-800 text-sm font-medium">
     {label}
   </div>
 );
@@ -180,14 +180,14 @@ const OnboardingFlow = () => {
       <div className="flex items-center">
         <img src="/logos/logo.svg" alt="Vestige" className="h-8" />
       </div>
-      <div className="flex justify-center">
+      <div className="flex text-xs justify-center">
         <StepIndicator label={getStepLabel()} />
       </div>
       <div className="flex justify-end">
         <button
           onClick={step < 4 ? handleNext : handleComplete}
           disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
-          className="w-12 h-12 rounded-full border-2 border-white bg-transparent hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+          className="w-7 h-7 rounded-md border-2 border-white bg-transparent hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
         >
           <ArrowRight className="w-6 h-6 text-white" />
         </button>
@@ -209,12 +209,12 @@ const OnboardingFlow = () => {
   };
 
   const renderCard = () => {
-    const containerClass = `${styles.cardContainer} ${slideDirection}`;
-    const cardClass = `${styles.card} rounded-2xl`;
+  const containerClass = `${styles.cardContainer} ${slideDirection}`;
+  const cardClass = `${styles.card} rounded-2xl`;
 
-    if (step === 1) {
-      return (
-        <div className={containerClass}> 
+  if (step === 1) {
+    return (
+      <div className={containerClass}>
         <div className={cardClass}>
           {showImageEditor && previewUrl ? (
             <ProfileImageEditor
@@ -223,27 +223,25 @@ const OnboardingFlow = () => {
               onBack={() => setShowImageEditor(false)}
             />
           ) : (
-            <div className="relative h-full">
-              <div className="absolute inset-0">
-                {previewUrl ? (
-                  <img
-                    src={previewUrl}
-                    alt={formData.username || 'Profile'}
-                    className="w-full h-full object-cover rounded-2xl"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center rounded-2xl">
-                    <div className="text-center">
-                      <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center mx-auto">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                          <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
-                        </svg>
-                      </div>
-                    </div>
+            <div className="w-full h-full relative">
+              {/* Background/Image Layer */}
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt={formData.username || 'Profile'}
+                  className="w-full h-full object-cover rounded-2xl"
+                />
+              ) : (
+                <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center rounded-2xl">
+                  <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
+                    </svg>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
+              {/* Upload Button Layer */}
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30">
                 <input
                   type="file"
@@ -265,8 +263,10 @@ const OnboardingFlow = () => {
                 </button>
               </div>
 
+              {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 pointer-events-none rounded-2xl" />
               
+              {/* Content Layer */}
               <div className="absolute bottom-0 left-0 right-0 p-6">
                 <div className="flex justify-between items-start">
                   <h1 className="text-2xl font-headlines text-white">{formData.username}</h1>
@@ -289,10 +289,10 @@ const OnboardingFlow = () => {
             </div>
           )}
         </div>
-        </div>
-      );
-      
-    }
+      </div>
+    );
+  }
+
 
     if (step === 2) {
       return (
