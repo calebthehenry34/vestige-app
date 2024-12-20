@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { SliderRegular, BrightnessRegular, ContrastRegular, ColorRegular } from '@fluentui/react-icons';
+import React, { useState, useRef, } from 'react';
+import { BrightnessRegular, ContrastRegular, ColorRegular } from '@fluentui/react-icons';
 
 const filters = [
   { name: 'Normal', filter: '' },
