@@ -1,22 +1,17 @@
 .cardContainer {
-  position: relative; /* or absolute depending on your needs */
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  perspective: 1000px; /* Adds depth to the rotation */
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .card {
-  position: absolute; /* Changed from absolute */
-  width: 90%; /* Or your desired card width */
-  max-width: 500px; /* Or your desired max width */
-  height: auto; /* Or your desired height */
-  background: #262626;
-  border-radius: 12px; /* Optional */
-  transform-origin: center center;
-  will-change: transform, opacity; /* Optimizes animations */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+  transition: transform 0.3s ease-in-out;
 }
 
 .slideLeft {
@@ -62,4 +57,17 @@
     transform: translateX(0) rotate(0);
     opacity: 1;
   }
+}
+
+.imageContainer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.imageOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0.6) 100%);
+  pointer-events: none;
 }

@@ -187,9 +187,9 @@ const OnboardingFlow = () => {
         <button
           onClick={step < 4 ? handleNext : handleComplete}
           disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
-          className="w-7 h-7 rounded-md border-2 border-white bg-transparent hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+          className="w-10 h-10 rounded-md border-2 border-white bg-transparent hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
         >
-          <ArrowRight className="w-2 h-2 text-white" />
+          <ArrowRight className="w-5 h-5 text-white" />
         </button>
       </div>
     </div>
