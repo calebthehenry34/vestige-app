@@ -1,4 +1,4 @@
-import { S3Client } from '@aws-sdk/client-s3';
+import { S3Client, HeadBucketCommand } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -20,27 +20,13 @@ const validateS3Credentials = () => {
     AWS_REGION: process.env.AWS_REGION
   };
 
-  // Debug: Log the raw secret key length and first/last few characters
-  if (required.AWS_SECRET_ACCESS_KEY) {
-    console.log('Secret Key Debug:', {
-      length: required.AWS_SECRET_ACCESS_KEY.length,
-      firstChars: required.AWS_SECRET_ACCESS_KEY.substring(0, 4),
-      lastChars: required.AWS_SECRET_ACCESS_KEY.substring(required.AWS_SECRET_ACCESS_KEY.length - 4),
-      containsPlus: required.AWS_SECRET_ACCESS_KEY.includes('+'),
-      containsSlash: required.AWS_SECRET_ACCESS_KEY.includes('/')
-    });
-  }
-
-  // Log each credential status (without exposing sensitive data)
-  Object.entries(required).forEach(([key, value]) => {
-    if (key === 'AWS_SECRET_ACCESS_KEY' && value) {
-      console.log(`${key}: Present (${value.length} characters)`);
-    } else {
-      console.log(`${key}: ${value ? 'Present' : 'Missing'}`);
-      if (key === 'AWS_REGION' || key === 'AWS_BUCKET_NAME') {
-        console.log(`${key} value: ${value}`);
-      }
-    }
+  // Debug: Log credential details safely
+  console.log('S3 Configuration:', {
+    accessKeyId: required.AWS_ACCESS_KEY_ID ? `${required.AWS_ACCESS_KEY_ID.slice(0, 4)}...${required.AWS_ACCESS_KEY_ID.slice(-4)}` : 'Missing',
+    secretKeyPresent: !!required.AWS_SECRET_ACCESS_KEY,
+    secretKeyLength: required.AWS_SECRET_ACCESS_KEY?.length,
+    bucketName: required.AWS_BUCKET_NAME,
+    region: required.AWS_REGION
   });
 
   const missing = Object.entries(required)
@@ -56,6 +42,23 @@ const validateS3Credentials = () => {
 };
 
 let s3 = null;
+
+const validateBucket = async (client, bucketName) => {
+  try {
+    console.log(`Validating bucket: ${bucketName}`);
+    const command = new HeadBucketCommand({ Bucket: bucketName });
+    await client.send(command);
+    console.log('Bucket validation successful');
+    return true;
+  } catch (error) {
+    console.error('Bucket validation error:', {
+      message: error.message,
+      code: error.code,
+      bucketName
+    });
+    return false;
+  }
+};
 
 if (validateS3Credentials()) {
   try {
@@ -82,41 +85,37 @@ if (validateS3Credentials()) {
         secretAccessKey: credentials.secretAccessKey
       },
       maxAttempts: 3,
-      // Force path style for troubleshooting
-      forcePathStyle: true
+      forcePathStyle: true,
+      // Add configuration for handling larger files
+      requestHandler: {
+        abortSignal: {
+          timeoutInMs: 900000 // 15 minutes timeout
+        }
+      }
     });
 
     console.log('S3 Client initialized with explicit credentials');
 
-    // Test the credentials immediately
-    const testCredentials = async () => {
-      try {
-        const creds = await s3.config.credentials();
-        console.log('Credential test result:', {
-          hasAccessKey: !!creds.accessKeyId,
-          accessKeyLength: creds.accessKeyId?.length,
-          hasSecretKey: !!creds.secretAccessKey,
-          secretKeyLength: creds.secretAccessKey?.length,
-          // Log the actual secret key length to verify it's not being truncated
-          actualSecretKeyLength: process.env.AWS_SECRET_ACCESS_KEY.length
-        });
-        return true;
-      } catch (error) {
-        console.error('Credential test error:', {
-          message: error.message,
-          stack: error.stack
-        });
-        return false;
-      }
-    };
-
-    // Run the test
-    testCredentials();
+    // Validate bucket immediately
+    validateBucket(s3, process.env.AWS_BUCKET_NAME)
+      .then(isValid => {
+        if (!isValid) {
+          console.error('Bucket validation failed - S3 functionality may be impaired');
+          // Don't set s3 to null here, as the bucket might exist but we don't have permission to HeadBucket
+        }
+      })
+      .catch(error => {
+        console.error('Error during bucket validation:', error);
+      });
 
   } catch (error) {
     console.error("Error initializing S3 client:", {
       message: error.message,
-      stack: error.stack
+      stack: error.stack,
+      config: {
+        region: process.env.AWS_REGION,
+        bucketName: process.env.AWS_BUCKET_NAME
+      }
     });
     s3 = null;
   }

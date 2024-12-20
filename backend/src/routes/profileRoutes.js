@@ -70,13 +70,15 @@ router.post('/complete-onboarding',
           console.log('Sending S3 command...');
           await s3.send(command);
 
-          profilePictureUrl = `https://${bucketName}.s3.amazonaws.com/profile-pictures/${fileName}`;
+          // Update URL format to match bucket configuration
+          profilePictureUrl = `https://s3.${process.env.AWS_REGION}.amazonaws.com/${bucketName}/profile-pictures/${fileName}`;
           console.log('S3 upload successful:', profilePictureUrl);
         } catch (uploadError) {
           console.error('S3 upload error:', {
             message: uploadError.message,
             code: uploadError.code,
-            stack: uploadError.stack
+            stack: uploadError.stack,
+            requestId: uploadError.$metadata?.requestId
           });
           return res.status(500).json({ 
             message: 'Failed to upload profile picture',
