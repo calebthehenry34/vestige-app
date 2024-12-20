@@ -84,9 +84,9 @@ if (validateS3Credentials()) {
         accessKeyId: credentials.accessKeyId,
         secretAccessKey: credentials.secretAccessKey
       },
+      endpoint: `https://s3.${process.env.AWS_REGION.trim()}.amazonaws.com`,
+      forcePathStyle: false, // Use virtual hosted-style URLs
       maxAttempts: 3,
-      forcePathStyle: true,
-      // Add configuration for handling larger files
       requestHandler: {
         abortSignal: {
           timeoutInMs: 900000 // 15 minutes timeout
@@ -101,7 +101,6 @@ if (validateS3Credentials()) {
       .then(isValid => {
         if (!isValid) {
           console.error('Bucket validation failed - S3 functionality may be impaired');
-          // Don't set s3 to null here, as the bucket might exist but we don't have permission to HeadBucket
         }
       })
       .catch(error => {
@@ -114,7 +113,8 @@ if (validateS3Credentials()) {
       stack: error.stack,
       config: {
         region: process.env.AWS_REGION,
-        bucketName: process.env.AWS_BUCKET_NAME
+        bucketName: process.env.AWS_BUCKET_NAME,
+        endpoint: `https://s3.${process.env.AWS_REGION}.amazonaws.com`
       }
     });
     s3 = null;

@@ -50,19 +50,26 @@ router.post('/complete-onboarding',
             mimeType: req.file.mimetype
           });
 
+          // Ensure the file buffer is base64 encoded
+          const base64Data = req.file.buffer.toString('base64');
+          const buffer = Buffer.from(base64Data, 'base64');
+
           const uploadParams = {
             Bucket: bucketName,
             Key: `profile-pictures/${fileName}`,
-            Body: req.file.buffer,
+            Body: buffer,
             ContentType: req.file.mimetype,
-            ACL: 'public-read'
+            ContentEncoding: 'base64',
+            ACL: 'public-read',
+            CacheControl: 'max-age=31536000'
           };
 
           console.log('Attempting S3 upload with params:', {
             Bucket: uploadParams.Bucket,
             Key: uploadParams.Key,
             ContentType: uploadParams.ContentType,
-            BufferLength: req.file.buffer.length
+            ContentEncoding: uploadParams.ContentEncoding,
+            BufferLength: buffer.length
           });
 
           const command = new PutObjectCommand(uploadParams);
@@ -70,15 +77,17 @@ router.post('/complete-onboarding',
           console.log('Sending S3 command...');
           await s3.send(command);
 
-          // Update URL format to match bucket configuration
-          profilePictureUrl = `https://s3.${process.env.AWS_REGION}.amazonaws.com/${bucketName}/profile-pictures/${fileName}`;
+          // Use virtual-hosted-style URL
+          profilePictureUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/profile-pictures/${fileName}`;
           console.log('S3 upload successful:', profilePictureUrl);
         } catch (uploadError) {
           console.error('S3 upload error:', {
             message: uploadError.message,
             code: uploadError.code,
             stack: uploadError.stack,
-            requestId: uploadError.$metadata?.requestId
+            requestId: uploadError.$metadata?.requestId,
+            region: process.env.AWS_REGION,
+            bucket: getS3BucketName()
           });
           return res.status(500).json({ 
             message: 'Failed to upload profile picture',
