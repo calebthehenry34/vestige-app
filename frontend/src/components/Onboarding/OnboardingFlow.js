@@ -7,8 +7,6 @@ import { API_URL } from '../../config';
 import ProfileImageEditor from './ProfileImageEditor';
 import styles from './OnboardingFlow.module.css';
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
-
 const StepIndicator = ({ label }) => (
   <div className="text-gray-200 text-sm font-medium">
     {label}
@@ -46,11 +44,6 @@ const OnboardingFlow = () => {
     const file = e.target.files?.[0];
     
     if (!file) return;
-
-    if (file.size > MAX_FILE_SIZE) {
-      setError('File is too large. Maximum size is 50MB.');
-      return;
-    }
 
     if (!file.type.startsWith('image/')) {
       setError('Please upload an image file.');
@@ -286,7 +279,7 @@ const OnboardingFlow = () => {
               )}
 
               {/* Upload Button Layer */}
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30">
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center">
                 <input
                   type="file"
                   id="profile-upload"
@@ -305,9 +298,6 @@ const OnboardingFlow = () => {
                     <Add className="w-8 h-8 text-white" />
                   )}
                 </button>
-                <p className="text-center text-sm text-gray-400 mt-4">
-                  Maximum file size: 50MB
-                </p>
               </div>
 
               {/* Gradient Overlay */}

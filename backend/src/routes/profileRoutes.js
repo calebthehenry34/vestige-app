@@ -5,7 +5,7 @@ import Post from '../models/Post.js';
 import Follow from '../models/Follow.js';
 import upload from '../middleware/upload.js';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
-import s3, { getS3BucketName } from '../config/s3.js';
+import s3, { getS3BucketName, isS3Available } from '../config/s3.js';
 import crypto from 'crypto';
 
 const router = express.Router();
@@ -22,17 +22,34 @@ router.post('/complete-onboarding',
   upload.handleUpload('profilePicture'), 
   async (req, res) => {
     try {
-      console.log('File received:', req.file); // Check what file data you're getting
+      console.log('Starting onboarding completion...');
+      console.log('User ID:', req.user.userId);
+      console.log('File received:', req.file); 
+      console.log('Body:', req.body);
+
       const userId = req.user.userId;
-      const { username, bio } = req.body;
+      const { bio } = req.body;
       
       let profilePictureUrl;
       
       if (req.file) {
         try {
+          // Check if S3 is available
+          if (!isS3Available()) {
+            console.error('S3 client is not available');
+            return res.status(500).json({ message: 'S3 storage is not configured' });
+          }
+
           const fileName = generateUniqueFileName(req.file.originalname);
           const bucketName = getS3BucketName();
           
+          console.log('Preparing S3 upload...', {
+            bucketName,
+            fileName,
+            fileSize: req.file.size,
+            mimeType: req.file.mimetype
+          });
+
           const uploadParams = {
             Bucket: bucketName,
             Key: `profile-pictures/${fileName}`,
@@ -49,21 +66,30 @@ router.post('/complete-onboarding',
           });
 
           const command = new PutObjectCommand(uploadParams);
+          
+          console.log('Sending S3 command...');
           await s3.send(command);
 
           profilePictureUrl = `https://${bucketName}.s3.amazonaws.com/profile-pictures/${fileName}`;
           console.log('S3 upload successful:', profilePictureUrl);
         } catch (uploadError) {
-          console.error('S3 upload error:', uploadError);
-          return res.status(500).json({ message: 'Failed to upload profile picture' });
+          console.error('S3 upload error:', {
+            message: uploadError.message,
+            code: uploadError.code,
+            stack: uploadError.stack
+          });
+          return res.status(500).json({ 
+            message: 'Failed to upload profile picture',
+            details: uploadError.message
+          });
         }
       }
 
+      console.log('Updating user profile...');
       // Update user profile
       const updatedUser = await User.findByIdAndUpdate(
         userId,
         {
-          username,
           bio,
           profilePicture: profilePictureUrl,
           onboardingComplete: true
@@ -72,10 +98,16 @@ router.post('/complete-onboarding',
       );
 
       if (!updatedUser) {
+        console.error('User not found:', userId);
         return res.status(404).json({ message: 'User not found' });
       }
 
-      console.log('Updated user:', updatedUser); // Debug log
+      console.log('User profile updated successfully:', {
+        userId: updatedUser._id,
+        bio: updatedUser.bio,
+        profilePicture: updatedUser.profilePicture,
+        onboardingComplete: updatedUser.onboardingComplete
+      });
 
       res.json({
         message: 'Onboarding completed successfully',
@@ -85,8 +117,15 @@ router.post('/complete-onboarding',
         }
       });
     } catch (error) {
-      console.error('Complete onboarding error:', error);
-      res.status(500).json({ message: 'Failed to complete onboarding' });
+      console.error('Complete onboarding error:', {
+        message: error.message,
+        stack: error.stack,
+        userId: req.user?.userId
+      });
+      res.status(500).json({ 
+        message: 'Failed to complete onboarding',
+        details: error.message
+      });
     }
   }
 );
@@ -99,7 +138,7 @@ router.get('/:username', auth, async (req, res) => {
     const profile = await User.findOne({ 
       username: new RegExp(`^${username}$`, 'i') 
     })
-    .select('username email bio profilePicture onboardingComplete')  // Only select needed fields
+    .select('username email bio profilePicture onboardingComplete')
     .lean();
 
     if (!profile) {
@@ -120,13 +159,13 @@ router.get('/:username', auth, async (req, res) => {
 
 router.post('/update', auth, async (req, res) => {
   try {
-    console.log('User from token:', req.user); // Debug log
-    console.log('Request body:', req.body); // Debug log
+    console.log('User from token:', req.user);
+    console.log('Request body:', req.body);
 
     const { bio, location, website } = req.body;
     
     const user = await User.findById(req.user.userId);
-    console.log('Found user:', user); // Debug log
+    console.log('Found user:', user);
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -138,7 +177,7 @@ router.post('/update', auth, async (req, res) => {
     if (website) user.website = website;
     
     await user.save();
-    console.log('Updated user:', user); // Debug log
+    console.log('Updated user:', user);
 
     res.json({
       user: {
