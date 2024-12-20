@@ -12,8 +12,10 @@ import {
   DeleteRegular,
   FlagRegular,
   PersonRegular,
+  AddRegular,
 } from '@fluentui/react-icons';
 import PostComments from '../Post/PostComments';
+import PostCreator from '../Post/PostCreator';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config';
@@ -29,6 +31,7 @@ const Home = () => {
   const [showComments, setShowComments] = useState({});
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharePostId, setSharePostId] = useState(null);
+  const [showPostCreator, setShowPostCreator] = useState(false);
   const scrollRestoredRef = useRef(false);
 
   const fetchPosts = useCallback(async () => {
@@ -91,6 +94,11 @@ const Home = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [fetchPosts]);
+
+  const handlePostCreated = async (newPost) => {
+    await fetchPosts(); // Refresh the feed
+    setShowPostCreator(false); // Close the creator
+  };
 
   const togglePostMenu = (postId) => {
     setActivePostMenu(activePostMenu === postId ? null : postId);
@@ -357,7 +365,7 @@ const Home = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#ae52e3]"></div>
       </div>
     );
   }
@@ -372,9 +380,24 @@ const Home = () => {
 
   return (
     <div className="max-w-xl mx-auto p-4 m-50">
+      {/* Create Post Button */}
+      <button
+        onClick={() => setShowPostCreator(true)}
+        className="fixed bottom-4 right-4 bg-[#ae52e3] text-white p-4 rounded-full shadow-lg hover:bg-[#9a3dd0] transition-colors z-50"
+      >
+        <AddRegular className="w-6 h-6" />
+      </button>
+
+      {/* Post Creator Modal */}
+      <PostCreator
+        isOpen={showPostCreator}
+        onClose={() => setShowPostCreator(false)}
+        onPostCreated={handlePostCreated}
+      />
+
       <div className="space-y-6">
         {Array.isArray(posts) && posts.map((post) => (
-          <div key={post._id} className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div key={post._id} className="bg-[#1a1a1a] rounded-lg shadow-md overflow-hidden">
             <Link to={`/post/${post._id}`} className="block relative" onClick={(e) => {
               if (e.target.closest('button')) {
                 e.preventDefault();
@@ -418,12 +441,12 @@ const Home = () => {
                 ) : (
                   <div className="relative">
                     <img
-                      src={post.media?.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`}
+                      src={post.media}
                       alt="Post content"
                       className="w-full h-auto"
                       onError={(e) => {
                         console.error('Image load error:', post.media);
-                        e.target.src = '/api/placeholder/400/400';
+                        e.target.src = 'https://via.placeholder.com/400';
                       }}
                     />
                   </div>
@@ -442,7 +465,7 @@ const Home = () => {
                 </button>
 
                 {activePostMenu === post._id && (
-                  <div className="absolute right-4 top-12 w-48 bg-white rounded-lg shadow-lg z-20 py-1">
+                  <div className="absolute right-4 top-12 w-48 bg-[#262626] rounded-lg shadow-lg z-20 py-1">
                     {post.user?._id === user?.id ? (
                       <>
                         <button
@@ -451,7 +474,7 @@ const Home = () => {
                             e.stopPropagation();
                             handleEditCaption(post._id);
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center"
+                          className="w-full text-left px-4 py-2 hover:bg-[#333333] text-white flex items-center"
                         >
                           <EditRegular className="w-5 h-5 mr-2" />
                           Edit Caption
@@ -462,7 +485,7 @@ const Home = () => {
                             e.stopPropagation();
                             handleDeletePost(post._id);
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center"
+                          className="w-full text-left px-4 py-2 hover:bg-[#333333] text-red-500 flex items-center"
                         >
                           <DeleteRegular className="w-5 h-5 mr-2" />
                           Delete Post
@@ -475,7 +498,7 @@ const Home = () => {
                           e.stopPropagation();
                           handleReportPost(post._id);
                         }}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center"
+                        className="w-full text-left px-4 py-2 hover:bg-[#333333] text-red-500 flex items-center"
                       >
                         <FlagRegular className="w-5 h-5 mr-2" />
                         Report Post
@@ -553,8 +576,8 @@ const Home = () => {
       {/* Share Modal */}
       {showShareModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-4 w-80">
-            <h3 className="text-lg font-semibold mb-4">Share Post</h3>
+          <div className="bg-[#1a1a1a] rounded-lg p-4 w-80">
+            <h3 className="text-lg font-semibold mb-4 text-white">Share Post</h3>
             <div className="space-y-4">
               <button 
                 onClick={async () => {
@@ -567,13 +590,13 @@ const Home = () => {
                   }
                   setShowShareModal(false);
                 }}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100 rounded"
+                className="w-full text-left px-4 py-2 hover:bg-[#262626] rounded text-white"
               >
                 Copy Link
               </button>
               <button 
                 onClick={() => setShowShareModal(false)}
-                className="w-full px-4 py-2 bg-gray-100 rounded"
+                className="w-full px-4 py-2 bg-[#262626] rounded text-white"
               >
                 Cancel
               </button>

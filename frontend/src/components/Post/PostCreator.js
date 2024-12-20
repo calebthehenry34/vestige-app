@@ -13,24 +13,32 @@ import styles from '../Onboarding/OnboardingFlow.module.css';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
-const PostCreator = ({ isOpen, onClose }) => {
-  const [step, setStep] = useState('type');
-  const [slideDirection, setSlideDirection] = useState('');
-  const [media, setMedia] = useState(null);
-  const [editedMedia, setEditedMedia] = useState(null);
-  const [caption, setCaption] = useState('');
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [error, setError] = useState(null);
+const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
+  const initialState = {
+    step: 'type',
+    slideDirection: '',
+    media: null,
+    editedMedia: null,
+    caption: '',
+    uploadProgress: 0,
+    error: null
+  };
+
+  const [state, setState] = useState(initialState);
+
+  const resetState = () => {
+    setState(initialState);
+  };
 
   const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
-    setError(null);
+    setState(prev => ({ ...prev, error: null }));
     
     if (rejectedFiles.length > 0) {
       const { errors } = rejectedFiles[0];
       if (errors[0]?.code === 'file-too-large') {
-        setError('File is too large. Maximum size is 50MB.');
+        setState(prev => ({ ...prev, error: 'File is too large. Maximum size is 50MB.' }));
       } else if (errors[0]?.code === 'file-invalid-type') {
-        setError('Invalid file type. Please upload a JPEG or PNG image.');
+        setState(prev => ({ ...prev, error: 'Invalid file type. Please upload a JPEG or PNG image.' }));
       }
       return;
     }
@@ -39,11 +47,17 @@ const PostCreator = ({ isOpen, onClose }) => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setMedia(reader.result);
-        setSlideDirection(styles.slideLeft);
+        setState(prev => ({
+          ...prev,
+          media: reader.result,
+          slideDirection: styles.slideLeft
+        }));
         setTimeout(() => {
-          setStep('editor');
-          setSlideDirection(styles.slideNext);
+          setState(prev => ({
+            ...prev,
+            step: 'editor',
+            slideDirection: styles.slideNext
+          }));
         }, 300);
       };
       reader.readAsDataURL(file);
@@ -61,25 +75,30 @@ const PostCreator = ({ isOpen, onClose }) => {
   });
 
   const handleEditComplete = async ({ croppedImage, filter, adjustments }) => {
-    setEditedMedia({
-      url: croppedImage,
-      filter: filter || '',
-      adjustments: adjustments ? 
-        `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%)` 
-        : ''
-    });
-    setSlideDirection(styles.slideLeft);
+    setState(prev => ({
+      ...prev,
+      editedMedia: {
+        url: croppedImage,
+        filter: filter || '',
+        adjustments: adjustments ? 
+          `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%)` 
+          : ''
+      },
+      slideDirection: styles.slideLeft
+    }));
     setTimeout(() => {
-      setStep('details');
-      setSlideDirection(styles.slideNext);
+      setState(prev => ({
+        ...prev,
+        step: 'details',
+        slideDirection: styles.slideNext
+      }));
     }, 300);
   };
 
   const handleShare = async () => {
     try {
-      setError(null);
+      setState(prev => ({ ...prev, error: null }));
       
-      // Create a canvas to apply filters
       const img = new Image();
       img.crossOrigin = "Anonymous";
       
@@ -91,7 +110,7 @@ const PostCreator = ({ isOpen, onClose }) => {
           canvas.width = img.width;
           canvas.height = img.height;
           
-          ctx.filter = `${editedMedia.filter} ${editedMedia.adjustments}`;
+          ctx.filter = `${state.editedMedia.filter} ${state.editedMedia.adjustments}`;
           ctx.drawImage(img, 0, 0);
           
           canvas.toBlob((blob) => {
@@ -100,12 +119,12 @@ const PostCreator = ({ isOpen, onClose }) => {
         };
         
         img.onerror = reject;
-        img.src = editedMedia.url;
+        img.src = state.editedMedia.url;
       });
 
       const formData = new FormData();
       formData.append('media', processedImage);
-      formData.append('caption', caption);
+      formData.append('caption', state.caption);
 
       const token = localStorage.getItem('token');
       const result = await axios.post(`${API_URL}/api/posts`, formData, {
@@ -116,44 +135,65 @@ const PostCreator = ({ isOpen, onClose }) => {
         withCredentials: true,
         onUploadProgress: (progressEvent) => {
           const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(progress);
+          setState(prev => ({ ...prev, uploadProgress: progress }));
         }
       });
 
+      // Reset state and close
+      resetState();
       onClose();
-      return result.data;
+      
+      // Notify parent of new post
+      if (onPostCreated) {
+        onPostCreated(result.data);
+      }
     } catch (error) {
       console.error('Error creating post:', error);
       const errorMessage = error.response?.data?.error || error.message || 'Error creating post';
-      setError(errorMessage);
-      setUploadProgress(0);
-      throw error;
+      setState(prev => ({
+        ...prev,
+        error: errorMessage,
+        uploadProgress: 0
+      }));
     }
   };
 
   const handleBack = () => {
-    switch (step) {
+    switch (state.step) {
       case 'editor':
-        setSlideDirection(styles.slideRight);
+        setState(prev => ({
+          ...prev,
+          slideDirection: styles.slideRight
+        }));
         setTimeout(() => {
-          setStep('type');
-          setSlideDirection(styles.slideNext);
+          setState(prev => ({
+            ...prev,
+            step: 'type',
+            slideDirection: styles.slideNext
+          }));
         }, 300);
         break;
       case 'details':
-        setSlideDirection(styles.slideRight);
+        setState(prev => ({
+          ...prev,
+          slideDirection: styles.slideRight
+        }));
         setTimeout(() => {
-          setStep('editor');
-          setSlideDirection(styles.slideNext);
+          setState(prev => ({
+            ...prev,
+            step: 'editor',
+            slideDirection: styles.slideNext
+          }));
         }, 300);
         break;
       default:
+        resetState();
         onClose();
     }
   };
 
   const handleMomentClick = () => {
-    setError('Moments feature coming soon!');
+    setState(prev => ({ ...prev, error: 'Moments feature coming soon!' }));
   };
 
   const renderNavigation = () => (
@@ -164,16 +204,16 @@ const PostCreator = ({ isOpen, onClose }) => {
         </button>
       </div>
       <div className="flex text-xs justify-center text-gray-200">
-        {step === 'type' ? 'New Post' : step === 'editor' ? 'Edit Photo' : 'Share Post'}
+        {state.step === 'type' ? 'New Post' : state.step === 'editor' ? 'Edit Photo' : 'Share Post'}
       </div>
       <div className="flex justify-end">
-        {step === 'details' && (
+        {state.step === 'details' && (
           <button
             onClick={handleShare}
-            disabled={uploadProgress > 0 && uploadProgress < 100}
+            disabled={state.uploadProgress > 0 && state.uploadProgress < 100}
             className="px-4 py-2 bg-[#ae52e3] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#9a3dd0]"
           >
-            {uploadProgress > 0 && uploadProgress < 100 ? 'Sharing...' : 'Share'}
+            {state.uploadProgress > 0 && state.uploadProgress < 100 ? 'Sharing...' : 'Share'}
           </button>
         )}
       </div>
@@ -181,12 +221,12 @@ const PostCreator = ({ isOpen, onClose }) => {
   );
 
   const renderTypeSelection = () => (
-    <div className={`${styles.cardContainer} ${slideDirection}`}>
+    <div className={`${styles.cardContainer} ${state.slideDirection}`}>
       <div className={`${styles.card} overflow-auto p-4`}>
-        {media ? (
+        {state.media ? (
           <div className="relative w-full aspect-[4/5] mb-4">
             <img
-              src={media}
+              src={state.media}
               alt="Selected"
               className="w-full h-full object-cover rounded-lg"
             />
@@ -223,16 +263,16 @@ const PostCreator = ({ isOpen, onClose }) => {
   );
 
   const renderDetails = () => (
-    <div className={`${styles.cardContainer} ${slideDirection}`}>
+    <div className={`${styles.cardContainer} ${state.slideDirection}`}>
       <div className={`${styles.card} overflow-auto`}>
         <div className="h-full flex flex-col">
           <div className="relative w-full aspect-[4/5]">
             <img
-              src={editedMedia.url}
+              src={state.editedMedia.url}
               alt="Preview"
               className="w-full h-full object-cover"
               style={{ 
-                filter: `${editedMedia.filter} ${editedMedia.adjustments}`
+                filter: `${state.editedMedia.filter} ${state.editedMedia.adjustments}`
               }}
             />
           </div>
@@ -240,8 +280,8 @@ const PostCreator = ({ isOpen, onClose }) => {
           <div className="p-4 flex-shrink-0">
             <textarea
               placeholder="Write a caption..."
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
+              value={state.caption}
+              onChange={(e) => setState(prev => ({ ...prev, caption: e.target.value }))}
               className="w-full p-3 rounded-lg resize-none border bg-[#1a1a1a] border-gray-800 text-white placeholder-gray-500"
               rows={4}
             />
@@ -258,24 +298,24 @@ const PostCreator = ({ isOpen, onClose }) => {
       <div className="h-[100vh] flex flex-col max-h-screen">
         {renderNavigation()}
         <div className="flex-1 relative overflow-hidden">
-          {step === 'type' && renderTypeSelection()}
-          {step === 'editor' && media && (
+          {state.step === 'type' && renderTypeSelection()}
+          {state.step === 'editor' && state.media && (
             <ImageEditor 
-              image={media} 
+              image={state.media} 
               onSave={handleEditComplete} 
               onBack={handleBack} 
             />
           )}
-          {step === 'details' && editedMedia && renderDetails()}
+          {state.step === 'details' && state.editedMedia && renderDetails()}
         </div>
 
-        {error && (
+        {state.error && (
           <div className="fixed bottom-4 left-4 right-4 bg-red-500/90 text-white p-4 rounded-lg backdrop-blur-sm">
             <div className="flex items-start gap-3">
               <ErrorCircleRegular className="flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium">Error</p>
-                <p>{error}</p>
+                <p>{state.error}</p>
               </div>
             </div>
           </div>
