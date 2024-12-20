@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   DismissRegular,
   ChevronLeftRegular,
-  ChevronRightRegular
+  ChevronRightRegular,
+  ArrowLeftFilled
 } from '@fluentui/react-icons';
 
 const StoryViewer = ({ stories, currentIndex = 0, onClose }) => {
@@ -78,7 +79,7 @@ const StoryViewer = ({ stories, currentIndex = 0, onClose }) => {
 
   const handleKeyDown = useCallback((e) => {
     switch (e.key) {
-      case 'ArrowLeft':
+      case 'ArrowLeftFilled':
         handlePrevStory();
         break;
       case 'ArrowRight':

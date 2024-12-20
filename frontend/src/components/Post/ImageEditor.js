@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useContext } from 'react';
 import Cropper from 'react-easy-crop';
 import {
-  ArrowLeft,
+  ArrowLeftFilled,
   ErrorCircleRegular,
 } from '@fluentui/react-icons';
 import { ThemeContext } from '../../App';
@@ -166,7 +166,7 @@ const ImageEditor = ({ image, onSave, onBack }) => {
     <div className="p-6 border-b border-[#333333] grid grid-cols-3 items-center">
       <div className="flex items-center">
         <button onClick={handleBack} className="text-white hover:text-gray-300 transition-colors">
-          <ArrowLeft className="w-6 h-6" />
+          <ArrowLeftFilled className="w-6 h-6" />
         </button>
       </div>
       <div className="flex text-xs justify-center text-gray-200">

@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
-  Image24Regular as ImageRegular,
-  Sparkle24Regular as SparkleRegular,
-  ChevronLeft24Regular as ArrowLeft,
-  ErrorCircle24Regular as ErrorCircleRegular,
+  ImageRegular,
+  SparkleRegular,
+  ArrowLeftFilled,
+  ErrorCircleRegular,
 } from '@fluentui/react-icons';
 import ImageEditor from './ImageEditor';
 import axios from 'axios';
@@ -160,7 +160,7 @@ const PostCreator = ({ isOpen, onClose }) => {
     <div className="p-6 border-b border-[#333333] grid grid-cols-3 items-center">
       <div className="flex items-center">
         <button onClick={handleBack} className="text-white hover:text-gray-300 transition-colors">
-          <ArrowLeft className="w-6 h-6" />
+          <ArrowLeftFilled className="w-6 h-6" />
         </button>
       </div>
       <div className="flex text-xs justify-center text-gray-200">

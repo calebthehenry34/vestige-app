@@ -9,7 +9,7 @@ import {
   ShareRegular,
   BookmarkRegular,
   BookmarkFilled,
-  ArrowLeftRegular,
+  ArrowLeftFilled,
   PersonRegular,
   ErrorCircleRegular,
 } from '@fluentui/react-icons';
@@ -186,7 +186,7 @@ const VideoFeed = () => {
         className="fixed top-6 left-4 z-[60] p-2 rounded-full bg-black/20 backdrop-blur-sm hover:bg-black/40 transition-colors"
         style={{ position: 'fixed' }}
       >
-        <ArrowLeftRegular className="w-6 h-6 text-white" />
+        <ArrowLeftFilled className="w-6 h-6 text-white" />
       </button>
 
       {/* Video Container */}
