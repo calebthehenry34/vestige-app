@@ -1,5 +1,6 @@
 import Post from '../models/Post.js';
 import User from '../models/User.js';
+import Notification from '../models/notification.js';
 import s3, { isS3Available, getCredentials, getS3BucketName } from '../config/s3.js';
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -203,6 +204,17 @@ export const createPost = async (req, res) => {
       const users = await User.find({ _id: { $in: taggedUsers } });
       if (users.length !== taggedUsers.length) {
         return res.status(400).json({ error: 'One or more tagged users do not exist' });
+      }
+      // Create tag notifications
+      for (const taggedUserId of taggedUsers) {
+        if (taggedUserId.toString() !== req.user.userId) {
+          await Notification.create({
+            recipient: taggedUserId,
+            sender: req.user.userId,
+            type: 'tag',
+            post: post._id
+          });
+        }
       }
     }
 
@@ -439,8 +451,24 @@ export const likePost = async (req, res) => {
     
     if (liked) {
       post.likes = post.likes.filter(id => id.toString() !== req.user.userId);
+      // Remove like notification if exists
+      await Notification.deleteOne({
+        recipient: post.user,
+        sender: req.user.userId,
+        type: 'like',
+        post: post._id
+      });
     } else {
       post.likes.push(req.user.userId);
+      // Create notification for post like (only if the liker isn't the post owner)
+      if (post.user.toString() !== req.user.userId) {
+        await Notification.create({
+          recipient: post.user,
+          sender: req.user.userId,
+          type: 'like',
+          post: post._id
+        });
+      }
     }
 
     await post.save();

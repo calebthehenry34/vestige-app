@@ -11,7 +11,7 @@ const FollowButton = ({ userId, initialIsFollowing, onFollowChange }) => {
     try {
       setLoading(true);
       const method = isFollowing ? 'DELETE' : 'POST';
-      const response = await fetch(API_URL + '/api/users/' + userId + '/follow', {
+      const response = await fetch(`${API_URL}/api/users/follow/${userId}`, {
         method,
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -50,7 +50,7 @@ const FollowButton = ({ userId, initialIsFollowing, onFollowChange }) => {
         </>
       ) : (
         <>
-          <HandshakeFilled className="w-5 h-5 mr-2" />
+          <PersonAddRegular className="w-5 h-5 mr-2" />
           Follow
         </>
       )}

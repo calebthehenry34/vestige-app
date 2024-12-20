@@ -12,6 +12,8 @@ import { Link } from 'react-router-dom';
 import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
+import FollowButton from '../Common/FollowButton';
+import FollowersModal from './FollowersModal';
 
 const Profile = () => {
   const { username } = useParams();
@@ -23,6 +25,9 @@ const Profile = () => {
   const { theme } = useContext(ThemeContext);
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [bioText, setBioText] = useState('');
+  const [followersModalOpen, setFollowersModalOpen] = useState(false);
+  const [followingModalOpen, setFollowingModalOpen] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   // Fetch profile data and posts
   useEffect(() => {
@@ -44,6 +49,7 @@ const Profile = () => {
 
         setProfileData(profileData);
         setBioText(profileData.bio || '');
+        setIsFollowing(profileData.isFollowing || false);
 
         // Fetch user's posts using their ID
         const postsResponse = await fetch(API_URL + '/api/posts?userId=' + profileData._id, {
@@ -108,6 +114,14 @@ const Profile = () => {
     setIsEditingBio(false);
   };
 
+  const handleFollowChange = (newFollowState) => {
+    setIsFollowing(newFollowState);
+    setProfileData(prev => ({
+      ...prev,
+      followersCount: prev.followersCount + (newFollowState ? 1 : -1)
+    }));
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -129,24 +143,19 @@ const Profile = () => {
   return (
     <div className="max-w-4xl mx-auto pt-16 px-0">
       <div className="relative w-full aspect-[4/5] overflow-hidden mb-0">
-        {/* Profile Photo Section - Clickable only if own profile */}
+        {/* Profile Photo Section */}
         <div 
           className={`relative w-full h-4/5 ${isOwnProfile ? 'cursor-pointer' : ''}`}
           onClick={handleProfilePhotoClick}
         >
-         <img
-  src={getProfileImageUrl(profileData?.profilePicture, profileData?.username)}
-  alt={profileData?.username}
-  className="w-full h-full object-cover"
-  onError={(e) => {
-    console.log('Profile image error:', {
-      originalSrc: e.target.src,
-      profileData: profileData
-    });
-    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`;
-    e.target.onError = null;
-  }}
-/>
+          <img
+            src={getProfileImageUrl(profileData?.profilePicture, profileData?.username)}
+            alt={profileData?.username}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(profileData?.username || 'User')}`;
+            }}
+          />
         </div>
 
         {/* Gradient Overlay */}
@@ -165,14 +174,16 @@ const Profile = () => {
                   <LauncherSettingsRegular className="w-6 h-6" />
                 </Link>
               ) : (
-                <button className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 flex items-center">
-                  Follow
-                </button>
+                <FollowButton
+                  userId={profileData._id}
+                  initialIsFollowing={isFollowing}
+                  onFollowChange={handleFollowChange}
+                />
               )}
             </div>
           </div>
 
-          {/* Bio Section - Separate click handler */}
+          {/* Bio Section */}
           <div 
             className={`mb-4 ${isOwnProfile ? 'cursor-pointer' : ''}`}
             onClick={handleBioClick}
@@ -202,15 +213,21 @@ const Profile = () => {
 
           <div className="flex space-x-6">
             <div>
-              <div className="text-lg font-bold">{profileData?.posts?.length || 0}</div>
+              <div className="text-lg font-bold">{posts.length}</div>
               <div className="text-sm text-white/80">Posts</div>
             </div>
-            <div>
-              <div className="text-lg font-bold">{profileData?.followers?.length || 0}</div>
+            <div
+              className="cursor-pointer"
+              onClick={() => setFollowersModalOpen(true)}
+            >
+              <div className="text-lg font-bold">{profileData?.followerCount || 0}</div>
               <div className="text-sm text-white/80">Followers</div>
             </div>
-            <div>
-              <div className="text-lg font-bold">{profileData?.following?.length || 0}</div>
+            <div
+              className="cursor-pointer"
+              onClick={() => setFollowingModalOpen(true)}
+            >
+              <div className="text-lg font-bold">{profileData?.followingCount || 0}</div>
               <div className="text-sm text-white/80">Following</div>
             </div>
           </div>
@@ -269,7 +286,6 @@ const Profile = () => {
                   alt=""
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    console.log('Image load error:', post.media);
                     e.target.src = '/api/placeholder/400/400';
                   }}
                 />
@@ -296,6 +312,20 @@ const Profile = () => {
           {isOwnProfile ? "You haven't posted anything yet" : "No posts yet"}
         </div>
       )}
+
+      {/* Followers/Following Modals */}
+      <FollowersModal
+        isOpen={followersModalOpen}
+        onClose={() => setFollowersModalOpen(false)}
+        userId={profileData._id}
+        type="followers"
+      />
+      <FollowersModal
+        isOpen={followingModalOpen}
+        onClose={() => setFollowingModalOpen(false)}
+        userId={profileData._id}
+        type="following"
+      />
     </div>
   );
 };
