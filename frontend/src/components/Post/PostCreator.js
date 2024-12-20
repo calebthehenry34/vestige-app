@@ -2,9 +2,11 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
   ImageRegular,
-  SparkleRegular,
   ArrowLeftFilled,
   ErrorCircleRegular,
+  CheckmarkCircleFilled,
+  HashtagRegular,
+  PersonTagRegular,
 } from '@fluentui/react-icons';
 import ImageEditor from './ImageEditor';
 import axios from 'axios';
@@ -21,7 +23,9 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     editedMedia: null,
     caption: '',
     uploadProgress: 0,
-    error: null
+    error: null,
+    loading: false,
+    success: false
   };
 
   const [state, setState] = useState(initialState);
@@ -74,11 +78,11 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     multiple: false
   });
 
-  const handleEditComplete = async ({ croppedImage, filter, adjustments }) => {
+  const handleEditComplete = async ({ filter, adjustments }) => {
     setState(prev => ({
       ...prev,
       editedMedia: {
-        url: croppedImage,
+        url: prev.media,
         filter: filter || '',
         adjustments: adjustments ? 
           `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%)` 
@@ -97,7 +101,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
   const handleShare = async () => {
     try {
-      setState(prev => ({ ...prev, error: null }));
+      setState(prev => ({ ...prev, loading: true, error: null }));
       
       const img = new Image();
       img.crossOrigin = "Anonymous";
@@ -139,21 +143,24 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
         }
       });
 
-      // Reset state and close
-      resetState();
-      onClose();
+      setState(prev => ({ ...prev, success: true, loading: false }));
       
-      // Notify parent of new post
-      if (onPostCreated) {
-        onPostCreated(result.data);
-      }
+      // Show success message for 2 seconds before closing
+      setTimeout(() => {
+        resetState();
+        onClose();
+        if (onPostCreated) {
+          onPostCreated(result.data);
+        }
+      }, 2000);
     } catch (error) {
       console.error('Error creating post:', error);
       const errorMessage = error.response?.data?.error || error.message || 'Error creating post';
       setState(prev => ({
         ...prev,
         error: errorMessage,
-        uploadProgress: 0
+        uploadProgress: 0,
+        loading: false
       }));
     }
   };
@@ -192,10 +199,6 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     }
   };
 
-  const handleMomentClick = () => {
-    setState(prev => ({ ...prev, error: 'Moments feature coming soon!' }));
-  };
-
   const renderNavigation = () => (
     <div className="p-6 border-b border-[#333333] grid grid-cols-3 items-center">
       <div className="flex items-center">
@@ -210,10 +213,10 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
         {state.step === 'details' && (
           <button
             onClick={handleShare}
-            disabled={state.uploadProgress > 0 && state.uploadProgress < 100}
+            disabled={state.loading || state.uploadProgress > 0}
             className="px-4 py-2 bg-[#ae52e3] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#9a3dd0]"
           >
-            {state.uploadProgress > 0 && state.uploadProgress < 100 ? 'Sharing...' : 'Share'}
+            {state.loading ? 'Sharing...' : 'Share'}
           </button>
         )}
       </div>
@@ -223,41 +226,15 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
   const renderTypeSelection = () => (
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
       <div className={`${styles.card} overflow-auto p-4`}>
-        {state.media ? (
-          <div className="relative w-full aspect-[4/5] mb-4">
-            <img
-              src={state.media}
-              alt="Selected"
-              className="w-full h-full object-cover rounded-lg"
-            />
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <p className="text-white">Click Next to Edit</p>
-            </div>
+        <div {...getRootProps()} className="p-8 mb-4 rounded-lg border-2 border-dashed cursor-pointer transition-all hover:border-[#ae52e3] border-gray-800 bg-[#1a1a1a]">
+          <input {...getInputProps()} />
+          <div className="text-center">
+            <ImageRegular className="w-12 h-12 mx-auto mb-4 text-[#ae52e3]" />
+            <p className="font-medium text-white">
+              {isDragActive ? 'Drop photo here' : 'Add a photo'}
+            </p>
           </div>
-        ) : (
-          <>
-            <div {...getRootProps()} className="p-8 mb-4 rounded-lg border-2 border-dashed cursor-pointer transition-all hover:border-[#ae52e3] border-gray-800 bg-[#1a1a1a]">
-              <input {...getInputProps()} />
-              <div className="text-center">
-                <ImageRegular className="w-12 h-12 mx-auto mb-4 text-[#ae52e3]" />
-                <p className="font-medium text-white">
-                  {isDragActive ? 'Drop photo here' : 'Add a photo'}
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={handleMomentClick}
-              className="w-full p-6 rounded-lg border-2 transition-all border-gray-800 hover:border-[#ae52e3] bg-[#1a1a1a]"
-            >
-              <div className="flex items-center justify-center">
-                <SparkleRegular className="w-8 h-8 text-[#ae52e3]" />
-              </div>
-              <p className="mt-2 font-medium text-white">Moment</p>
-              <p className="text-gray-400 text-sm">Videos that disappear in 24 hours</p>
-            </button>
-          </>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -266,6 +243,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
       <div className={`${styles.card} overflow-auto`}>
         <div className="h-full flex flex-col">
+          {/* Preview Image */}
           <div className="relative w-full aspect-[4/5]">
             <img
               src={state.editedMedia.url}
@@ -277,6 +255,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
             />
           </div>
           
+          {/* Caption Section */}
           <div className="p-4 flex-shrink-0">
             <textarea
               placeholder="Write a caption..."
@@ -285,6 +264,18 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
               className="w-full p-3 rounded-lg resize-none border bg-[#1a1a1a] border-gray-800 text-white placeholder-gray-500"
               rows={4}
             />
+            
+            {/* Tag Helpers */}
+            <div className="mt-4 space-y-2 text-gray-400">
+              <div className="flex items-center">
+                <HashtagRegular className="w-5 h-5 mr-2" />
+                <span>Use # to add hashtags</span>
+              </div>
+              <div className="flex items-center">
+                <PersonTagRegular className="w-5 h-5 mr-2" />
+                <span>Use @ to tag people</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -309,6 +300,30 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
           {state.step === 'details' && state.editedMedia && renderDetails()}
         </div>
 
+        {/* Loading Overlay */}
+        {state.loading && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <div className="bg-[#1a1a1a] rounded-lg p-6 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-[#ae52e3] mx-auto mb-4"></div>
+              <p className="text-white">Processing your post...</p>
+              {state.uploadProgress > 0 && (
+                <p className="text-gray-400 mt-2">{state.uploadProgress}%</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Success Message */}
+        {state.success && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <div className="bg-[#1a1a1a] rounded-lg p-6 text-center">
+              <CheckmarkCircleFilled className="w-12 h-12 text-green-500 mx-auto mb-4" />
+              <p className="text-white">Post created successfully!</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error Message */}
         {state.error && (
           <div className="fixed bottom-4 left-4 right-4 bg-red-500/90 text-white p-4 rounded-lg backdrop-blur-sm">
             <div className="flex items-start gap-3">

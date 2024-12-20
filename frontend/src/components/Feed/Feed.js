@@ -6,10 +6,11 @@ import {
   SendRegular,
   BookmarkRegular,
   BookmarkFilled,
+  ImageRegular,
 } from '@fluentui/react-icons';
-import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../../config';
+import PostCreator from '../Post/PostCreator';
 
 const CommentSection = ({ post, onAddComment }) => {
   const [commentText, setCommentText] = useState('');
@@ -17,7 +18,7 @@ const CommentSection = ({ post, onAddComment }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (commentText.trim()) {
-      onAddComment(post.id, commentText);
+      onAddComment(commentText);
       setCommentText('');
     }
   };
@@ -47,6 +48,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showComments, setShowComments] = useState({});
+  const [showPostCreator, setShowPostCreator] = useState(false);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -78,74 +80,9 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
     }
   }, [onRefreshNeeded, fetchPosts]);
 
-  const toggleLike = async (postId) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post(`${API_URL}/api/posts/${postId}/like`, {}, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      setPosts(posts.map(post => {
-        if (post._id === postId) {
-          const isLiked = post.likes.includes(localStorage.getItem('userId'));
-          return {
-            ...post,
-            likes: isLiked 
-              ? post.likes.filter(id => id !== localStorage.getItem('userId'))
-              : [...post.likes, localStorage.getItem('userId')]
-          };
-        }
-        return post;
-      }));
-    } catch (error) {
-      console.error('Error toggling like:', error);
-    }
-  };
-
-  const toggleSave = (postId) => {
-    setPosts(posts.map(post => {
-      if (post._id === postId) {
-        return {
-          ...post,
-          saved: !post.saved
-        };
-      }
-      return post;
-    }));
-  };
-
-  const toggleComments = (postId) => {
-    setShowComments(prev => ({
-      ...prev,
-      [postId]: !prev[postId]
-    }));
-  };
-
-  const addComment = async (postId, commentText) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(`${API_URL}/api/posts/${postId}/comments`, {
-        text: commentText
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      setPosts(posts.map(post => {
-        if (post._id === postId) {
-          return {
-            ...post,
-            comments: [...post.comments, response.data]
-          };
-        }
-        return post;
-      }));
-    } catch (error) {
-      console.error('Error adding comment:', error);
-    }
+  const handlePostCreated = async (newPost) => {
+    await fetchPosts(); // Refresh the feed
+    setShowPostCreator(false); // Close the creator
   };
 
   if (loading) {
@@ -166,28 +103,21 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
 
   return (
     <div className="max-w-xl mx-auto py-8">
-      {/* Stories Section */}
-      <div className="bg-[#1a1a1a] rounded-lg shadow mb-6 p-4 overflow-x-auto">
-        <div className="flex space-x-4">
-          {[1, 2, 3, 4, 5].map((story) => (
-            <div 
-              key={story} 
-              className="flex-shrink-0 cursor-pointer"
-              onClick={() => onStoryClick?.(story - 1)}
-            >
-              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#ae52e3] to-[#685ee7] p-0.5">
-                <div className="w-full h-full rounded-full border-2 border-[#1a1a1a]">
-                  <img
-                    src={`https://picsum.photos/64/64?random=${story}`}
-                    alt={`Story ${story}`}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Create Post Button */}
+      <button
+        onClick={() => setShowPostCreator(true)}
+        className="w-full mb-6 p-4 rounded-lg border border-gray-800 bg-[#1a1a1a] hover:border-[#ae52e3] transition-colors flex items-center justify-center gap-2 text-white"
+      >
+        <ImageRegular className="w-6 h-6" />
+        <span>Create New Post</span>
+      </button>
+
+      {/* Post Creator Modal */}
+      <PostCreator
+        isOpen={showPostCreator}
+        onClose={() => setShowPostCreator(false)}
+        onPostCreated={handlePostCreated}
+      />
 
       {/* Posts */}
       <div className="space-y-6">
@@ -195,18 +125,15 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
           <div key={post._id} className="bg-[#1a1a1a] rounded-lg shadow">
             {/* Post Header */}
             <div className="flex items-center p-4">
-              <Link to={`/profile/${post.user.username}`} className="flex items-center">
-                <img
-                  src={post.user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username)}`}
-                  alt={post.user.username}
-                  className="h-10 w-10 rounded-full object-cover"
-                  onError={(e) => {
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username)}`;
-                    e.target.onError = null;
-                  }}
-                />
-                <span className="ml-3 font-medium text-white">{post.user.username}</span>
-              </Link>
+              <img
+                src={post.user.profilePicture}
+                alt={post.user.username}
+                className="h-10 w-10 rounded-full object-cover"
+                onError={(e) => {
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username)}`;
+                }}
+              />
+              <span className="ml-3 font-medium text-white">{post.user.username}</span>
             </div>
 
             {/* Post Image */}
@@ -215,7 +142,6 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                 src={post.media}
                 alt={post.caption}
                 className="w-full object-cover"
-                onDoubleClick={() => toggleLike(post._id)}
               />
             </div>
 
@@ -223,30 +149,22 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
             <div className="p-4">
               <div className="flex justify-between mb-2">
                 <div className="flex space-x-4">
-                  <button onClick={() => toggleLike(post._id)}>
-                    {post.likes.includes(localStorage.getItem('userId')) ? (
-                      <HeartFilled className="w-6 h-6 text-red-500" />
-                    ) : (
-                      <HeartRegular className="w-6 h-6 text-white" />
-                    )}
+                  <button className="text-white hover:text-[#ae52e3] transition-colors">
+                    <HeartRegular className="w-6 h-6" />
                   </button>
-                  <button onClick={() => toggleComments(post._id)}>
-                    <ChatRegular className="w-6 h-6 text-white" />
+                  <button className="text-white hover:text-[#ae52e3] transition-colors">
+                    <ChatRegular className="w-6 h-6" />
                   </button>
-                  <button>
-                    <SendRegular className="w-6 h-6 text-white" />
+                  <button className="text-white hover:text-[#ae52e3] transition-colors">
+                    <SendRegular className="w-6 h-6" />
                   </button>
                 </div>
-                <button onClick={() => toggleSave(post._id)}>
-                  {post.saved ? (
-                    <BookmarkFilled className="w-6 h-6 text-[#ae52e3]" />
-                  ) : (
-                    <BookmarkRegular className="w-6 h-6 text-white" />
-                  )}
+                <button className="text-white hover:text-[#ae52e3] transition-colors">
+                  <BookmarkRegular className="w-6 h-6" />
                 </button>
               </div>
 
-              <div className="font-semibold mb-2 text-white">{post.likes.length} likes</div>
+              <div className="font-semibold text-white mb-2">{post.likes?.length || 0} likes</div>
 
               {/* Caption */}
               <div className="text-white">
@@ -255,33 +173,26 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
               </div>
 
               {/* Comments */}
-              {(showComments[post._id] || (post.comments && post.comments.length < 3)) && (
-                <div className="mt-2 text-white">
-                  {post.comments && post.comments.map((comment) => (
-                    <div key={comment._id} className="mt-1">
-                      <span className="font-semibold mr-2">{comment.user.username}</span>
-                      {comment.text}
+              {post.comments && post.comments.length > 0 && (
+                <div className="mt-2 text-gray-400">
+                  <button onClick={() => setShowComments(prev => ({ ...prev, [post._id]: !prev[post._id] }))}>
+                    View all {post.comments.length} comments
+                  </button>
+                  {showComments[post._id] && (
+                    <div className="mt-2 space-y-2">
+                      {post.comments.map(comment => (
+                        <div key={comment._id} className="text-white">
+                          <span className="font-semibold mr-2">{comment.user.username}</span>
+                          {comment.text}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
 
-              {post.comments && post.comments.length >= 3 && !showComments[post._id] && (
-                <button
-                  className="text-gray-400 mt-2"
-                  onClick={() => toggleComments(post._id)}
-                >
-                  View all {post.comments.length} comments
-                </button>
-              )}
-
-              {/* Timestamp */}
-              <div className="text-gray-400 text-xs mt-2">
-                {new Date(post.createdAt).toLocaleDateString()}
-              </div>
-
-              {/* Comment Input */}
-              <CommentSection post={post} onAddComment={addComment} />
+              {/* Add Comment */}
+              <CommentSection post={post} onAddComment={(text) => console.log('Comment:', text)} />
             </div>
           </div>
         ))}
