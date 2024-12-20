@@ -137,7 +137,6 @@ const PostCreator = ({ isOpen, onClose }) => {
         setTimeout(() => {
           setStep('type');
           setSlideDirection(styles.slideNext);
-          setMedia(null);
         }, 300);
         break;
       case 'details':
@@ -183,26 +182,41 @@ const PostCreator = ({ isOpen, onClose }) => {
   const renderTypeSelection = () => (
     <div className={`${styles.cardContainer} ${slideDirection}`}>
       <div className={`${styles.card} overflow-auto p-4`}>
-        <div {...getRootProps()} className="p-8 mb-4 rounded-lg border-2 border-dashed cursor-pointer transition-all hover:border-[#ae52e3] border-gray-800 bg-[#1a1a1a]">
-          <input {...getInputProps()} />
-          <div className="text-center">
-            <ImageRegular className="w-12 h-12 mx-auto mb-4 text-[#ae52e3]" />
-            <p className="font-medium text-white">
-              {isDragActive ? 'Drop photo here' : 'Add a photo'}
-            </p>
+        {media ? (
+          <div className="relative w-full aspect-[4/5] mb-4">
+            <img
+              src={media}
+              alt="Selected"
+              className="w-full h-full object-cover rounded-lg"
+            />
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <p className="text-white">Click Next to Edit</p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <>
+            <div {...getRootProps()} className="p-8 mb-4 rounded-lg border-2 border-dashed cursor-pointer transition-all hover:border-[#ae52e3] border-gray-800 bg-[#1a1a1a]">
+              <input {...getInputProps()} />
+              <div className="text-center">
+                <ImageRegular className="w-12 h-12 mx-auto mb-4 text-[#ae52e3]" />
+                <p className="font-medium text-white">
+                  {isDragActive ? 'Drop photo here' : 'Add a photo'}
+                </p>
+              </div>
+            </div>
 
-        <button
-          onClick={handleMomentClick}
-          className="w-full p-6 rounded-lg border-2 transition-all border-gray-800 hover:border-[#ae52e3] bg-[#1a1a1a]"
-        >
-          <div className="flex items-center justify-center">
-            <SparkleRegular className="w-8 h-8 text-[#ae52e3]" />
-          </div>
-          <p className="mt-2 font-medium text-white">Moment</p>
-          <p className="text-gray-400 text-sm">Videos that disappear in 24 hours</p>
-        </button>
+            <button
+              onClick={handleMomentClick}
+              className="w-full p-6 rounded-lg border-2 transition-all border-gray-800 hover:border-[#ae52e3] bg-[#1a1a1a]"
+            >
+              <div className="flex items-center justify-center">
+                <SparkleRegular className="w-8 h-8 text-[#ae52e3]" />
+              </div>
+              <p className="mt-2 font-medium text-white">Moment</p>
+              <p className="text-gray-400 text-sm">Videos that disappear in 24 hours</p>
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -210,25 +224,27 @@ const PostCreator = ({ isOpen, onClose }) => {
   const renderDetails = () => (
     <div className={`${styles.cardContainer} ${slideDirection}`}>
       <div className={`${styles.card} overflow-auto`}>
-        <div className="relative w-full aspect-[4/5]">
-          <img
-            src={editedMedia.url}
-            alt="Preview"
-            className="w-full h-full object-cover"
-            style={{ 
-              filter: `${editedMedia.filter} ${editedMedia.adjustments}`
-            }}
-          />
-        </div>
-        
-        <div className="p-4">
-          <textarea
-            placeholder="Write a caption..."
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            className="w-full p-3 rounded-lg resize-none border bg-[#1a1a1a] border-gray-800 text-white placeholder-gray-500"
-            rows={4}
-          />
+        <div className="h-full flex flex-col">
+          <div className="relative w-full aspect-[4/5]">
+            <img
+              src={editedMedia.url}
+              alt="Preview"
+              className="w-full h-full object-cover"
+              style={{ 
+                filter: `${editedMedia.filter} ${editedMedia.adjustments}`
+              }}
+            />
+          </div>
+          
+          <div className="p-4 flex-shrink-0">
+            <textarea
+              placeholder="Write a caption..."
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+              className="w-full p-3 rounded-lg resize-none border bg-[#1a1a1a] border-gray-800 text-white placeholder-gray-500"
+              rows={4}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -238,7 +254,7 @@ const PostCreator = ({ isOpen, onClose }) => {
   
   return (
     <div className="fixed inset-0 z-[100] bg-black">
-      <div className="h-screen flex flex-col">
+      <div className="h-[100vh] flex flex-col max-h-screen">
         {renderNavigation()}
         <div className="flex-1 relative overflow-hidden">
           {step === 'type' && renderTypeSelection()}

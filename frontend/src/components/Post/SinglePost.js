@@ -80,8 +80,10 @@ const SinglePost = () => {
       const response = await fetch(`${API_URL}/api/posts/${id}/comments/${commentId}/like`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
   
       if (response.ok) {
@@ -103,6 +105,7 @@ const SinglePost = () => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ text: replyText })
       });
   
@@ -111,7 +114,8 @@ const SinglePost = () => {
       const postResponse = await fetch(`${API_URL}/api/posts/${id}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        },
+        credentials: 'include'
       });
   
       if (!postResponse.ok) throw new Error('Failed to fetch updated post');
@@ -133,8 +137,10 @@ const SinglePost = () => {
       const response = await fetch(`${API_URL}/api/posts/${id}/like`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
 
       if (response.ok) {
@@ -154,8 +160,10 @@ const SinglePost = () => {
       const response = await fetch(`${API_URL}/api/posts/${id}/save`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
 
       if (response.ok) {
@@ -178,6 +186,7 @@ const SinglePost = () => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ text: newComment })
       });
   
@@ -188,7 +197,8 @@ const SinglePost = () => {
         const fullPostResponse = await fetch(`${API_URL}/api/posts/${id}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+          },
+          credentials: 'include'
         });
         if (fullPostResponse.ok) {
           const fullPost = await fullPostResponse.json();

@@ -117,11 +117,13 @@ const OnboardingFlow = () => {
   const handleComplete = async () => {
     try {
       setLoading(true);
-      const formDataToSend = new FormData();
+      setError('');
+
       if (!formData.profilePicture || !formData.bio) {
         throw new Error('Missing required profile information');
       }
   
+      const formDataToSend = new FormData();
       formDataToSend.append('profilePicture', formData.profilePicture);
       formDataToSend.append('bio', formData.bio);
       formDataToSend.append('onboardingComplete', 'true');
@@ -131,12 +133,13 @@ const OnboardingFlow = () => {
         throw new Error('No authentication token found');
       }
   
-      const response = await fetch(API_URL + '/api/profile/complete-onboarding', {
+      const response = await fetch(`${API_URL}/api/profile/complete-onboarding`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        body: formDataToSend
+        body: formDataToSend,
+        credentials: 'include'
       });
   
       if (!response.ok) {
@@ -146,6 +149,7 @@ const OnboardingFlow = () => {
   
       const data = await response.json();
   
+      // Update user context
       await updateUser({ 
         ...user,
         bio: formData.bio,
@@ -153,6 +157,7 @@ const OnboardingFlow = () => {
         onboardingComplete: true
       });
   
+      // Update local storage
       const currentUserData = JSON.parse(localStorage.getItem('user') || '{}');
       localStorage.setItem('user', JSON.stringify({
         ...currentUserData,
@@ -161,11 +166,11 @@ const OnboardingFlow = () => {
         onboardingComplete: true
       }));
   
+      // Navigate to home
       navigate('/');
     } catch (error) {
       console.error('Onboarding error:', error);
       setError(error.message);
-    } finally {
       setLoading(false);
     }
   };
