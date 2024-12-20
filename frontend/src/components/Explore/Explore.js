@@ -16,6 +16,27 @@ const Explore = () => {
   const [searchQuery, setSearchQuery] = useState(hashtag || '');
   const [trendingHashtags, setTrendingHashtags] = useState([]);
 
+  const fetchTrendingHashtags = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/posts/trending-hashtags`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch trending hashtags');
+      }
+
+      setTrendingHashtags(data.hashtags || []);
+    } catch (error) {
+      console.error('Error fetching trending hashtags:', error);
+    }
+  }, []);
+
   const fetchExplorePosts = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -81,7 +102,8 @@ const Explore = () => {
     } else {
       fetchExplorePosts();
     }
-  }, [hashtag, fetchExplorePosts, fetchPostsByHashtag]);
+    fetchTrendingHashtags();
+  }, [hashtag, fetchExplorePosts, fetchPostsByHashtag, fetchTrendingHashtags]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -154,10 +176,10 @@ const Explore = () => {
           </button>
         </div>
 
-        {/* Hashtag Search */}
+        {/* Hashtag Search and Trending Hashtags */}
         {activeTab === 'hashtags' && (
           <div className="mb-6">
-            <form onSubmit={handleSearch} className="flex justify-center">
+            <form onSubmit={handleSearch} className="flex justify-center mb-4">
               <div className="relative w-full max-w-md">
                 <input
                   type="text"
@@ -180,6 +202,37 @@ const Explore = () => {
                 </button>
               </div>
             </form>
+
+            {/* Trending Hashtags */}
+            {trendingHashtags.length > 0 && (
+              <div className={`max-w-md mx-auto p-4 rounded-lg ${
+                theme === 'dark-theme' ? 'bg-gray-800' : 'bg-white'
+              }`}>
+                <h3 className={`text-lg font-semibold mb-3 ${
+                  theme === 'dark-theme' ? 'text-white' : 'text-black'
+                }`}>
+                  Trending Hashtags
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {trendingHashtags.map((tag, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSearchQuery(tag);
+                        navigate(`/explore/hashtag/${tag.replace('#', '')}`);
+                      }}
+                      className={`px-3 py-1 rounded-full text-sm ${
+                        theme === 'dark-theme'
+                          ? 'bg-gray-700 text-white hover:bg-gray-600'
+                          : 'bg-gray-100 text-black hover:bg-gray-200'
+                      }`}
+                    >
+                      #{tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -850,6 +850,73 @@ export const likeComment = async (req, res) => {
   }
 };
 
+export const deleteReply = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    const reply = comment.replies.id(req.params.replyId);
+    if (!reply) {
+      return res.status(404).json({ error: 'Reply not found' });
+    }
+
+    // Check if user is authorized to delete the reply
+    if (reply.user.toString() !== req.user.userId && post.user.toString() !== req.user.userId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    reply.remove();
+    await post.save();
+
+    // Remove all notifications related to this reply
+    await Notification.deleteMany({
+      post: post._id,
+      comment: comment._id,
+      type: 'reply'
+    });
+
+    await post.populate([
+      { path: 'user', select: 'username profilePicture' },
+      { path: 'taggedUsers', select: 'username profilePicture' },
+      { path: 'likes', select: 'username profilePicture' },
+      {
+        path: 'comments',
+        populate: [
+          {
+            path: 'user',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'likes',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'replies',
+            populate: {
+              path: 'user',
+              select: 'username profilePicture'
+            }
+          }
+        ]
+      }
+    ]);
+
+    const processedPost = await processPostsWithPresignedUrls(post);
+    res.json(processedPost);
+  } catch (error) {
+    console.error('Delete reply error:', error);
+    res.status(500).json({ error: 'Error deleting reply' });
+  }
+};
+
+
 export const deleteComment = async (req, res) => {
   try {
     const post = await Post.findById(req.params.postId);
@@ -910,13 +977,4 @@ export const deleteComment = async (req, res) => {
   }
 };
 
-export const deleteReply = async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.postId);
-    if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
-    }
 
-    const comment = post.comments.id(req.params.commentId);
-    if (!comment) {
-      return res.status(404).json({ error: 'Comment not
