@@ -18,7 +18,7 @@ const UserSuggestions = () => {
   
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/users/suggestions`, {
+      const response = await fetch(`${API_URL}/users/suggestions`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -41,7 +41,7 @@ const UserSuggestions = () => {
 
   const handleFollow = async (userId) => {
     try {
-      const response = await fetch(`${API_URL}/api/users/${userId}/follow`, {
+      const response = await fetch(`${API_URL}/users/${userId}/follow`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -107,7 +107,7 @@ const UserSuggestions = () => {
 
   if (loading) {
     return (
-      <div className={`rounded-lg shadow-lg mb-6 ${
+      <div className={`rounded-lg shadow-lg mb-6 pt-10 ${
         theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
       }`}>
         <div className="p-4 border-b border-gray-200">
@@ -131,7 +131,7 @@ const UserSuggestions = () => {
 
   if (error) {
     return (
-      <div className="p-4 text-red-500 bg-red-100 rounded-lg">
+      <div className="p-4 text-red-500 bg-red-100 rounded-lg pt-10">
         Failed to load suggestions: {error}
       </div>
     );
@@ -139,7 +139,7 @@ const UserSuggestions = () => {
 
   if (!users.length) {
     return (
-      <div className={`p-6 text-center rounded-lg shadow-lg ${
+      <div className={`p-6 text-center rounded-lg shadow-lg pt-10 ${
         theme === 'dark-theme' ? 'bg-gray-900 text-gray-400' : 'bg-white text-gray-500'
       }`}>
         <p>No suggestions available right now</p>
@@ -148,7 +148,7 @@ const UserSuggestions = () => {
   }
 
   return (
-    <div className={`rounded-lg shadow-lg mb-6 ${
+    <div className={`rounded-lg shadow-lg mb-6 pt-10 ${
       theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
     }`}>
       <button

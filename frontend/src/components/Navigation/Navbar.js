@@ -373,7 +373,7 @@ const Navbar = () => {
                 className={`p-2 transition-colors ${
                   // Special styling for the Add button (assuming it's the middle item)
                   index === 2 
-                    ? `absolute -top-5 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex items-center justify-center ${
+                    ? `absolute left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex items-center justify-center ${
                       theme === 'dark-theme'
                         ? 'bg-gray-900 text-white hover:bg-gray-800'
                         : 'bg-white text-gray-700 hover:bg-gray-100'
