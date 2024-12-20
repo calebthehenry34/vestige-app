@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
-  ImageRegular,
-  SparkleRegular,
-  ArrowLeft,
-  ErrorCircleRegular,
+  Image24Regular as ImageRegular,
+  Sparkle24Regular as SparkleRegular,
+  ChevronLeft24Regular as ArrowLeft,
+  ErrorCircle24Regular as ErrorCircleRegular,
 } from '@fluentui/react-icons';
 import ImageEditor from './ImageEditor';
 import axios from 'axios';
