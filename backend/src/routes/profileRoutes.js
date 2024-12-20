@@ -4,7 +4,8 @@ import User from '../models/User.js';
 import Post from '../models/Post.js';
 import Follow from '../models/Follow.js';
 import upload from '../middleware/upload.js';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import s3, { getS3BucketName, isS3Available } from '../config/s3.js';
 import crypto from 'crypto';
 
@@ -15,6 +16,14 @@ const generateUniqueFileName = (originalName) => {
   const hash = crypto.randomBytes(8).toString('hex');
   const ext = originalName.split('.').pop();
   return `${timestamp}-${hash}.${ext}`;
+};
+
+const generatePresignedUrl = async (key) => {
+  const command = new GetObjectCommand({
+    Bucket: getS3BucketName(),
+    Key: key
+  });
+  return await getSignedUrl(s3, command, { expiresIn: 3600 }); // URL expires in 1 hour
 };
 
 router.post('/complete-onboarding', 
@@ -30,6 +39,7 @@ router.post('/complete-onboarding',
       const userId = req.user.userId;
       const { bio } = req.body;
       
+      let profilePictureKey;
       let profilePictureUrl;
       
       if (req.file) {
@@ -42,6 +52,7 @@ router.post('/complete-onboarding',
 
           const fileName = generateUniqueFileName(req.file.originalname);
           const bucketName = getS3BucketName();
+          profilePictureKey = `profile-pictures/${fileName}`;
           
           console.log('Preparing S3 upload...', {
             bucketName,
@@ -50,26 +61,19 @@ router.post('/complete-onboarding',
             mimeType: req.file.mimetype
           });
 
-          // Ensure the file buffer is base64 encoded
-          const base64Data = req.file.buffer.toString('base64');
-          const buffer = Buffer.from(base64Data, 'base64');
-
           const uploadParams = {
             Bucket: bucketName,
-            Key: `profile-pictures/${fileName}`,
-            Body: buffer,
+            Key: profilePictureKey,
+            Body: req.file.buffer,
             ContentType: req.file.mimetype,
-            ContentEncoding: 'base64',
             CacheControl: 'max-age=31536000'
-            // Removed ACL parameter as the bucket doesn't allow it
           };
 
           console.log('Attempting S3 upload with params:', {
             Bucket: uploadParams.Bucket,
             Key: uploadParams.Key,
             ContentType: uploadParams.ContentType,
-            ContentEncoding: uploadParams.ContentEncoding,
-            BufferLength: buffer.length
+            BufferLength: req.file.buffer.length
           });
 
           const command = new PutObjectCommand(uploadParams);
@@ -77,9 +81,9 @@ router.post('/complete-onboarding',
           console.log('Sending S3 command...');
           await s3.send(command);
 
-          // Use virtual-hosted-style URL
-          profilePictureUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/profile-pictures/${fileName}`;
-          console.log('S3 upload successful:', profilePictureUrl);
+          // Generate a pre-signed URL for the uploaded file
+          profilePictureUrl = await generatePresignedUrl(profilePictureKey);
+          console.log('S3 upload successful, generated pre-signed URL:', profilePictureUrl);
         } catch (uploadError) {
           console.error('S3 upload error:', {
             message: uploadError.message,
@@ -97,12 +101,12 @@ router.post('/complete-onboarding',
       }
 
       console.log('Updating user profile...');
-      // Update user profile
+      // Store the S3 key in the database, not the pre-signed URL
       const updatedUser = await User.findByIdAndUpdate(
         userId,
         {
           bio,
-          profilePicture: profilePictureUrl,
+          profilePicture: profilePictureKey, // Store the S3 key
           onboardingComplete: true
         },
         { new: true }
@@ -116,7 +120,7 @@ router.post('/complete-onboarding',
       console.log('User profile updated successfully:', {
         userId: updatedUser._id,
         bio: updatedUser.bio,
-        profilePicture: updatedUser.profilePicture,
+        profilePictureKey: updatedUser.profilePicture,
         onboardingComplete: updatedUser.onboardingComplete
       });
 
@@ -124,7 +128,7 @@ router.post('/complete-onboarding',
         message: 'Onboarding completed successfully',
         user: {
           ...updatedUser.toObject(),
-          profilePicture: profilePictureUrl
+          profilePicture: profilePictureUrl // Send the pre-signed URL to the client
         }
       });
     } catch (error) {
@@ -155,6 +159,11 @@ router.get('/:username', auth, async (req, res) => {
     if (!profile) {
       console.log('No profile found for username:', username);
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Generate pre-signed URL for profile picture if it exists
+    if (profile.profilePicture) {
+      profile.profilePicture = await generatePresignedUrl(profile.profilePicture);
     }
 
     console.log('Profile found:', profile);
@@ -188,6 +197,13 @@ router.post('/update', auth, async (req, res) => {
     if (website) user.website = website;
     
     await user.save();
+
+    // Generate pre-signed URL for profile picture if it exists
+    let profilePictureUrl = user.profilePicture;
+    if (profilePictureUrl) {
+      profilePictureUrl = await generatePresignedUrl(profilePictureUrl);
+    }
+
     console.log('Updated user:', user);
 
     res.json({
@@ -198,7 +214,7 @@ router.post('/update', auth, async (req, res) => {
         bio: user.bio,
         location: user.location,
         website: user.website,
-        profilePicture: user.profilePicture
+        profilePicture: profilePictureUrl
       }
     });
   } catch (error) {
