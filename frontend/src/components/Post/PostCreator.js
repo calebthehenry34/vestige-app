@@ -11,7 +11,7 @@ import axios from 'axios';
 import { API_URL } from '../../config';
 import styles from '../Onboarding/OnboardingFlow.module.css';
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
 
 const PostCreator = ({ isOpen, onClose }) => {
   const [step, setStep] = useState('type');
@@ -113,6 +113,7 @@ const PostCreator = ({ isOpen, onClose }) => {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`
         },
+        credentials: 'include',
         onUploadProgress: (progressEvent) => {
           const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           setUploadProgress(progress);
@@ -202,6 +203,7 @@ const PostCreator = ({ isOpen, onClose }) => {
                 <p className="font-medium text-white">
                   {isDragActive ? 'Drop photo here' : 'Add a photo'}
                 </p>
+                <p className="text-sm text-gray-400 mt-2">Maximum file size: 50MB</p>
               </div>
             </div>
 

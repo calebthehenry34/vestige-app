@@ -84,8 +84,11 @@ app.use(cors({
 
 // Basic middleware
 app.use(compression());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Increase file size limits to 50MB
+const MAX_FILE_SIZE = '50mb';
+app.use(express.json({ limit: MAX_FILE_SIZE }));
+app.use(express.urlencoded({ extended: true, limit: MAX_FILE_SIZE }));
 
 app.use('/uploads', auth, uploadsLimiter, (req, res, next) => {
   // Only allow image files
