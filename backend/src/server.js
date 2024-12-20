@@ -12,6 +12,7 @@ import emailRoutes from './routes/emailRoutes.js';
 import chatRoutes from './routes/messageRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import videoRoutes from './routes/videoRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { startEmailQueue } from './services/emailService.js';
@@ -142,6 +143,7 @@ app.use('/api/email', emailRoutes);
 app.use('/api/messages', chatRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts/videos', videoRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Test route (only in development)
 if (process.env.NODE_ENV !== 'production') {
