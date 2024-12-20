@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config';
 import FollowButton from '../Common/FollowButton';
+import { ThemeContext } from '../../App';
 
 const ActivityFeed = () => {
+  const navigate = useNavigate();
+  const { theme } = useContext(ThemeContext);
   const [activeTab, setActiveTab] = useState('all');
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,109 +58,119 @@ const ActivityFeed = () => {
     return `${seconds}s`;
   };
 
+  const handleNotificationClick = (notification) => {
+    if (notification.post) {
+      navigate(`/post/${notification.post._id}`);
+    } else if (notification.type === 'follow') {
+      navigate(`/profile/${notification.sender.username}`);
+    }
+  };
+
   const renderActivity = (notification) => {
-    const { type, sender, post, createdAt } = notification;
+    const { type, sender, post, comment, createdAt } = notification;
 
     const baseUserInfo = (
       <div className="flex items-center">
         <img
           src={sender.profilePicture || '/default-avatar.png'}
           alt={sender.username}
-          className="w-10 h-10 rounded-full mr-3"
+          className="w-10 h-10 rounded-full mr-3 object-cover"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/profile/${sender.username}`);
+          }}
         />
         <div>
-          <span className="font-semibold">{sender.username}</span>
+          <span className={`font-semibold ${
+            theme === 'dark-theme' ? 'text-white' : 'text-black'
+          }`}>
+            {sender.username}
+          </span>
         </div>
       </div>
     );
 
-    switch (type) {
-      case 'follow':
-        return (
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center flex-1">
-              {baseUserInfo}
-              <span className="ml-1">started following you.</span>
-              <div className="text-gray-500 text-sm">{getTimeAgo(createdAt)}</div>
+    const getNotificationText = () => {
+      switch (type) {
+        case 'follow':
+          return 'started following you.';
+        case 'like':
+          return 'liked your post.';
+        case 'comment':
+          return `commented: "${comment?.text}"`;
+        case 'reply':
+          return `replied: "${comment?.text}"`;
+        case 'commentLike':
+          return 'liked your comment.';
+        case 'tag':
+          return comment ? 'mentioned you in a comment.' : 'tagged you in a post.';
+        default:
+          return '';
+      }
+    };
+
+    return (
+      <div 
+        className={`flex items-center justify-between py-4 cursor-pointer hover:${
+          theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'
+        }`}
+        onClick={() => handleNotificationClick(notification)}
+      >
+        <div className="flex items-center flex-1">
+          {baseUserInfo}
+          <div className="ml-1 flex flex-col">
+            <span className={theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-700'}>
+              {getNotificationText()}
+            </span>
+            <div className={`text-sm ${
+              theme === 'dark-theme' ? 'text-gray-500' : 'text-gray-400'
+            }`}>
+              {getTimeAgo(createdAt)}
             </div>
+          </div>
+        </div>
+        {type === 'follow' ? (
+          <div onClick={e => e.stopPropagation()}>
             <FollowButton userId={sender._id} />
           </div>
-        );
-
-      case 'like':
-        return (
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center flex-1">
-              {baseUserInfo}
-              <span className="ml-1">liked your post.</span>
-              <div className="text-gray-500 text-sm">{getTimeAgo(createdAt)}</div>
-            </div>
-            {post && post.media && (
-              <img
-                src={post.media}
-                alt="Post"
-                className="w-12 h-12 object-cover rounded"
-              />
-            )}
-          </div>
-        );
-
-      case 'comment':
-        return (
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center flex-1">
-              {baseUserInfo}
-              <span className="ml-1">commented on your post.</span>
-              <div className="text-gray-500 text-sm">{getTimeAgo(createdAt)}</div>
-            </div>
-            {post && post.media && (
-              <img
-                src={post.media}
-                alt="Post"
-                className="w-12 h-12 object-cover rounded"
-              />
-            )}
-          </div>
-        );
-
-      case 'tag':
-        return (
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center flex-1">
-              {baseUserInfo}
-              <span className="ml-1">tagged you in a post.</span>
-              <div className="text-gray-500 text-sm">{getTimeAgo(createdAt)}</div>
-            </div>
-            {post && post.media && (
-              <img
-                src={post.media}
-                alt="Post"
-                className="w-12 h-12 object-cover rounded"
-              />
-            )}
-          </div>
-        );
-
-      default:
-        return null;
-    }
+        ) : post?.media && (
+          <img
+            src={post.media}
+            alt="Post"
+            className="w-12 h-12 object-cover rounded"
+          />
+        )}
+      </div>
+    );
   };
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-8 text-center">
-        Loading...
+      <div className={`max-w-2xl mx-auto px-4 py-8 text-center ${
+        theme === 'dark-theme' ? 'text-white' : 'text-black'
+      }`}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4">
+    <div className={`max-w-2xl mx-auto px-4 ${
+      theme === 'dark-theme' ? 'bg-black' : 'bg-white'
+    }`}>
       {/* Tabs */}
-      <div className="flex border-b mb-4">
+      <div className={`flex border-b mb-4 ${
+        theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
+      }`}>
         <button
           className={`px-8 py-4 font-semibold ${
-            activeTab === 'all' ? 'border-b-2 border-black' : 'text-gray-500'
+            activeTab === 'all' 
+              ? theme === 'dark-theme'
+                ? 'border-b-2 border-white text-white'
+                : 'border-b-2 border-black text-black'
+              : theme === 'dark-theme'
+                ? 'text-gray-500'
+                : 'text-gray-500'
           }`}
           onClick={() => setActiveTab('all')}
         >
@@ -164,7 +178,13 @@ const ActivityFeed = () => {
         </button>
         <button
           className={`px-8 py-4 font-semibold ${
-            activeTab === 'follows' ? 'border-b-2 border-black' : 'text-gray-500'
+            activeTab === 'follows'
+              ? theme === 'dark-theme'
+                ? 'border-b-2 border-white text-white'
+                : 'border-b-2 border-black text-black'
+              : theme === 'dark-theme'
+                ? 'text-gray-500'
+                : 'text-gray-500'
           }`}
           onClick={() => setActiveTab('follows')}
         >
@@ -173,9 +193,13 @@ const ActivityFeed = () => {
       </div>
 
       {/* Activity List */}
-      <div className="divide-y">
+      <div className={`divide-y ${
+        theme === 'dark-theme' ? 'divide-gray-800' : 'divide-gray-200'
+      }`}>
         {notifications.length === 0 ? (
-          <div className="py-8 text-center text-gray-500">
+          <div className={`py-8 text-center ${
+            theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
+          }`}>
             No notifications yet
           </div>
         ) : (

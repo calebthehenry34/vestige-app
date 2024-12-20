@@ -76,7 +76,7 @@ export const getSinglePost = async (req, res) => {
     const post = await Post.findById(id)
       .populate('user', 'username profilePicture')
       .populate('taggedUsers', 'username profilePicture')
-      .populate('likes', 'username profilePicture') // Add this line to populate likes
+      .populate('likes', 'username profilePicture')
       .populate({
         path: 'comments',
         populate: [
@@ -87,6 +87,13 @@ export const getSinglePost = async (req, res) => {
           {
             path: 'likes',
             select: 'username profilePicture'
+          },
+          {
+            path: 'replies',
+            populate: {
+              path: 'user',
+              select: 'username profilePicture'
+            }
           }
         ]
       });
@@ -360,7 +367,27 @@ export const getPosts = async (req, res) => {
       .limit(limit)
       .populate('user', 'username profilePicture')
       .populate('taggedUsers', 'username profilePicture')
-      .populate('likes', 'username profilePicture'); // Add this line to populate likes
+      .populate('likes', 'username profilePicture')
+      .populate({
+        path: 'comments',
+        populate: [
+          {
+            path: 'user',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'likes',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'replies',
+            populate: {
+              path: 'user',
+              select: 'username profilePicture'
+            }
+          }
+        ]
+      });
 
     const processedPosts = await processPostsWithPresignedUrls(posts);
 
@@ -391,7 +418,27 @@ export const getUserPosts = async (req, res) => {
       .limit(limit)
       .populate('user', 'username profilePicture')
       .populate('taggedUsers', 'username profilePicture')
-      .populate('likes', 'username profilePicture'); // Add this line to populate likes
+      .populate('likes', 'username profilePicture')
+      .populate({
+        path: 'comments',
+        populate: [
+          {
+            path: 'user',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'likes',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'replies',
+            populate: {
+              path: 'user',
+              select: 'username profilePicture'
+            }
+          }
+        ]
+      });
 
     const processedPosts = await processPostsWithPresignedUrls(posts);
 
@@ -511,7 +558,27 @@ export const getPostsByHashtag = async (req, res) => {
       .limit(limit)
       .populate('user', 'username profilePicture')
       .populate('taggedUsers', 'username profilePicture')
-      .populate('likes', 'username profilePicture'); // Add this line to populate likes
+      .populate('likes', 'username profilePicture')
+      .populate({
+        path: 'comments',
+        populate: [
+          {
+            path: 'user',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'likes',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'replies',
+            populate: {
+              path: 'user',
+              select: 'username profilePicture'
+            }
+          }
+        ]
+      });
 
     const processedPosts = await processPostsWithPresignedUrls(posts);
 
@@ -528,3 +595,328 @@ export const getPostsByHashtag = async (req, res) => {
     res.status(500).json({ error: 'Error fetching posts' });
   }
 };
+
+// New comment endpoints
+export const addComment = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const { text } = req.body;
+    if (!text) {
+      return res.status(400).json({ error: 'Comment text is required' });
+    }
+
+    // Extract mentioned users from the comment text
+    const mentionRegex = /@(\w+)/g;
+    const mentions = text.match(mentionRegex) || [];
+    const mentionedUsernames = mentions.map(mention => mention.substring(1));
+
+    // Find mentioned users in the database
+    const mentionedUsers = await User.find({ username: { $in: mentionedUsernames } });
+
+    const comment = {
+      text,
+      user: req.user.userId,
+      likes: [],
+      replies: []
+    };
+
+    post.comments.push(comment);
+    await post.save();
+
+    // Create notification for post owner (if commenter isn't the post owner)
+    if (post.user.toString() !== req.user.userId) {
+      await Notification.create({
+        recipient: post.user,
+        sender: req.user.userId,
+        type: 'comment',
+        post: post._id,
+        comment: post.comments[post.comments.length - 1]._id
+      });
+    }
+
+    // Create notifications for mentioned users
+    for (const mentionedUser of mentionedUsers) {
+      if (mentionedUser._id.toString() !== req.user.userId) {
+        await Notification.create({
+          recipient: mentionedUser._id,
+          sender: req.user.userId,
+          type: 'tag',
+          post: post._id,
+          comment: post.comments[post.comments.length - 1]._id
+        });
+      }
+    }
+
+    await post.populate([
+      { path: 'user', select: 'username profilePicture' },
+      { path: 'taggedUsers', select: 'username profilePicture' },
+      { path: 'likes', select: 'username profilePicture' },
+      {
+        path: 'comments',
+        populate: [
+          {
+            path: 'user',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'likes',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'replies',
+            populate: {
+              path: 'user',
+              select: 'username profilePicture'
+            }
+          }
+        ]
+      }
+    ]);
+
+    const processedPost = await processPostsWithPresignedUrls(post);
+    res.json(processedPost);
+  } catch (error) {
+    console.error('Add comment error:', error);
+    res.status(500).json({ error: 'Error adding comment' });
+  }
+};
+
+export const addReply = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    const { text } = req.body;
+    if (!text) {
+      return res.status(400).json({ error: 'Reply text is required' });
+    }
+
+    // Extract mentioned users from the reply text
+    const mentionRegex = /@(\w+)/g;
+    const mentions = text.match(mentionRegex) || [];
+    const mentionedUsernames = mentions.map(mention => mention.substring(1));
+
+    // Find mentioned users in the database
+    const mentionedUsers = await User.find({ username: { $in: mentionedUsernames } });
+
+    const reply = {
+      text,
+      user: req.user.userId
+    };
+
+    comment.replies.push(reply);
+    await post.save();
+
+    // Create notification for comment owner (if replier isn't the comment owner)
+    if (comment.user.toString() !== req.user.userId) {
+      await Notification.create({
+        recipient: comment.user,
+        sender: req.user.userId,
+        type: 'reply',
+        post: post._id,
+        comment: comment._id
+      });
+    }
+
+    // Create notifications for mentioned users
+    for (const mentionedUser of mentionedUsers) {
+      if (mentionedUser._id.toString() !== req.user.userId) {
+        await Notification.create({
+          recipient: mentionedUser._id,
+          sender: req.user.userId,
+          type: 'tag',
+          post: post._id,
+          comment: comment._id
+        });
+      }
+    }
+
+    await post.populate([
+      { path: 'user', select: 'username profilePicture' },
+      { path: 'taggedUsers', select: 'username profilePicture' },
+      { path: 'likes', select: 'username profilePicture' },
+      {
+        path: 'comments',
+        populate: [
+          {
+            path: 'user',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'likes',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'replies',
+            populate: {
+              path: 'user',
+              select: 'username profilePicture'
+            }
+          }
+        ]
+      }
+    ]);
+
+    const processedPost = await processPostsWithPresignedUrls(post);
+    res.json(processedPost);
+  } catch (error) {
+    console.error('Add reply error:', error);
+    res.status(500).json({ error: 'Error adding reply' });
+  }
+};
+
+export const likeComment = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    const liked = comment.likes.includes(req.user.userId);
+    
+    if (liked) {
+      comment.likes = comment.likes.filter(id => id.toString() !== req.user.userId);
+      // Remove like notification if exists
+      await Notification.deleteOne({
+        recipient: comment.user,
+        sender: req.user.userId,
+        type: 'commentLike',
+        post: post._id,
+        comment: comment._id
+      });
+    } else {
+      comment.likes.push(req.user.userId);
+      // Create notification for comment like (only if the liker isn't the comment owner)
+      if (comment.user.toString() !== req.user.userId) {
+        await Notification.create({
+          recipient: comment.user,
+          sender: req.user.userId,
+          type: 'commentLike',
+          post: post._id,
+          comment: comment._id
+        });
+      }
+    }
+
+    await post.save();
+
+    await post.populate([
+      { path: 'user', select: 'username profilePicture' },
+      { path: 'taggedUsers', select: 'username profilePicture' },
+      { path: 'likes', select: 'username profilePicture' },
+      {
+        path: 'comments',
+        populate: [
+          {
+            path: 'user',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'likes',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'replies',
+            populate: {
+              path: 'user',
+              select: 'username profilePicture'
+            }
+          }
+        ]
+      }
+    ]);
+
+    const processedPost = await processPostsWithPresignedUrls(post);
+    res.json(processedPost);
+  } catch (error) {
+    console.error('Like comment error:', error);
+    res.status(500).json({ error: 'Error liking comment' });
+  }
+};
+
+export const deleteComment = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    // Check if user is authorized to delete the comment
+    if (comment.user.toString() !== req.user.userId && post.user.toString() !== req.user.userId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    comment.remove();
+    await post.save();
+
+    // Remove all notifications related to this comment
+    await Notification.deleteMany({
+      post: post._id,
+      comment: req.params.commentId
+    });
+
+    await post.populate([
+      { path: 'user', select: 'username profilePicture' },
+      { path: 'taggedUsers', select: 'username profilePicture' },
+      { path: 'likes', select: 'username profilePicture' },
+      {
+        path: 'comments',
+        populate: [
+          {
+            path: 'user',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'likes',
+            select: 'username profilePicture'
+          },
+          {
+            path: 'replies',
+            populate: {
+              path: 'user',
+              select: 'username profilePicture'
+            }
+          }
+        ]
+      }
+    ]);
+
+    const processedPost = await processPostsWithPresignedUrls(post);
+    res.json(processedPost);
+  } catch (error) {
+    console.error('Delete comment error:', error);
+    res.status(500).json({ error: 'Error deleting comment' });
+  }
+};
+
+export const deleteReply = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not

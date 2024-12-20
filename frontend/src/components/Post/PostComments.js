@@ -1,17 +1,20 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './PostComments.module.css';
 import { ThemeContext } from '../../App';  
 import { 
   HeartRegular, 
   HeartFilled,
   MoreVerticalRegular,
-  PersonRegular
+  PersonRegular,
+  DeleteRegular
 } from '@fluentui/react-icons';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 
 const PostComments = ({ post, isOpen, onComment, onReply }) => {
+  const navigate = useNavigate();
   const [newComment, setNewComment] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const { theme } = useContext(ThemeContext);
@@ -25,14 +28,76 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
 
     try {
       if (replyTo?._id) {
-        await onReply?.(post._id, replyTo._id, trimmedComment);
+        const response = await fetch(`${API_URL}/api/posts/${post._id}/comments/${replyTo._id}/replies`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ text: trimmedComment })
+        });
+
+        if (!response.ok) throw new Error('Failed to add reply');
+        const updatedPost = await response.json();
+        onReply?.(updatedPost);
         setReplyTo(null);
       } else {
-        await onComment?.(trimmedComment);
+        const response = await fetch(`${API_URL}/api/posts/${post._id}/comments`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ text: trimmedComment })
+        });
+
+        if (!response.ok) throw new Error('Failed to add comment');
+        const updatedPost = await response.json();
+        onComment?.(updatedPost);
       }
       setNewComment('');
     } catch (error) {
       console.error('Error submitting comment/reply:', error);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/posts/${post._id}/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error('Failed to delete comment');
+      const updatedPost = await response.json();
+      onComment?.(updatedPost);
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    }
+  };
+
+  const handleDeleteReply = async (commentId, replyId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/posts/${post._id}/comments/${commentId}/replies/${replyId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error('Failed to delete reply');
+      const updatedPost = await response.json();
+      onComment?.(updatedPost);
+    } catch (error) {
+      console.error('Error deleting reply:', error);
     }
   };
 
@@ -43,28 +108,52 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
     if (input) input.focus();
   };
 
-  const handleCommentMenu = (commentId) => {
-    setActiveCommentMenu(activeCommentMenu === commentId ? null : commentId);
-  };
-
   const handleLikeComment = async (commentId) => {
-    if (!commentId) return;
-
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No auth token');
-
-      const response = await fetch(`${API_URL}/api/comments/${commentId}/like`, {
+      const response = await fetch(`${API_URL}/api/posts/${post._id}/comments/${commentId}/like`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
 
       if (!response.ok) throw new Error('Failed to like comment');
+      const updatedPost = await response.json();
+      onComment?.(updatedPost);
     } catch (error) {
       console.error('Error liking comment:', error);
     }
+  };
+
+  const renderText = (text) => {
+    return text.split(' ').map((word, index) => {
+      if (word.startsWith('#')) {
+        return (
+          <React.Fragment key={index}>
+            <button
+              onClick={() => navigate(`/explore/hashtag/${word.slice(1)}`)}
+              className="text-blue-500 hover:underline"
+            >
+              {word}
+            </button>{' '}
+          </React.Fragment>
+        );
+      } else if (word.startsWith('@')) {
+        return (
+          <React.Fragment key={index}>
+            <button
+              onClick={() => navigate(`/profile/${word.slice(1)}`)}
+              className="text-blue-500 hover:underline"
+            >
+              {word}
+            </button>{' '}
+          </React.Fragment>
+        );
+      }
+      return word + ' ';
+    });
   };
 
   useEffect(() => {
@@ -126,7 +215,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
             <span className={`text-sm ${
               theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-700'
             }`}>
-              {post.caption}
+              {renderText(post.caption)}
             </span>
           </div>
         )}
@@ -154,7 +243,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
                       theme === 'dark-theme' ? 'bg-zinc-800' : 'bg-gray-100'
                     }`}>
                       <span className="text-xs mr-2">{comment.user?.username || 'Unknown User'}</span>
-                      <span className="text-xs">{comment.text}</span>
+                      <span className="text-xs">{renderText(comment.text)}</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <button 
@@ -167,6 +256,14 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
                           <HeartRegular className="w-4 h-4" />
                         )}
                       </button>
+                      {(user?.id === comment.user?._id || user?.id === post.user?._id) && (
+                        <button
+                          onClick={() => handleDeleteComment(comment._id)}
+                          className="text-gray-500 hover:text-red-500 transition-colors"
+                        >
+                          <DeleteRegular className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div className="text-xs text-gray-500 mt-1 ml-2">
@@ -214,33 +311,17 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
                         <span className={
                           theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-700'
                         }>
-                          {reply.text}
+                          {renderText(reply.text)}
                         </span>
                       </div>
                       <div className="flex items-center space-x-2 ml-2">
-                        <button 
-                          onClick={() => handleLikeComment(reply._id)}
-                          className="text-gray-500 hover:text-red-500 transition-colors"
-                        >
-                          {reply.likes?.includes(user?.id) ? (
-                            <HeartFilled className="w-4 h-4 text-red-500" />
-                          ) : (
-                            <HeartRegular className="w-4 h-4" />
-                          )}
-                        </button>
-                        {(user?.id === reply.user?._id || user?.isAdmin) && (
-                          <div className="relative">
-                            <button 
-                              onClick={() => handleCommentMenu(reply._id)}
-                              className={`text-gray-500 ${
-                                theme === 'dark-theme' 
-                                  ? 'hover:text-gray-300' 
-                                  : 'hover:text-gray-700'
-                              }`}
-                            >
-                              <MoreVerticalRegular className="w-4 h-4" />
-                            </button>
-                          </div>
+                        {(user?.id === reply.user?._id || user?.id === post.user?._id) && (
+                          <button
+                            onClick={() => handleDeleteReply(comment._id, reply._id)}
+                            className="text-gray-500 hover:text-red-500 transition-colors"
+                          >
+                            <DeleteRegular className="w-4 h-4" />
+                          </button>
                         )}
                       </div>
                     </div>
@@ -283,7 +364,10 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
             name="comment"
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            placeholder={replyTo ? `Reply to ${replyTo.user?.username || 'Unknown User'}...` : "Add a comment..."}
+            placeholder={replyTo 
+              ? `Reply to ${replyTo.user?.username || 'Unknown User'}...` 
+              : "Add a comment... (Use @ to mention users, # for hashtags)"
+            }
             className={`text-sm flex-1 border-0 focus:ring-0 outline-none ${styles.commentInput} ${
               theme === 'dark-theme' 
                 ? 'text-white placeholder-gray-500 bg-black' 

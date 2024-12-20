@@ -13,6 +13,7 @@ import {
 } from '@fluentui/react-icons';
 import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
+import PostComments from './PostComments';
 
 const SinglePost = () => {
   const { theme } = useContext(ThemeContext);
@@ -22,19 +23,10 @@ const SinglePost = () => {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [newComment, setNewComment] = useState('');
   const [isZoomed, setIsZoomed] = useState(false);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [dragStart, setDragStart] = useState(null);
-  const [showAllComments, setShowAllComments] = useState(false);
-  const [replyingTo, setReplyingTo] = useState(null);
-  const [replyText, setReplyText] = useState('');
-
-  const visibleComments = post?.comments 
-    ? showAllComments 
-      ? post.comments 
-      : post.comments.slice(0, 3)
-    : [];
+  const [showComments, setShowComments] = useState(true);
 
   const getMediaUrl = (mediaPath) => {
     if (!mediaPath) return '';
@@ -54,7 +46,7 @@ const SinglePost = () => {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          credentials: 'include' // Add this line
+          credentials: 'include'
         });
 
         if (!response.ok) {
@@ -74,63 +66,6 @@ const SinglePost = () => {
 
     fetchPost();
   }, [id]);
-
-  const handleCommentLike = async (commentId) => {
-    if (!commentId) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/posts/${id}/comments/${commentId}/like`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
-  
-      if (response.ok) {
-        const updatedPost = await response.json();
-        setPost(updatedPost);
-      }
-    } catch (error) {
-      console.error('Error liking comment:', error);
-    }
-  };
-  
-  const handleCommentReply = async (commentId, replyText) => {
-    if (!commentId || !replyText?.trim()) return;
-
-    try {
-      const response = await fetch(`${API_URL}/api/posts/${id}/comments/${commentId}/reply`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ text: replyText })
-      });
-  
-      if (!response.ok) throw new Error('Failed to add reply');
-  
-      const postResponse = await fetch(`${API_URL}/api/posts/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        credentials: 'include'
-      });
-  
-      if (!postResponse.ok) throw new Error('Failed to fetch updated post');
-  
-      const updatedPost = await postResponse.json();
-      setPost(updatedPost);
-      setReplyText('');
-      setReplyingTo(null);
-    } catch (error) {
-      console.error('Error adding reply:', error);
-    }
-  };
 
   const handleLike = async () => {
     if (!id) return;
@@ -178,46 +113,6 @@ const SinglePost = () => {
     }
   };
 
-  const handleComment = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim() || !id) return;
-  
-    try {
-      const response = await fetch(`${API_URL}/api/posts/${id}/comment`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ text: newComment })
-      });
-  
-      if (!response.ok) throw new Error('Failed to add comment');
-  
-      const updatedPost = await response.json();
-      if (!updatedPost?.media) {
-        const fullPostResponse = await fetch(`${API_URL}/api/posts/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          credentials: 'include'
-        });
-        if (fullPostResponse.ok) {
-          const fullPost = await fullPostResponse.json();
-          setPost(fullPost);
-        } else {
-          setPost(prev => ({ ...prev, comments: updatedPost.comments }));
-        }
-      } else {
-        setPost(updatedPost);
-      }
-      setNewComment('');
-    } catch (error) {
-      console.error('Error adding comment:', error);
-    }
-  };
-
   const handleShare = async () => {
     try {
       await navigator.share({
@@ -227,6 +122,35 @@ const SinglePost = () => {
     } catch (error) {
       console.error('Error sharing:', error);
     }
+  };
+
+  const renderText = (text) => {
+    return text.split(' ').map((word, index) => {
+      if (word.startsWith('#')) {
+        return (
+          <React.Fragment key={index}>
+            <button
+              onClick={() => navigate(`/explore/hashtag/${word.slice(1)}`)}
+              className="text-blue-500 hover:underline"
+            >
+              {word}
+            </button>{' '}
+          </React.Fragment>
+        );
+      } else if (word.startsWith('@')) {
+        return (
+          <React.Fragment key={index}>
+            <button
+              onClick={() => navigate(`/profile/${word.slice(1)}`)}
+              className="text-blue-500 hover:underline"
+            >
+              {word}
+            </button>{' '}
+          </React.Fragment>
+        );
+      }
+      return word + ' ';
+    });
   };
 
   if (loading) {
@@ -385,184 +309,17 @@ const SinglePost = () => {
             }`}>
               <p>
                 <span className="font-medium mr-2">{post.user?.username || 'Unknown User'}</span>
-                {post.caption}
+                {renderText(post.caption)}
               </p>
             </div>
 
-            {/* Comments section */}
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-4 space-y-4">
-                {visibleComments.map((comment) => (
-                  <div key={comment._id} className="mb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start flex-1">
-                        {comment.user ? (
-                          <img
-                            src={getProfileImageUrl(comment.user.profilePicture, comment.user.username)}
-                            alt={comment.user.username}
-                            className="h-8 w-8 rounded-md object-cover"
-                          />
-                        ) : (
-                          <div className="h-8 w-8 rounded-md bg-gray-200 flex items-center justify-center">
-                            <PersonRegular className="w-5 h-5 text-gray-400" />
-                          </div>
-                        )}
-                        <div className="ml-3 flex-1">
-                          <span className={`font-medium ${
-                            theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
-                          }`}>{comment.user?.username || 'Unknown User'}</span>
-                          <p className={`text-sm ${
-                            theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-700'
-                          }`}>{comment.text}</p>
-                          <div className="flex items-center mt-1 space-x-4">
-                            <button 
-                              onClick={() => setReplyingTo(replyingTo === comment._id ? null : comment._id)}
-                              className={`text-sm ${
-                                theme === 'dark-theme' ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
-                              }`}
-                            >
-                              Reply
-                            </button>
-                            <span className="text-xs text-gray-400">
-                              {new Date(comment.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                          
-                          {/* Replies section */}
-                          {showAllComments && (
-                            <>
-                              {replyingTo === comment._id && (
-                                <form 
-                                  onSubmit={(e) => {
-                                    e.preventDefault();
-                                    handleCommentReply(comment._id, replyText);
-                                  }}
-                                  className="mt-2 flex items-center"
-                                >
-                                  <input
-                                    type="text"
-                                    value={replyText}
-                                    onChange={(e) => setReplyText(e.target.value)}
-                                    placeholder={`Reply to ${comment.user?.username || 'Unknown User'}...`}
-                                    className={`flex-1 text-sm py-1 px-2 rounded-lg border ${
-                                      theme === 'dark-theme'
-                                        ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500'
-                                        : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400'
-                                    }`}
-                                    autoFocus
-                                  />
-                                  <button
-                                    type="submit"
-                                    disabled={!replyText.trim()}
-                                    className={`ml-2 text-sm font-semibold ${
-                                      replyText.trim()
-                                        ? 'text-blue-500 hover:text-blue-600'
-                                        : 'text-gray-400 cursor-not-allowed'
-                                    }`}
-                                  >
-                                    Reply
-                                  </button>
-                                </form>
-                              )}
-
-                              {comment.replies?.length > 0 && (
-                                <div className="ml-8 mt-2 space-y-2">
-                                  {comment.replies.map((reply) => (
-                                    <div key={reply._id} className="flex items-start justify-between">
-                                      <div className="flex items-start flex-1">
-                                        {reply.user ? (
-                                          <img
-                                            src={getProfileImageUrl(reply.user.profilePicture, reply.user.username)}
-                                            alt={reply.user.username}
-                                            className="h-6 w-6 rounded-full object-cover"
-                                          />
-                                        ) : (
-                                          <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center">
-                                            <PersonRegular className="w-4 h-4 text-gray-400" />
-                                          </div>
-                                        )}
-                                        <div className="ml-2">
-                                          <span className={`font-medium ${
-                                            theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
-                                          }`}>{reply.user?.username || 'Unknown User'}</span>
-                                          <p className={`text-sm ${
-                                            theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-700'
-                                          }`}>{reply.text}</p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => handleCommentLike(comment._id)}
-                        className="ml-2 flex items-center"
-                      >
-                        {comment.likes?.includes(user?.id) ? (
-                          <HeartFilled className="w-4 h-4 text-red-500" />
-                        ) : (
-                          <HeartRegular className="w-4 h-4 text-gray-400 hover:text-red-500" />
-                        )}
-                        {comment.likes?.length > 0 && (
-                          <span className="ml-1 text-xs text-gray-500">{comment.likes.length}</span>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                {post?.comments?.length > 3 && !showAllComments && (
-                  <button
-                    onClick={() => setShowAllComments(true)}
-                    className={`text-sm font-medium ${
-                      theme === 'dark-theme' 
-                        ? 'text-gray-400 hover:text-white' 
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    View all {post.comments.length} comments
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Comment Input */}
-            <div className={`shrink-0 border-t mt-auto ${
-              theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
-            }`}>
-              <form onSubmit={handleComment} className="p-4">
-                <div className="flex items-center">
-                  <input
-                    type="text"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Add a comment..."
-                    className={`flex-1 text-sm border-0 focus:ring-0 outline-none ${
-                      theme === 'dark-theme' 
-                        ? 'bg-gray-900 text-white placeholder-gray-500' 
-                        : 'bg-white text-gray-900 placeholder-gray-400'
-                    }`}
-                  />
-                  <button
-                    type="submit"
-                    disabled={!newComment.trim()}
-                    className={`ml-2 text-sm font-semibold ${
-                      newComment.trim() 
-                        ? theme === 'dark-theme'
-                          ? 'text-blue-400 hover:text-blue-300'
-                          : 'text-blue-500 hover:text-blue-600'
-                        : `${theme === 'dark-theme' ? 'text-gray-600' : 'text-gray-400'} cursor-not-allowed`
-                    }`}
-                  >
-                    Post
-                  </button>
-                </div>
-              </form>
-            </div>
+            {/* Comments */}
+            <PostComments
+              post={post}
+              isOpen={showComments}
+              onComment={(updatedPost) => setPost(updatedPost)}
+              onReply={(updatedPost) => setPost(updatedPost)}
+            />
           </div>
         </div>
       </div>

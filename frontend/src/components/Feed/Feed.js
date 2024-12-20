@@ -1,46 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   HeartRegular,
+  HeartFilled,
   CommentRegular,
   ShareRegular,
   BookmarkRegular,
+  BookmarkFilled,
 } from '@fluentui/react-icons';
 import axios from 'axios';
 import { API_URL } from '../../config';
 import PostCreator from '../Post/PostCreator';
-
-const CommentSection = ({ post, onAddComment }) => {
-  const [commentText, setCommentText] = useState('');
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (commentText.trim()) {
-      onAddComment(commentText);
-      setCommentText('');
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="mt-4 flex items-center border-t pt-4">
-      <input
-        type="text"
-        value={commentText}
-        onChange={(e) => setCommentText(e.target.value)}
-        placeholder="Add a comment..."
-        className="flex-1 outline-none bg-transparent text-white placeholder-gray-400"
-      />
-      <button 
-        type="submit" 
-        className="text-[#ae52e3] font-semibold ml-2 disabled:opacity-50"
-        disabled={!commentText.trim()}
-      >
-        Post
-      </button>
-    </form>
-  );
-};
+import PostComments from '../Post/PostComments';
+import { useAuth } from '../../context/AuthContext';
 
 const Feed = ({ onStoryClick, onRefreshNeeded }) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -81,6 +57,92 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
     setShowPostCreator(false);
   };
 
+  const handleLike = async (postId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/posts/${postId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const updatedPost = await response.json();
+        setPosts(posts.map(post => 
+          post._id === postId ? updatedPost : post
+        ));
+      }
+    } catch (error) {
+      console.error('Error liking post:', error);
+    }
+  };
+
+  const handleSave = async (postId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/posts/${postId}/save`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setPosts(posts.map(post => 
+          post._id === postId ? { ...post, saved: result.saved } : post
+        ));
+      }
+    } catch (error) {
+      console.error('Error saving post:', error);
+    }
+  };
+
+  const handleShare = async (post) => {
+    try {
+      await navigator.share({
+        title: `Post by ${post.user.username}`,
+        url: `${window.location.origin}/post/${post._id}`
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
+  const renderText = (text) => {
+    return text.split(' ').map((word, index) => {
+      if (word.startsWith('#')) {
+        return (
+          <React.Fragment key={index}>
+            <button
+              onClick={() => navigate(`/explore/hashtag/${word.slice(1)}`)}
+              className="text-blue-500 hover:underline"
+            >
+              {word}
+            </button>{' '}
+          </React.Fragment>
+        );
+      } else if (word.startsWith('@')) {
+        return (
+          <React.Fragment key={index}>
+            <button
+              onClick={() => navigate(`/profile/${word.slice(1)}`)}
+              className="text-blue-500 hover:underline"
+            >
+              {word}
+            </button>{' '}
+          </React.Fragment>
+        );
+      }
+      return word + ' ';
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -115,12 +177,18 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
               <img
                 src={post.user.profilePicture}
                 alt={post.user.username}
-                className="h-10 w-10 rounded-full object-cover"
+                className="h-10 w-10 rounded-full object-cover cursor-pointer"
+                onClick={() => navigate(`/profile/${post.user.username}`)}
                 onError={(e) => {
                   e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username)}`;
                 }}
               />
-              <span className="ml-3 font-medium text-white">{post.user.username}</span>
+              <span 
+                className="ml-3 font-medium text-white cursor-pointer"
+                onClick={() => navigate(`/profile/${post.user.username}`)}
+              >
+                {post.user.username}
+              </span>
             </div>
 
             {/* Post Image */}
@@ -128,7 +196,8 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
               <img 
                 src={post.media}
                 alt={post.caption}
-                className="w-full object-cover"
+                className="w-full object-cover cursor-pointer"
+                onClick={() => navigate(`/post/${post._id}`)}
               />
             </div>
 
@@ -136,18 +205,38 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
             <div className="p-4">
               <div className="flex justify-between mb-2">
                 <div className="flex space-x-4">
-                  <button className="text-white hover:text-[#ae52e3] transition-colors">
-                    <HeartRegular className="w-6 h-6" />
+                  <button 
+                    onClick={() => handleLike(post._id)}
+                    className="text-white hover:text-[#ae52e3] transition-colors"
+                  >
+                    {post.likes?.includes(user?.id) ? (
+                      <HeartFilled className="w-6 h-6 text-red-500" />
+                    ) : (
+                      <HeartRegular className="w-6 h-6" />
+                    )}
                   </button>
-                  <button className="text-white hover:text-[#ae52e3] transition-colors">
+                  <button 
+                    onClick={() => setShowComments(prev => ({ ...prev, [post._id]: !prev[post._id] }))}
+                    className="text-white hover:text-[#ae52e3] transition-colors"
+                  >
                     <CommentRegular className="w-6 h-6" />
                   </button>
-                  <button className="text-white hover:text-[#ae52e3] transition-colors">
+                  <button 
+                    onClick={() => handleShare(post)}
+                    className="text-white hover:text-[#ae52e3] transition-colors"
+                  >
                     <ShareRegular className="w-6 h-6" />
                   </button>
                 </div>
-                <button className="text-white hover:text-[#ae52e3] transition-colors">
-                  <BookmarkRegular className="w-6 h-6" />
+                <button 
+                  onClick={() => handleSave(post._id)}
+                  className="text-white hover:text-[#ae52e3] transition-colors"
+                >
+                  {post.saved ? (
+                    <BookmarkFilled className="w-6 h-6" />
+                  ) : (
+                    <BookmarkRegular className="w-6 h-6" />
+                  )}
                 </button>
               </div>
 
@@ -155,31 +244,30 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
 
               {/* Caption */}
               <div className="text-white">
-                <span className="font-semibold mr-2">{post.user.username}</span>
-                {post.caption}
+                <span 
+                  className="font-semibold mr-2 cursor-pointer"
+                  onClick={() => navigate(`/profile/${post.user.username}`)}
+                >
+                  {post.user.username}
+                </span>
+                {renderText(post.caption)}
               </div>
 
               {/* Comments */}
-              {post.comments && post.comments.length > 0 && (
-                <div className="mt-2 text-gray-400">
-                  <button onClick={() => setShowComments(prev => ({ ...prev, [post._id]: !prev[post._id] }))}>
-                    View all {post.comments.length} comments
-                  </button>
-                  {showComments[post._id] && (
-                    <div className="mt-2 space-y-2">
-                      {post.comments.map(comment => (
-                        <div key={comment._id} className="text-white">
-                          <span className="font-semibold mr-2">{comment.user.username}</span>
-                          {comment.text}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Add Comment */}
-              <CommentSection post={post} onAddComment={(text) => console.log('Comment:', text)} />
+              <PostComments
+                post={post}
+                isOpen={showComments[post._id]}
+                onComment={(updatedPost) => {
+                  setPosts(posts.map(p => 
+                    p._id === updatedPost._id ? updatedPost : p
+                  ));
+                }}
+                onReply={(updatedPost) => {
+                  setPosts(posts.map(p => 
+                    p._id === updatedPost._id ? updatedPost : p
+                  ));
+                }}
+              />
             </div>
           </div>
         ))}
