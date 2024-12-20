@@ -12,26 +12,31 @@ router.get('/', auth, async (req, res) => {
     const notifications = await Notification.find({ recipient: req.user.userId })
       .sort({ createdAt: -1 })
       .populate('sender', 'username profilePicture')
-      .populate('post', 'media caption comments');
+      .populate({
+        path: 'post',
+        select: 'media caption comments',
+        populate: {
+          path: 'comments',
+          select: 'text'
+        }
+      });
 
     // Process notifications to handle potentially missing comments
     const processedNotifications = notifications.map(notification => {
       const notificationObj = notification.toObject();
       
       // If this notification involves a comment and has a post
-      if (notificationObj.comment && notificationObj.post?.comments) {
+      if (notificationObj.comment && notificationObj.post) {
         // Find the matching comment in the post's comments array
-        const comment = notificationObj.post.comments.find(
+        const comment = notificationObj.post.comments?.find(
           c => c._id.toString() === notificationObj.comment.toString()
         );
         
         // If comment exists, include it, otherwise set to null
-        notificationObj.comment = comment || null;
+        notificationObj.commentData = comment || null;
         
         // Remove the comments array from the post to avoid sending unnecessary data
-        if (notificationObj.post) {
-          delete notificationObj.post.comments;
-        }
+        delete notificationObj.post.comments;
       }
       
       return notificationObj;
@@ -66,7 +71,14 @@ router.post('/', auth, async (req, res) => {
 
     const populatedNotification = await Notification.findById(notification._id)
       .populate('sender', 'username profilePicture')
-      .populate('post', 'media caption');
+      .populate({
+        path: 'post',
+        select: 'media caption comments',
+        populate: {
+          path: 'comments',
+          select: 'text'
+        }
+      });
 
     // Process notification to handle comment data
     const processedNotification = populatedNotification.toObject();
@@ -74,7 +86,8 @@ router.post('/', auth, async (req, res) => {
       const comment = processedNotification.post.comments?.find(
         c => c._id.toString() === processedNotification.comment.toString()
       );
-      processedNotification.comment = comment || null;
+      processedNotification.commentData = comment || null;
+      delete processedNotification.post.comments;
     }
     
     res.status(201).json(processedNotification);
@@ -93,7 +106,14 @@ router.patch('/:id/read', auth, async (req, res) => {
       { new: true }
     )
     .populate('sender', 'username profilePicture')
-    .populate('post', 'media caption');
+    .populate({
+      path: 'post',
+      select: 'media caption comments',
+      populate: {
+        path: 'comments',
+        select: 'text'
+      }
+    });
 
     if (!notification) {
       return res.status(404).json({ error: 'Notification not found' });
@@ -105,7 +125,8 @@ router.patch('/:id/read', auth, async (req, res) => {
       const comment = processedNotification.post.comments?.find(
         c => c._id.toString() === processedNotification.comment.toString()
       );
-      processedNotification.comment = comment || null;
+      processedNotification.commentData = comment || null;
+      delete processedNotification.post.comments;
     }
 
     res.json(processedNotification);

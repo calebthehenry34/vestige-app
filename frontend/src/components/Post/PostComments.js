@@ -5,7 +5,6 @@ import { ThemeContext } from '../../App';
 import { 
   HeartRegular, 
   HeartFilled,
-  PersonRegular,
   DeleteRegular
 } from '@fluentui/react-icons';
 import { useAuth } from '../../context/AuthContext';
@@ -19,14 +18,41 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
   const { theme } = useContext(ThemeContext);
   const { user } = useAuth();
   const [activeCommentMenu, setActiveCommentMenu] = useState(null);
+  const [optimisticComments, setOptimisticComments] = useState([]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const trimmedComment = newComment.trim();
     if (!trimmedComment || !post?._id) return;
 
+    // Create optimistic comment
+    const optimisticComment = {
+      _id: Date.now().toString(), // Temporary ID
+      text: trimmedComment,
+      user: {
+        _id: user.id,
+        username: user.username,
+        profilePicture: user.profilePicture
+      },
+      likes: [],
+      replies: [],
+      isOptimistic: true
+    };
+
     try {
       if (replyTo?._id) {
+        // Add optimistic reply
+        const updatedComments = post.comments.map(comment => {
+          if (comment._id === replyTo._id) {
+            return {
+              ...comment,
+              replies: [...(comment.replies || []), optimisticComment]
+            };
+          }
+          return comment;
+        });
+        setOptimisticComments(updatedComments);
+
         const response = await fetch(`${API_URL}/api/posts/${post._id}/comments/${replyTo._id}/replies`, {
           method: 'POST',
           headers: {
@@ -42,6 +68,9 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
         onReply?.(updatedPost);
         setReplyTo(null);
       } else {
+        // Add optimistic comment
+        setOptimisticComments([...post.comments, optimisticComment]);
+
         const response = await fetch(`${API_URL}/api/posts/${post._id}/comments`, {
           method: 'POST',
           headers: {
@@ -59,6 +88,8 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
       setNewComment('');
     } catch (error) {
       console.error('Error submitting comment/reply:', error);
+      // Remove optimistic comment on error
+      setOptimisticComments(post.comments);
     }
   };
 
@@ -166,7 +197,14 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [activeCommentMenu]);
 
+  // Reset optimistic comments when post comments update
+  useEffect(() => {
+    setOptimisticComments(post?.comments || []);
+  }, [post?.comments]);
+
   if (!post) return null;
+
+  const displayComments = optimisticComments.length > 0 ? optimisticComments : post.comments;
 
   return (
     <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
@@ -221,21 +259,15 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
 
         {/* Comments list with replies */}
         <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
-          {post.comments?.map((comment) => (
+          {displayComments?.map((comment) => (
             <div key={comment._id} className="space-y-2">
               {/* Main comment */}
               <div className="flex items-start space-x-2">
-                {comment.user ? (
-                  <img
-                    src={getProfileImageUrl(comment.user.profilePicture, comment.user.username)}
-                    alt={comment.user.username}
-                    className="h-8 w-8 rounded-md object-cover"
-                  />
-                ) : (
-                  <div className="h-8 w-8 rounded-md bg-gray-200 flex items-center justify-center">
-                    <PersonRegular className="w-5 h-5 text-gray-400" />
-                  </div>
-                )}
+                <img
+                  src={comment.user?.profilePicture ? getProfileImageUrl(comment.user.profilePicture, comment.user.username) : `https://ui-avatars.com/api/?name=${comment.user?.username || 'U'}&background=random`}
+                  alt={comment.user?.username || 'User'}
+                  className="h-8 w-8 rounded-md object-cover"
+                />
                 <div className="flex-1">
                   <div className="flex justify-between items-start">
                     <div className={`inline-block rounded-lg px-3 py-2 ${
@@ -245,17 +277,19 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
                       <span className="text-xs">{renderText(comment.text)}</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => handleLikeComment(comment._id)}
-                        className="text-gray-500 hover:text-red-500 transition-colors"
-                      >
-                        {comment.likes?.includes(user?.id) ? (
-                          <HeartFilled className="w-4 h-4 text-red-500" />
-                        ) : (
-                          <HeartRegular className="w-4 h-4" />
-                        )}
-                      </button>
-                      {(user?.id === comment.user?._id || user?.id === post.user?._id) && (
+                      {!comment.isOptimistic && (
+                        <button 
+                          onClick={() => handleLikeComment(comment._id)}
+                          className="text-gray-500 hover:text-red-500 transition-colors"
+                        >
+                          {comment.likes?.includes(user?.id) ? (
+                            <HeartFilled className="w-4 h-4 text-red-500" />
+                          ) : (
+                            <HeartRegular className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
+                      {(user?.id === comment.user?._id || user?.id === post.user?._id) && !comment.isOptimistic && (
                         <button
                           onClick={() => handleDeleteComment(comment._id)}
                           className="text-gray-500 hover:text-red-500 transition-colors"
@@ -266,7 +300,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
                     </div>
                   </div>
                   <div className="text-xs text-gray-500 mt-1 ml-2">
-                    {comment.user?._id !== user?.id && (
+                    {comment.user?._id !== user?.id && !comment.isOptimistic && (
                       <button 
                         onClick={() => handleReply(comment)}
                         className="hover:text-blue-500"
@@ -281,17 +315,11 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
               {/* Replies */}
               {comment.replies?.map((reply) => (
                 <div key={reply._id} className="text-xs ml-8 flex items-start space-x-2">
-                  {reply.user ? (
-                    <img
-                      src={getProfileImageUrl(reply.user.profilePicture, reply.user.username)}
-                      alt={reply.user.username}
-                      className="w-6 h-6 rounded-md text-sm"
-                    />
-                  ) : (
-                    <div className="w-6 h-6 rounded-md bg-gray-200 flex items-center justify-center">
-                      <PersonRegular className="w-4 h-4 text-gray-400" />
-                    </div>
-                  )}
+                  <img
+                    src={reply.user?.profilePicture ? getProfileImageUrl(reply.user.profilePicture, reply.user.username) : `https://ui-avatars.com/api/?name=${reply.user?.username || 'U'}&background=random`}
+                    alt={reply.user?.username || 'User'}
+                    className="w-6 h-6 rounded-md text-sm"
+                  />
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
                       <div className={`inline-block rounded-lg px-3 py-2 ${
@@ -314,7 +342,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
                         </span>
                       </div>
                       <div className="flex items-center space-x-2 ml-2">
-                        {(user?.id === reply.user?._id || user?.id === post.user?._id) && (
+                        {(user?.id === reply.user?._id || user?.id === post.user?._id) && !reply.isOptimistic && (
                           <button
                             onClick={() => handleDeleteReply(comment._id, reply._id)}
                             className="text-gray-500 hover:text-red-500 transition-colors"

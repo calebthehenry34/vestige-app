@@ -6,7 +6,6 @@ import {
   BookmarkRegular,
   HeartRegular,
   ChatRegular,
-  LauncherSettingsRegular
 } from '@fluentui/react-icons';
 import { Link } from 'react-router-dom';
 import { ThemeContext } from '../../App';
@@ -166,14 +165,7 @@ const Profile = () => {
           <div className="flex justify-between items-start">
             <h1 className="text-2xl font-bold">{profileData?.username}</h1>
             <div className="flex gap-2">
-              {isOwnProfile ? (
-                <Link
-                  to="/settings"
-                  className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                >
-                  <LauncherSettingsRegular className="w-6 h-6" />
-                </Link>
-              ) : (
+              {!isOwnProfile && (
                 <FollowButton
                   userId={profileData._id}
                   initialIsFollowing={isFollowing}

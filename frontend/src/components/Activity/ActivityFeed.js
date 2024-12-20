@@ -67,7 +67,7 @@ const ActivityFeed = () => {
   };
 
   const renderActivity = (notification) => {
-    const { type, sender, post, comment, createdAt } = notification;
+    const { type, sender, post, commentData, createdAt } = notification;
 
     const baseUserInfo = (
       <div className="flex items-center">
@@ -97,13 +97,13 @@ const ActivityFeed = () => {
         case 'like':
           return 'liked your post.';
         case 'comment':
-          return `commented: "${comment?.text}"`;
+          return commentData ? `commented: "${commentData.text}"` : 'commented on your post.';
         case 'reply':
-          return `replied: "${comment?.text}"`;
+          return commentData ? `replied: "${commentData.text}"` : 'replied to your comment.';
         case 'commentLike':
           return 'liked your comment.';
         case 'tag':
-          return comment ? 'mentioned you in a comment.' : 'tagged you in a post.';
+          return commentData ? 'mentioned you in a comment.' : 'tagged you in a post.';
         default:
           return '';
       }
@@ -155,7 +155,7 @@ const ActivityFeed = () => {
   }
 
   return (
-    <div className={`max-w-2xl mx-auto px-4 ${
+    <div className={`max-w-2xl mx-auto px-4 mb-50 font-headlines ${
       theme === 'dark-theme' ? 'bg-black' : 'bg-white'
     }`}>
       {/* Tabs */}

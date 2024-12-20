@@ -99,11 +99,11 @@ const Explore = () => {
   useEffect(() => {
     if (hashtag) {
       fetchPostsByHashtag(hashtag);
-    } else {
+    } else if (activeTab === 'posts') {
       fetchExplorePosts();
     }
     fetchTrendingHashtags();
-  }, [hashtag, fetchExplorePosts, fetchPostsByHashtag, fetchTrendingHashtags]);
+  }, [hashtag, fetchExplorePosts, fetchPostsByHashtag, fetchTrendingHashtags, activeTab]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -179,14 +179,14 @@ const Explore = () => {
         {/* Hashtag Search and Trending Hashtags */}
         {activeTab === 'hashtags' && (
           <div className="mb-6">
-            <form onSubmit={handleSearch} className="flex justify-center mb-4">
+            <form onSubmit={handleSearch} className="flex justify-center mb-6">
               <div className="relative w-full max-w-md">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search hashtags..."
-                  className={`w-full px-4 py-2 rounded-full pr-10 ${
+                  className={`w-full px-4 py-3 rounded-full pr-10 ${
                     theme === 'dark-theme'
                       ? 'bg-gray-800 text-white placeholder-gray-400'
                       : 'bg-white text-black placeholder-gray-500'
@@ -204,101 +204,101 @@ const Explore = () => {
             </form>
 
             {/* Trending Hashtags */}
-            {trendingHashtags.length > 0 && (
-              <div className={`max-w-md mx-auto p-4 rounded-lg ${
-                theme === 'dark-theme' ? 'bg-gray-800' : 'bg-white'
+            <div className={`max-w-2xl mx-auto p-6 rounded-lg ${
+              theme === 'dark-theme' ? 'bg-gray-800' : 'bg-white'
+            }`}>
+              <h3 className={`text-xl font-semibold mb-4 ${
+                theme === 'dark-theme' ? 'text-white' : 'text-black'
               }`}>
-                <h3 className={`text-lg font-semibold mb-3 ${
-                  theme === 'dark-theme' ? 'text-white' : 'text-black'
-                }`}>
-                  Trending Hashtags
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {trendingHashtags.map((tag, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setSearchQuery(tag);
-                        navigate(`/explore/hashtag/${tag.replace('#', '')}`);
-                      }}
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        theme === 'dark-theme'
-                          ? 'bg-gray-700 text-white hover:bg-gray-600'
-                          : 'bg-gray-100 text-black hover:bg-gray-200'
-                      }`}
-                    >
-                      #{tag}
-                    </button>
-                  ))}
-                </div>
+                Popular Hashtags
+              </h3>
+              <div className="flex flex-wrap gap-3">
+                {trendingHashtags.map((tag, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setSearchQuery(tag);
+                      navigate(`/explore/hashtag/${tag.replace('#', '')}`);
+                    }}
+                    className={`px-4 py-2 rounded-full text-sm transition-colors ${
+                      theme === 'dark-theme'
+                        ? 'bg-gray-700 text-white hover:bg-gray-600'
+                        : 'bg-gray-100 text-black hover:bg-gray-200'
+                    }`}
+                  >
+                    #{tag}
+                  </button>
+                ))}
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Posts Grid */}
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="grid grid-cols-3 gap-1 md:grid-cols-2 lg:grid-cols-3 md:gap-4">
-          {posts.map((post) => (
-            <Link 
-              key={post._id} 
-              to={`/post/${post._id}`}
-              className={`relative aspect-square group overflow-hidden rounded-lg ${
-                theme === 'dark-theme' ? 'bg-gray-800' : 'bg-white'
-              }`}
-            >
-              {post.mediaType === 'video' ? (
-                <div className="w-full h-full bg-black rounded-lg overflow-hidden">
-                  <video
+      {/* Posts Grid - Only show when posts tab is active or hashtag is being viewed */}
+      {(activeTab === 'posts' || hashtag) && (
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid grid-cols-3 gap-1 md:grid-cols-2 lg:grid-cols-3 md:gap-4">
+            {posts.map((post) => (
+              <Link 
+                key={post._id} 
+                to={`/post/${post._id}`}
+                className={`relative aspect-square group overflow-hidden rounded-lg ${
+                  theme === 'dark-theme' ? 'bg-gray-800' : 'bg-white'
+                }`}
+              >
+                {post.mediaType === 'video' ? (
+                  <div className="w-full h-full bg-black rounded-lg overflow-hidden">
+                    <video
+                      src={post.media.startsWith('http') 
+                        ? post.media 
+                        : API_URL + '/uploads/' + post.media}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <img
                     src={post.media.startsWith('http') 
                       ? post.media 
                       : API_URL + '/uploads/' + post.media}
-                    className="w-full h-full object-cover"
+                    alt=""
+                    className="w-full h-full object-cover rounded-lg"
+                    onError={(e) => {
+                      console.log('Image load error:', post.media);
+                      e.target.src = `https://ui-avatars.com/api/?name=Post&size=400`;
+                    }}
                   />
-                </div>
-              ) : (
-                <img
-                  src={post.media.startsWith('http') 
-                    ? post.media 
-                    : API_URL + '/uploads/' + post.media}
-                  alt=""
-                  className="w-full h-full object-cover rounded-lg"
-                  onError={(e) => {
-                    console.log('Image load error:', post.media);
-                    e.target.src = `https://ui-avatars.com/api/?name=Post&size=400`;
-                  }}
-                />
-              )}
-              
-              {/* Hover Overlay */}
-              <div className="opacity-0 group-hover:opacity-100 absolute inset-0 bg-black/50 hidden md:flex items-center justify-center space-x-6 transition-opacity rounded-lg">
-                <div className="flex items-center text-white">
-                  <HeartRegular className="w-6 h-6 mr-2" />
-                  <span className="font-semibold">{post.likes?.length || 0}</span>
-                </div>
-                <div className="flex items-center text-white">
-                  <ChatRegular className="w-6 h-6 mr-2" />
-                  <span className="font-semibold">{post.comments?.length || 0}</span>
-                </div>
-              </div>
-
-              {/* Hashtags Overlay (only show when viewing hashtag posts) */}
-              {activeTab === 'hashtags' && post.hashtags?.length > 0 && (
-                <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/70">
-                  <div className="flex flex-wrap gap-1">
-                    {post.hashtags.map((tag, index) => (
-                      <span key={index} className="text-xs text-white">
-                        #{tag}
-                      </span>
-                    ))}
+                )}
+                
+                {/* Hover Overlay */}
+                <div className="opacity-0 group-hover:opacity-100 absolute inset-0 bg-black/50 hidden md:flex items-center justify-center space-x-6 transition-opacity rounded-lg">
+                  <div className="flex items-center text-white">
+                    <HeartRegular className="w-6 h-6 mr-2" />
+                    <span className="font-semibold">{post.likes?.length || 0}</span>
+                  </div>
+                  <div className="flex items-center text-white">
+                    <ChatRegular className="w-6 h-6 mr-2" />
+                    <span className="font-semibold">{post.comments?.length || 0}</span>
                   </div>
                 </div>
-              )}
-            </Link>
-          ))}
+
+                {/* Hashtags Overlay (only show when viewing hashtag posts) */}
+                {hashtag && post.hashtags?.length > 0 && (
+                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/70">
+                    <div className="flex flex-wrap gap-1">
+                      {post.hashtags.map((tag, index) => (
+                        <span key={index} className="text-xs text-white">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
