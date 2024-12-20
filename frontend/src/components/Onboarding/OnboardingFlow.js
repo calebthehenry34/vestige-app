@@ -20,6 +20,7 @@ const OnboardingFlow = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [slideDirection, setSlideDirection] = useState('');
+  const [nextStep, setNextStep] = useState(null);
   const [formData, setFormData] = useState({
     profilePicture: null,
     username: user?.username || '',
@@ -92,9 +93,11 @@ const OnboardingFlow = () => {
     setError('');
     if (step < 4) {
       setSlideDirection(styles.slideLeft);
+      setNextStep(step + 1);
       setTimeout(() => {
         setStep(step + 1);
-        setSlideDirection(styles.slideCurrent);
+        setSlideDirection(styles.slideNext);
+        setNextStep(null);
       }, 300);
     }
   };
@@ -102,9 +105,11 @@ const OnboardingFlow = () => {
   const handleBack = () => {
     if (step > 1) {
       setSlideDirection(styles.slideRight);
+      setNextStep(step - 1);
       setTimeout(() => {
         setStep(step - 1);
-        setSlideDirection(styles.slideCurrent);
+        setSlideDirection(styles.slideNext);
+        setNextStep(null);
       }, 300);
     }
   };
@@ -168,7 +173,7 @@ const OnboardingFlow = () => {
   const getStepLabel = () => {
     switch (step) {
       case 1: return "Setup Profile";
-      case 2: return "Community Guidelines";
+      case 2: return "Guidelines";
       case 3: return "Choose Plan";
       case 4: return "Complete Setup";
       default: return "";
@@ -209,122 +214,122 @@ const OnboardingFlow = () => {
   };
 
   const renderCard = () => {
-  const containerClass = `${styles.cardContainer} ${slideDirection}`;
-  const cardClass = `${styles.card} rounded-2xl`;
+    const cardClass = `${styles.card} rounded-2xl`;
 
-  if (step === 1) {
-    return (
-      <div className={containerClass}>
-        <div className={cardClass}>
-          {showImageEditor && previewUrl ? (
-            <ProfileImageEditor
-              image={previewUrl}
-              onSave={handleImageSave}
-              onBack={() => setShowImageEditor(false)}
-            />
-          ) : (
-            <div className="w-full h-full relative">
-              {/* Background/Image Layer */}
-              {previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt={formData.username || 'Profile'}
-                  className="w-full h-full object-cover rounded-2xl"
-                />
-              ) : (
-                <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center rounded-2xl">
-                  <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                      <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
-                    </svg>
+    if (step === 1) {
+      return (
+        <div className={`${styles.cardContainer} ${slideDirection}`}>
+          <div className={cardClass}>
+            {showImageEditor && previewUrl ? (
+              <ProfileImageEditor
+                image={previewUrl}
+                onSave={handleImageSave}
+                onBack={() => setShowImageEditor(false)}
+              />
+            ) : (
+              <div className="w-full h-full relative">
+                {/* Background/Image Layer */}
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt={formData.username || 'Profile'}
+                    className="w-full h-full object-cover rounded-2xl"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center rounded-2xl">
+                    <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#A8A8A8"/>
+                      </svg>
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload Button Layer */}
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30">
+                  <input
+                    type="file"
+                    id="profile-upload"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    onClick={(e) => e.stopPropagation()}
+                    className="hidden"
+                  />
+                  <button 
+                    onClick={handleUploadClick}
+                    className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 cursor-pointer transition-colors flex items-center justify-center"
+                  >
+                    {previewUrl ? (
+                      <Reset className="w-8 h-8 text-white" />
+                    ) : (
+                      <Add className="w-8 h-8 text-white" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 pointer-events-none rounded-2xl" />
+                
+                {/* Content Layer */}
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <div className="flex justify-between items-start">
+                    <h1 className="text-2xl font-headlines text-white">{formData.username}</h1>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <textarea
+                      value={formData.bio}
+                      onChange={handleBioChange}
+                      placeholder="Write a short bio..."
+                      className="w-full px-0 py-1 bg-transparent text-white border-b border-white/30 focus:border-white resize-none focus:outline-none text-md"
+                      rows={2}
+                      style={{
+                        overflow: 'hidden',
+                        lineHeight: '1.5'
+                      }}
+                    />
                   </div>
                 </div>
-              )}
-
-              {/* Upload Button Layer */}
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30">
-                <input
-                  type="file"
-                  id="profile-upload"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  onClick={(e) => e.stopPropagation()}
-                  className="hidden"
-                />
-                <button 
-                  onClick={handleUploadClick}
-                  className="w-16 h-16 rounded-full bg-black/50 hover:bg-black/70 cursor-pointer transition-colors flex items-center justify-center"
-                >
-                  {previewUrl ? (
-                    <Reset className="w-8 h-8 text-white" />
-                  ) : (
-                    <Add className="w-8 h-8 text-white" />
-                  )}
-                </button>
               </div>
-
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 pointer-events-none rounded-2xl" />
-              
-              {/* Content Layer */}
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                <div className="flex justify-between items-start">
-                  <h1 className="text-2xl font-headlines text-white">{formData.username}</h1>
-                </div>
-                
-                <div className="mt-4">
-                  <textarea
-                    value={formData.bio}
-                    onChange={handleBioChange}
-                    placeholder="Write a short bio..."
-                    className="w-full px-0 py-1 bg-transparent text-white border-b border-white/30 focus:border-white resize-none focus:outline-none text-md"
-                    rows={2}
-                    style={{
-                      overflow: 'hidden',
-                      lineHeight: '1.5'
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
-    );
-  }
-
+      );
+    }
 
     if (step === 2) {
       return (
-        <div className={cardClass}>
-          <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
-            <div className="h-full flex flex-col">
-              <div className="w-full space-y-6">
-                <div className="bg-black/30 rounded-lg p-6">
-                  <div className="text-white">
-                    <h4 className="font-medium mb-4">Our Community Standards</h4>
-                    <ul className="font-medium space-y-4 text-gray-300">
-                      <li>Be respectful and kind to others</li>
-                      <li>No hate speech or bullying</li>
-                      <li>Protect your privacy and others'</li>
-                      <li>Share appropriate content only</li>
-                    </ul>
+        <div className={`${styles.cardContainer} ${slideDirection}`}>
+          <div className={cardClass}>
+            <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
+              <div className="h-full flex flex-col">
+                <div className="w-full space-y-6">
+                  <div className="bg-black/30 rounded-lg p-6">
+                    <div className="text-white">
+                      <h4 className="font-medium mb-4">Our Community Standards</h4>
+                      <ul className="font-medium space-y-4 text-gray-300">
+                        <li>Be respectful and kind to others</li>
+                        <li>No hate speech or bullying</li>
+                        <li>Protect your privacy and others'</li>
+                        <li>Share appropriate content only</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="pt-4">
+                    <Checkbox
+                      labelText={<span style={{ color: 'white' }}>I agree to follow the community guidelines</span>}
+                      id="guidelines"
+                      checked={formData.acceptedGuidelines}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        acceptedGuidelines: e.target.checked 
+                      })}
+                    />
                   </div>
                 </div>
-                <div className="pt-4">
-                  <Checkbox
-                    labelText={<span style={{ color: 'white' }}>I agree to follow the community guidelines</span>}
-                    id="guidelines"
-                    checked={formData.acceptedGuidelines}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      acceptedGuidelines: e.target.checked 
-                    })}
-                  />
-                </div>
               </div>
+              {renderBackButton()}
             </div>
-            {renderBackButton()}
           </div>
         </div>
       );
@@ -332,69 +337,73 @@ const OnboardingFlow = () => {
 
     if (step === 3) {
       return (
-        <div className={cardClass}>
-          <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
-            <div className="h-full flex flex-col">
-              <div className="w-full max-w-md mx-auto space-y-6">
-                <div className="text-left mb-8">
-                  <h2 className="text-2xl font-headlines text-white mb-2">Free Beta Access</h2>
-                  <p className="text-gray-400">Get early access to all features during our beta period</p>
-                </div>
-                <div className="bg-black/30 rounded-lg p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-                        </svg>
+        <div className={`${styles.cardContainer} ${slideDirection}`}>
+          <div className={cardClass}>
+            <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
+              <div className="h-full flex flex-col">
+                <div className="w-full max-w-md mx-auto space-y-6">
+                  <div className="text-left mb-8">
+                    <h2 className="text-2xl font-headlines text-white mb-2">Free Beta Access</h2>
+                    <p className="text-gray-400">Get early access to all features during our beta period</p>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
+                          </svg>
+                        </div>
+                        <span className="text-white">Full access to all features</span>
                       </div>
-                      <span className="text-white">Full access to all features</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-                        </svg>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
+                          </svg>
+                        </div>
+                        <span className="text-white">Early adopter benefits</span>
                       </div>
-                      <span className="text-white">Early adopter benefits</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-                        </svg>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
+                          </svg>
+                        </div>
+                        <span className="text-white">Help shape the future</span>
                       </div>
-                      <span className="text-white">Help shape the future</span>
                     </div>
                   </div>
                 </div>
               </div>
+              {renderBackButton()}
             </div>
-            {renderBackButton()}
           </div>
         </div>
       );
     }
 
     return (
-      <div className={cardClass}>
-        <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
-          <div className="h-full flex flex-col">
-            <div className="w-full space-y-6">
-              <div className="bg-black/30 rounded-lg p-6">
-                <div className="space-y-4">
-                  <p className="font-medium text-gray-200">
-                    Welcome to Vestige beta! You currently have access to all features 
-                    free of charge while we're in beta testing. <br/><br/>
-                    Please remember that features may not work as expected
-                    and we need your help. <br/><br/>
-                    If you find a problem, email support@vestigeapp.com and we'll fix it.
-                  </p>
+      <div className={`${styles.cardContainer} ${slideDirection}`}>
+        <div className={cardClass}>
+          <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
+            <div className="h-full flex flex-col">
+              <div className="w-full space-y-6">
+                <div className="bg-black/30 rounded-lg p-6">
+                  <div className="space-y-4">
+                    <p className="font-medium text-gray-200">
+                      Welcome to Vestige beta! You currently have access to all features 
+                      free of charge while we're in beta testing. <br/><br/>
+                      Please remember that features may not work as expected
+                      and we need your help. <br/><br/>
+                      If you find a problem, email support@vestigeapp.com and we'll fix it.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
+            {renderBackButton()}
           </div>
-          {renderBackButton()}
         </div>
       </div>
     );
@@ -405,7 +414,7 @@ const OnboardingFlow = () => {
       <div className="min-h-screen bg-black flex items-center justify-center p-4 font-headlines">
         <div className="w-[85vw] h-[80vh] bg-[#262626] rounded-2xl flex flex-col">
           {renderNavigation()}
-          <div className={styles.cardContainer}>
+          <div className="flex-1 relative overflow-hidden">
             {renderCard()}
           </div>
 
