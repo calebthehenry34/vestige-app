@@ -71,7 +71,6 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
     fetchPosts();
   }, [fetchPosts]);
 
-  // Expose refresh method to parent
   useEffect(() => {
     if (onRefreshNeeded) {
       onRefreshNeeded(fetchPosts);
@@ -79,8 +78,8 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   }, [onRefreshNeeded, fetchPosts]);
 
   const handlePostCreated = async (newPost) => {
-    await fetchPosts(); // Refresh the feed
-    setShowPostCreator(false); // Close the creator
+    await fetchPosts();
+    setShowPostCreator(false);
   };
 
   if (loading) {
@@ -101,15 +100,6 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
 
   return (
     <div className="max-w-xl mx-auto py-8">
-      {/* Create Post Button */}
-      <button
-        onClick={() => setShowPostCreator(true)}
-        className="w-full mb-6 p-4 rounded-lg border border-gray-800 bg-[#1a1a1a] hover:border-[#ae52e3] transition-colors flex items-center justify-center gap-2 text-white"
-      >
-        <ImageRegular className="w-6 h-6" />
-        <span>Create New Post</span>
-      </button>
-
       {/* Post Creator Modal */}
       <PostCreator
         isOpen={showPostCreator}

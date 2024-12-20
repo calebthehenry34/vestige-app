@@ -4,8 +4,6 @@ import {
   CompassNorthwestRegular, 
   HeartRegular, 
   PersonRegular, 
-  AddCircleRegular,
-  DocumentRegular,
   ImageMultipleRegular,
   VideoPersonPulseRegular, 
   SettingsRegular,
@@ -24,9 +22,9 @@ import {
   PresenceBlockedRegular,
   WeatherMoonRegular,
   WeatherSunnyRegular,
+  DocumentRegular,
 } from '@fluentui/react-icons';
 import { useAuth } from '../../context/AuthContext';
-import PostCreator from '../Post/PostCreator';
 import { ThemeContext } from '../../App';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 
@@ -38,16 +36,14 @@ const Navbar = () => {
   const [showDrawer, setShowDrawer] = useState(false);
   const [showFeedMenu, setShowFeedMenu] = useState(false);
   const [hasNotifications] = useState(true);
-  const [isPostCreatorOpen, setIsPostCreatorOpen] = useState(false);
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const [visible, setVisible] = useState(true);
   const [expandedSection, setExpandedSection] = useState(null);
 
   const isSettingsPage = location.pathname === '/settings';
-  const shouldHideNavbar = isPostCreatorOpen || isSettingsPage;
 
   useEffect(() => {
-    if (showFeedMenu || isPostCreatorOpen || showDrawer) {
+    if (showFeedMenu || showDrawer) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -56,7 +52,7 @@ const Navbar = () => {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [showFeedMenu, isPostCreatorOpen, showDrawer]);
+  }, [showFeedMenu, showDrawer]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -93,11 +89,6 @@ const Navbar = () => {
       action: () => handleNavigation('/explore'),
       icon: <CompassNorthwestRegular className="w-6 h-6" />,
       label: 'Explore' 
-    },
-    { 
-      action: () => setIsPostCreatorOpen(true),
-      icon: <AddCircleRegular className="w-6 h-6" />,
-      label: 'Create' 
     },
     { 
       action: () => handleNavigation('/activity'),
@@ -368,7 +359,7 @@ const Navbar = () => {
       </div>
 
       {/* Floating Mobile Navigation */}
-      {!shouldHideNavbar && (
+      {!isSettingsPage && (
         <div className="md:hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[90] w-50">
           <div className={`rounded-xl shadow-lg ${
             theme === 'dark-theme'
@@ -453,12 +444,6 @@ const Navbar = () => {
 
       {/* Drawer */}
       {renderDrawer()}
-
-      {/* Post Creator Modal */}
-      <PostCreator 
-        isOpen={isPostCreatorOpen}
-        onClose={() => setIsPostCreatorOpen(false)}
-      />
     </>
   );
 };
