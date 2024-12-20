@@ -57,14 +57,14 @@ postSchema.index({ user: 1, createdAt: -1 });
 postSchema.index({ hashtags: 1, createdAt: -1 });
 postSchema.index({ createdAt: -1 });
 
-// Virtual for comment count
+// Virtual for comment count with null check
 postSchema.virtual('commentCount').get(function() {
-  return this.comments.length;
+  return this.comments ? this.comments.length : 0;
 });
 
-// Virtual for like count
+// Virtual for like count with null check
 postSchema.virtual('likeCount').get(function() {
-  return this.likes.length;
+  return this.likes ? this.likes.length : 0;
 });
 
 // Ensure virtuals are included in JSON output

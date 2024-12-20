@@ -55,37 +55,37 @@ const FollowersModal = ({ isOpen, onClose, userId, type }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-[200] flex items-end justify-center">
+    <div className="fixed inset-0 bg-black/60 dark:bg-black/80 z-[200] flex items-end justify-center backdrop-blur-sm">
       <div 
-        className={`bg-white dark:bg-gray-900 w-full max-w-md rounded-t-2xl transform transition-transform duration-300 ease-out ${
+        className={`bg-white dark:bg-gray-900 w-full max-w-md rounded-t-2xl transform transition-transform duration-300 ease-out shadow-lg dark:shadow-gray-900/50 ${
           isAnimating ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700/50">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             {type === 'followers' ? 'Followers' : 'Following'}
           </h2>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors duration-200"
           >
-            <DismissRegular className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+            <DismissRegular className="w-6 h-6 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200" />
           </button>
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto">
           {loading ? (
             <div className="flex justify-center items-center p-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 dark:border-blue-400"></div>
             </div>
           ) : users.length === 0 ? (
             <div className="text-center p-4 text-gray-500 dark:text-gray-400">
               No {type} yet
             </div>
           ) : (
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="divide-y divide-gray-200 dark:divide-gray-700/50">
               {users.map(user => (
-                <div key={user._id} className="flex items-center justify-between p-4">
+                <div key={user._id} className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200">
                   <Link
                     to={`/profile/${user.username}`}
                     className="flex items-center flex-1"

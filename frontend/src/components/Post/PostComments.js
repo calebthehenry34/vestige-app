@@ -141,7 +141,6 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
   const handleReply = (comment) => {
     if (!comment?.user?._id || !user?.id || comment.user._id === user.id) return;
     setReplyTo(comment);
-    // Removed auto-focus behavior
   };
 
   const handleLikeComment = async (commentId) => {
@@ -266,7 +265,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
         )}
 
         {/* Comments list with replies */}
-        <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
+        <div className="space-y-3 mb-4 max-h-[300px] overflow-y-auto">
           {displayComments?.map((comment) => (
             <div key={comment._id} className="space-y-2">
               {/* Main comment */}
@@ -408,6 +407,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
                 ? 'text-white placeholder-gray-500 bg-black' 
                 : 'text-black placeholder-gray-500 bg-white'
             }`}
+            readOnly={!isOpen}
           />
           <button
             type="submit"

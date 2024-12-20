@@ -33,7 +33,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
   const [imageError, setImageError] = useState(false);
   const [localPost, setLocalPost] = useState(post);
   const isOwner = localPost?.user?._id === user?.id;
-  const isLiked = localPost?.likes?.some(like => like._id === user?.id);
+  const isLiked = localPost?.likes?.some(like => like.user === user?.id);
 
   const handleLike = async () => {
     try {

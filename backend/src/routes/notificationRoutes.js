@@ -13,29 +13,47 @@ router.get('/', auth, async (req, res) => {
     const notifications = await Notification.find({ recipient: req.user.userId })
       .sort({ createdAt: -1 })
       .populate('sender', 'username profilePicture')
-      .populate('post', 'media caption');
-
-    console.log('Found notifications:', notifications);
+      .lean() // Use lean() to get plain objects instead of Mongoose documents
+      .exec();
 
     const processedNotifications = await Promise.all(notifications.map(async notification => {
-      const notificationObj = notification.toObject();
+      // Initialize post and commentData as null by default
+      notification.post = null;
+      notification.commentData = null;
       
-      // Only process if notification exists and has required fields
-      if (notificationObj && notificationObj.comment && notificationObj.post?._id) {
+      // If there's a postId, try to populate post data
+      if (notification.post) {
         try {
-          console.log('Processing notification with comment:', notificationObj.comment);
-          const post = await mongoose.model('Post').findById(notificationObj.post._id);
-          console.log('Found post:', post?.id);
+          const post = await mongoose.model('Post')
+            .findById(notification.post)
+            .select('media caption')
+            .lean()
+            .exec();
           
-          // Initialize commentData as null by default
-          notificationObj.commentData = null;
+          if (post) {
+            notification.post = post;
+          }
+        } catch (err) {
+          console.error('Error populating post:', err);
+        }
+      }
+      
+      // Only process if notification has a comment ID and associated post
+      if (notification?.comment && notification?.post?._id) {
+        try {
+          const post = await mongoose.model('Post')
+            .findById(notification.post._id)
+            .lean()
+            .exec();
           
-          // Only try to find comment if post exists and has comments array
-          if (post && post.comments && Array.isArray(post.comments)) {
-            const comment = post.comments.find(c => c._id.toString() === notificationObj.comment.toString());
-            console.log('Found comment:', comment?._id);
+          // Check if post exists and has a valid comments array
+          if (post?.comments && Array.isArray(post.comments)) {
+            const comment = post.comments.find(c => 
+              c && c._id && c._id.toString() === notification.comment.toString()
+            );
+            
             if (comment) {
-              notificationObj.commentData = {
+              notification.commentData = {
                 _id: comment._id,
                 text: comment.text
               };
@@ -43,11 +61,10 @@ router.get('/', auth, async (req, res) => {
           }
         } catch (err) {
           console.error('Error processing comment:', err);
-          notificationObj.commentData = null;
         }
       }
       
-      return notificationObj;
+      return notification;
     }));
 
     res.json(processedNotifications);
@@ -77,21 +94,48 @@ router.post('/', auth, async (req, res) => {
       read: false
     });
 
+    // Get populated notification data using lean() to avoid virtuals
     const populatedNotification = await Notification.findById(notification._id)
       .populate('sender', 'username profilePicture')
-      .populate('post', 'media caption');
+      .lean()
+      .exec();
 
-    // Process notification to include comment data
-    const processedNotification = populatedNotification.toObject();
-    if (processedNotification && processedNotification.comment && processedNotification.post?._id) {
+    // Initialize post and commentData
+    populatedNotification.post = null;
+    populatedNotification.commentData = null;
+
+    // If there's a postId, try to populate post data
+    if (postId) {
       try {
-        const post = await mongoose.model('Post').findById(processedNotification.post._id);
-        processedNotification.commentData = null;
+        const post = await mongoose.model('Post')
+          .findById(postId)
+          .select('media caption')
+          .lean()
+          .exec();
         
-        if (post && post.comments && Array.isArray(post.comments)) {
-          const comment = post.comments.find(c => c._id.toString() === processedNotification.comment.toString());
+        if (post) {
+          populatedNotification.post = post;
+        }
+      } catch (err) {
+        console.error('Error populating post:', err);
+      }
+    }
+
+    // If there's a commentId and post, try to populate comment data
+    if (commentId && populatedNotification.post?._id) {
+      try {
+        const post = await mongoose.model('Post')
+          .findById(populatedNotification.post._id)
+          .lean()
+          .exec();
+        
+        if (post?.comments && Array.isArray(post.comments)) {
+          const comment = post.comments.find(c => 
+            c && c._id && c._id.toString() === commentId.toString()
+          );
+          
           if (comment) {
-            processedNotification.commentData = {
+            populatedNotification.commentData = {
               _id: comment._id,
               text: comment.text
             };
@@ -99,11 +143,10 @@ router.post('/', auth, async (req, res) => {
         }
       } catch (err) {
         console.error('Error processing comment:', err);
-        processedNotification.commentData = null;
       }
     }
     
-    res.status(201).json(processedNotification);
+    res.status(201).json(populatedNotification);
   } catch (error) {
     console.error('Notification creation error:', error);
     res.status(500).json({ error: 'Failed to create notification', details: error.message });
@@ -119,23 +162,49 @@ router.patch('/:id/read', auth, async (req, res) => {
       { new: true }
     )
     .populate('sender', 'username profilePicture')
-    .populate('post', 'media caption');
+    .lean()
+    .exec();
 
     if (!notification) {
       return res.status(404).json({ error: 'Notification not found' });
     }
 
-    // Process notification to include comment data
-    const processedNotification = notification.toObject();
-    if (processedNotification && processedNotification.comment && processedNotification.post?._id) {
+    // Initialize post and commentData
+    notification.post = null;
+    notification.commentData = null;
+
+    // If there's a postId, try to populate post data
+    if (notification.post) {
       try {
-        const post = await mongoose.model('Post').findById(processedNotification.post._id);
-        processedNotification.commentData = null;
+        const post = await mongoose.model('Post')
+          .findById(notification.post)
+          .select('media caption')
+          .lean()
+          .exec();
         
-        if (post && post.comments && Array.isArray(post.comments)) {
-          const comment = post.comments.find(c => c._id.toString() === processedNotification.comment.toString());
+        if (post) {
+          notification.post = post;
+        }
+      } catch (err) {
+        console.error('Error populating post:', err);
+      }
+    }
+
+    // If there's a comment and post, try to populate comment data
+    if (notification?.comment && notification?.post?._id) {
+      try {
+        const post = await mongoose.model('Post')
+          .findById(notification.post._id)
+          .lean()
+          .exec();
+        
+        if (post?.comments && Array.isArray(post.comments)) {
+          const comment = post.comments.find(c => 
+            c && c._id && c._id.toString() === notification.comment.toString()
+          );
+          
           if (comment) {
-            processedNotification.commentData = {
+            notification.commentData = {
               _id: comment._id,
               text: comment.text
             };
@@ -143,11 +212,10 @@ router.patch('/:id/read', auth, async (req, res) => {
         }
       } catch (err) {
         console.error('Error processing comment:', err);
-        processedNotification.commentData = null;
       }
     }
 
-    res.json(processedNotification);
+    res.json(notification);
   } catch (error) {
     console.error('Notification update error:', error);
     res.status(500).json({ error: 'Failed to update notification', details: error.message });

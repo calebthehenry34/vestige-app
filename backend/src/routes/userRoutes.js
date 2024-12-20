@@ -109,7 +109,28 @@ router.get('/:userId/followers', auth, async (req, res) => {
       .populate('follower', 'username profilePicture bio')
       .sort({ createdAt: -1 });
 
-    res.json(followers.map(follow => follow.follower));
+    // Filter out any null follower references and map to user objects
+    const validFollowers = followers
+      .filter(follow => follow.follower !== null)
+      .map(follow => ({
+        ...follow.follower.toObject(),
+        _id: follow.follower._id,
+        isFollowing: false // Default value, will be updated in the next step
+      }));
+
+    // Get the current user's following list to determine who they follow
+    const currentUserFollowing = await Follow.find({ follower: req.user.userId })
+      .select('following');
+    
+    const followingIds = currentUserFollowing.map(f => f.following.toString());
+
+    // Update isFollowing status for each follower
+    const followersWithStatus = validFollowers.map(follower => ({
+      ...follower,
+      isFollowing: followingIds.includes(follower._id.toString())
+    }));
+
+    res.json(followersWithStatus);
   } catch (error) {
     console.error('Error fetching followers:', error);
     res.status(500).json({ error: 'Error fetching followers' });
@@ -123,7 +144,16 @@ router.get('/:userId/following', auth, async (req, res) => {
       .populate('following', 'username profilePicture bio')
       .sort({ createdAt: -1 });
 
-    res.json(following.map(follow => follow.following));
+    // Filter out any null following references and map to user objects
+    const validFollowing = following
+      .filter(follow => follow.following !== null)
+      .map(follow => ({
+        ...follow.following.toObject(),
+        _id: follow.following._id,
+        isFollowing: true // These are users that are being followed by the requested user
+      }));
+
+    res.json(validFollowing);
   } catch (error) {
     console.error('Error fetching following:', error);
     res.status(500).json({ error: 'Error fetching following' });
