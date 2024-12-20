@@ -1,4 +1,4 @@
-import React, { useState, useRef, } from 'react';
+import React, { useState, useRef } from 'react';
 import { BrightnessRegular, ContrastRegular, ColorRegular } from '@fluentui/react-icons';
 
 const filters = [
