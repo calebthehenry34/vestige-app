@@ -119,7 +119,7 @@ const ActivityFeed = () => {
 
     return (
       <div 
-        className={`flex items-center justify-between py-4 cursor-pointer hover:${
+        className={`mb-50 flex items-center justify-between py-4 cursor-pointer hover:${
           theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'
         }`}
         onClick={() => handleNotificationClick(notification)}

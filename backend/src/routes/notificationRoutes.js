@@ -20,26 +20,26 @@ router.get('/', auth, async (req, res) => {
     const processedNotifications = await Promise.all(notifications.map(async notification => {
       const notificationObj = notification.toObject();
       
-      // Only process if both comment and post exist
-      if (notificationObj.comment && notificationObj.post?._id) {
+      // Only process if notification exists and has required fields
+      if (notificationObj && notificationObj.comment && notificationObj.post?._id) {
         try {
           console.log('Processing notification with comment:', notificationObj.comment);
           const post = await mongoose.model('Post').findById(notificationObj.post._id);
           console.log('Found post:', post?.id);
           
-          // Check if post exists and has comments array
-          if (post && Array.isArray(post.comments)) {
-            const comment = post.comments.id(notificationObj.comment);
-            console.log('Found comment:', comment?.id);
+          // Initialize commentData as null by default
+          notificationObj.commentData = null;
+          
+          // Only try to find comment if post exists and has comments array
+          if (post && post.comments && Array.isArray(post.comments)) {
+            const comment = post.comments.find(c => c._id.toString() === notificationObj.comment.toString());
+            console.log('Found comment:', comment?._id);
             if (comment) {
               notificationObj.commentData = {
                 _id: comment._id,
                 text: comment.text
               };
             }
-          } else {
-            // If post or comments don't exist, set commentData to null
-            notificationObj.commentData = null;
           }
         } catch (err) {
           console.error('Error processing comment:', err);
@@ -83,11 +83,13 @@ router.post('/', auth, async (req, res) => {
 
     // Process notification to include comment data
     const processedNotification = populatedNotification.toObject();
-    if (processedNotification.comment && processedNotification.post?._id) {
+    if (processedNotification && processedNotification.comment && processedNotification.post?._id) {
       try {
         const post = await mongoose.model('Post').findById(processedNotification.post._id);
-        if (post && Array.isArray(post.comments)) {
-          const comment = post.comments.id(processedNotification.comment);
+        processedNotification.commentData = null;
+        
+        if (post && post.comments && Array.isArray(post.comments)) {
+          const comment = post.comments.find(c => c._id.toString() === processedNotification.comment.toString());
           if (comment) {
             processedNotification.commentData = {
               _id: comment._id,
@@ -125,11 +127,13 @@ router.patch('/:id/read', auth, async (req, res) => {
 
     // Process notification to include comment data
     const processedNotification = notification.toObject();
-    if (processedNotification.comment && processedNotification.post?._id) {
+    if (processedNotification && processedNotification.comment && processedNotification.post?._id) {
       try {
         const post = await mongoose.model('Post').findById(processedNotification.post._id);
-        if (post && Array.isArray(post.comments)) {
-          const comment = post.comments.id(processedNotification.comment);
+        processedNotification.commentData = null;
+        
+        if (post && post.comments && Array.isArray(post.comments)) {
+          const comment = post.comments.find(c => c._id.toString() === processedNotification.comment.toString());
           if (comment) {
             processedNotification.commentData = {
               _id: comment._id,

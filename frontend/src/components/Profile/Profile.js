@@ -50,8 +50,8 @@ const Profile = () => {
         setBioText(profileData.bio || '');
         setIsFollowing(profileData.isFollowing || false);
 
-        // Fetch user's posts using their ID
-        const postsResponse = await fetch(API_URL + '/api/posts?userId=' + profileData._id, {
+        // Fetch user's posts using their ID with the correct endpoint
+        const postsResponse = await fetch(`${API_URL}/api/posts/user/${profileData._id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -63,7 +63,7 @@ const Profile = () => {
         }
 
         // Ensure posts is always an array
-        setPosts(Array.isArray(postsData) ? postsData : []);
+        setPosts(Array.isArray(postsData.posts) ? postsData.posts : []);
       } catch (error) {
         console.error('Error fetching profile data:', error);
         setPosts([]); // Set empty array on error
@@ -212,7 +212,7 @@ const Profile = () => {
               className="cursor-pointer"
               onClick={() => setFollowersModalOpen(true)}
             >
-              <div className="text-lg font-bold">{profileData?.followerCount || 0}</div>
+              <div className="text-lg font-bold">{profileData?.followersCount || 0}</div>
               <div className="text-sm text-white/80">Followers</div>
             </div>
             <div

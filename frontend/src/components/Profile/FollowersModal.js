@@ -55,7 +55,7 @@ const FollowersModal = ({ isOpen, onClose, userId, type }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-end justify-center">
+    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-[200] flex items-end justify-center">
       <div 
         className={`bg-white dark:bg-gray-900 w-full max-w-md rounded-t-2xl transform transition-transform duration-300 ease-out ${
           isAnimating ? 'translate-y-0' : 'translate-y-full'

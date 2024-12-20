@@ -192,6 +192,96 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
+// Pre-remove middleware to clean up user data
+userSchema.pre('remove', async function(next) {
+  try {
+    const Post = mongoose.model('Post');
+    const Notification = mongoose.model('Notification');
+    const Message = mongoose.model('Message');
+    const VerificationCode = mongoose.model('VerificationCode');
+    const Report = mongoose.model('Report');
+    const Blacklist = mongoose.model('Blacklist');
+
+    // Delete all posts by the user
+    await Post.deleteMany({ user: this._id });
+
+    // Remove user's likes and comments from other posts
+    await Post.updateMany(
+      {}, 
+      { 
+        $pull: { 
+          likes: this._id,
+          'comments.user': this._id,
+          'comments.likes': this._id,
+          'comments.replies.user': this._id,
+          taggedUsers: this._id
+        }
+      }
+    );
+
+    // Delete all notifications involving the user
+    await Notification.deleteMany({
+      $or: [
+        { recipient: this._id },
+        { sender: this._id }
+      ]
+    });
+
+    // Delete all messages involving the user
+    await Message.deleteMany({
+      $or: [
+        { sender: this._id },
+        { recipient: this._id }
+      ]
+    });
+
+    // Delete verification codes
+    await VerificationCode.deleteMany({ user: this._id });
+
+    // Remove user from followers/following lists of other users
+    await mongoose.model('User').updateMany(
+      {}, 
+      { 
+        $pull: { 
+          followers: this._id,
+          following: this._id,
+          savedPosts: { $in: this.posts }
+        }
+      }
+    );
+
+    // Delete all follow relationships
+    await Follow.deleteMany({
+      $or: [
+        { follower: this._id },
+        { following: this._id }
+      ]
+    });
+
+    // Clean up reports
+    // Delete reports made by the user
+    await Report.deleteMany({ reporter: this._id });
+    // Remove user from handledBy field in reports
+    await Report.updateMany(
+      { handledBy: this._id },
+      { $unset: { handledBy: 1 } }
+    );
+    // Delete reports for posts that were made by this user (since posts are being deleted)
+    await Report.deleteMany({ post: { $in: this.posts } });
+
+    // Remove user reference from blacklist entries they added
+    // We keep the blacklist entries themselves as they may still be relevant
+    await Blacklist.updateMany(
+      { addedBy: this._id },
+      { $unset: { addedBy: 1 } }
+    );
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Instance methods
 userSchema.methods.getDecryptedIp = function() {
   if (!this.lastIpAddress) return null;
