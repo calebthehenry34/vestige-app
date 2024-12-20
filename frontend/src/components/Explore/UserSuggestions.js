@@ -14,7 +14,7 @@ const UserSuggestions = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const containerRef = useRef(null);
   
-  const fetchSuggestedUsers = async () => {
+  const fetchUsers = async () => {
     try {
       const response = await fetch(`${API_URL}/api/users/suggestions`, {
         headers: {
@@ -24,16 +24,16 @@ const UserSuggestions = () => {
       const data = await response.json();
       const formattedUsers = Array.isArray(data) ? data : data.users || [];
       setUsers(formattedUsers);
-      setLoading(false);
     } catch (error) {
-      console.error('Error fetching suggested users:', error);
+      console.error('Error fetching users:', error);
       setUsers([]);
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSuggestedUsers();
+    fetchUsers();
   }, []);
 
   const checkScrollPosition = () => {
@@ -67,28 +67,6 @@ const UserSuggestions = () => {
     }
   };
 
-  const handleFollow = async (userId) => {
-    try {
-      const response = await fetch(`${API_URL}/api/users/${userId}/follow`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!response.ok) throw new Error('Failed to follow user');
-      
-      setUsers(users.map(u => {
-        if (u._id === userId) {
-          return { ...u, isFollowing: true };
-        }
-        return u;
-      }));
-    } catch (error) {
-      console.error('Error following user:', error);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center p-4">
@@ -114,7 +92,7 @@ const UserSuggestions = () => {
         <h2 className={`text-lg font-semibold ${
           theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
         }`}>
-          Suggested Users
+          Discover People
         </h2>
         {isExpanded ? (
           <ChevronUpRegular className="w-5 h-5" />
@@ -167,21 +145,13 @@ const UserSuggestions = () => {
                     }`}>
                       {user.username}
                     </h3>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleFollow(user._id);
-                      }}
-                      className={`mt-2 w-full px-3 py-1.5 rounded text-sm font-medium ${
-                        user.isFollowing
-                          ? theme === 'dark-theme'
-                            ? 'bg-gray-700 text-white hover:bg-gray-600'
-                            : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                          : 'bg-blue-500 text-white hover:bg-blue-600'
-                      }`}
-                    >
-                      {user.isFollowing ? 'Following' : 'Follow'}
-                    </button>
+                    {user.bio && (
+                      <p className={`text-sm mt-1 line-clamp-2 ${
+                        theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        {user.bio}
+                      </p>
+                    )}
                   </div>
                 </Link>
               </div>

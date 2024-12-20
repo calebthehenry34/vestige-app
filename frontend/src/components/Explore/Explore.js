@@ -65,9 +65,6 @@ const Explore = () => {
     );
   }
 
-  
-
-
   if (!posts.length) {
     return (
       <div className={`min-h-screen bg-gray-50 px-4 flex items-center justify-center ${
@@ -82,7 +79,7 @@ const Explore = () => {
     <div className={`min-h-screen m-50 mb-50 p-10 ${
       theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'
     } px-4`}>
-      <div className="max-w-6xl mx-auto px-4 py-6 temp-hide">
+      <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="mb-6">
           <UserSuggestions />
         </div>

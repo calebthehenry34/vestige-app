@@ -96,9 +96,9 @@ const Navbar = () => {
     },
     {
       action: () => setShowPostCreator(true),
-      icon: <AddRegular className="w-8 h-8" />,
+      icon: <AddRegular className="w-6 h-6" />,
       label: 'Create',
-      className: `${theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'} border-2 border-purple-500 rounded-full p-5 -mt-10`
+      className: `${theme === 'dark-theme' ? 'bg-gray-800' : 'bg-gray-100'} border-2 border-purple-500 rounded-full p-4 -mt-8`
     },
     { 
       action: () => handleNavigation('/notifications'),
@@ -359,15 +359,15 @@ const Navbar = () => {
 
       {/* Floating Mobile Navigation */}
       {!isSettingsPage && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-[90]">
+        <div className="md:hidden fixed bottom-6 left-4 right-4 z-[90]">
           <div className={`${
             theme === 'dark-theme'
-              ? 'bg-gray-900 border-t border-gray-800'
-              : 'bg-white border-t border-gray-200'
-          } px-6 pb-6 pt-2`}>
-            <div className="flex items-center justify-between relative">
+              ? 'bg-gray-900'
+              : 'bg-white'
+          } rounded-2xl shadow-lg px-4 py-3`}>
+            <div className="grid grid-cols-5 items-center relative">
               {navigationItems.map((item, index) => (
-                <div key={index} className={`${index === 2 ? 'absolute left-1/2 transform -translate-x-1/2' : ''} flex-1 flex justify-center`}>
+                <div key={index} className={`${index === 2 ? 'col-span-1 flex justify-center' : 'col-span-1 flex justify-center'}`}>
                   <button
                     onClick={item.action}
                     className={`p-2 transition-colors ${item.className || 'rounded-lg'} ${

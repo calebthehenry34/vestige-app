@@ -5,6 +5,21 @@ import User from '../models/User.js';
 
 const router = express.Router();
 
+// Get all users
+router.get('/suggestions', auth, async (req, res) => {
+  try {
+    const users = await User.find(
+      { _id: { $ne: req.user.userId } },
+      'username profilePicture bio'
+    ).limit(20);
+    
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Error fetching users' });
+  }
+});
+
 // Test route for S3 upload with better error handling
 router.post('/profile-picture', auth, upload.handleUpload('profilePicture'), async (req, res) => {
   try {
