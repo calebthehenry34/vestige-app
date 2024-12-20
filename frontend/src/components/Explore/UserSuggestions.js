@@ -18,7 +18,7 @@ const UserSuggestions = () => {
   
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${API_URL}/users/suggestions`, {
+      const response = await fetch(`${API_URL}/api/users/suggestions`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -41,7 +41,7 @@ const UserSuggestions = () => {
 
   const handleFollow = async (userId) => {
     try {
-      const response = await fetch(`${API_URL}/users/${userId}/follow`, {
+      const response = await fetch(`${API_URL}/api/users/${userId}/follow`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
