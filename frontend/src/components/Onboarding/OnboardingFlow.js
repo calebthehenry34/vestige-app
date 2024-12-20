@@ -32,13 +32,15 @@ const OnboardingFlow = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showImageEditor, setShowImageEditor] = useState(false);
 
-  // Prevent scrolling
+  // Auto-dismiss error after 3 seconds
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, []);
+    if (error) {
+      const timer = setTimeout(() => {
+        setError('');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const handleImageUpload = (e) => {
     e.stopPropagation();
@@ -74,18 +76,19 @@ const OnboardingFlow = () => {
   };
 
   const handleBioChange = (e) => {
-    setFormData(prev => ({ ...prev, bio: e.target.value }));
+    const textarea = e.target;
+    const lineHeight = parseInt(getComputedStyle(textarea).lineHeight);
+    const lines = Math.floor(textarea.scrollHeight / lineHeight);
+    
+    if (lines <= 2) {
+      setFormData(prev => ({ ...prev, bio: textarea.value }));
+    }
   };
 
   const handleNext = () => {
     if (step === 1) {
       if (!formData.profilePicture || !formData.bio) {
         setError('Profile picture and bio are required');
-        return;
-      }
-      
-      if (formData.bio.length > 150) {
-        setError('Bio must be 150 characters or less');
         return;
       }
     }
@@ -95,16 +98,6 @@ const OnboardingFlow = () => {
       setSlideDirection(styles.slideLeft);
       setTimeout(() => {
         setStep(step + 1);
-        setSlideDirection(styles.slideCurrent);
-      }, 300);
-    }
-  };
-
-  const handleBack = () => {
-    if (step > 1) {
-      setSlideDirection(styles.slideRight);
-      setTimeout(() => {
-        setStep(step - 1);
         setSlideDirection(styles.slideCurrent);
       }, 300);
     }
@@ -166,6 +159,25 @@ const OnboardingFlow = () => {
     }
   };
 
+  const renderNavigation = () => (
+    <div className="p-6 border-b border-[#333333] flex items-center gap-4">
+      <StepIndicator step={step} label={getStepLabel()} />
+      <Button
+        onClick={step < 4 ? handleNext : handleComplete}
+        disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
+        style={{
+          backgroundColor: '#ae52e3',
+          minHeight: '44px',
+          borderRadius: '5px',
+          minWidth: '140px',
+          padding: '0 24px'
+        }}
+      >
+        {step < 4 ? 'Continue' : (loading ? 'Completing...' : 'Got It!')}
+      </Button>
+    </div>
+  );
+
   const getStepLabel = () => {
     switch (step) {
       case 1: return "Setup Profile";
@@ -176,59 +188,8 @@ const OnboardingFlow = () => {
     }
   };
 
-  const renderNavigation = () => (
-    <div className="p-6 border-b border-[#333333] flex items-center gap-4">
-      {step > 1 && (
-        <Button
-          kind="secondary"
-          onClick={handleBack}
-          disabled={loading}
-          style={{
-            minHeight: '44px',
-            borderRadius: '5px',
-            minWidth: '100px'
-          }}
-        >
-          Back
-        </Button>
-      )}
-      
-      <StepIndicator step={step} label={getStepLabel()} />
-      
-      {step < 4 ? (
-        <Button
-          onClick={handleNext}
-          disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
-          style={{
-            backgroundColor: '#ae52e3',
-            minHeight: '44px',
-            borderRadius: '5px',
-            minWidth: '140px',
-            padding: '0 24px'
-          }}
-        >
-          Continue
-        </Button>
-      ) : (
-        <Button
-          onClick={handleComplete}
-          disabled={loading}
-          style={{
-            backgroundColor: '#ae52e3',
-            minHeight: '44px',
-            borderRadius: '5px',
-            minWidth: '140px',
-            padding: '0 24px'
-          }}
-        >
-          {loading ? 'Completing...' : 'Got It!'}
-        </Button>
-      )}
-    </div>
-  );
-
   const renderCard = () => {
-    const cardClass = `${styles.card} ${slideDirection}`;
+    const cardClass = `${styles.card} ${slideDirection} rounded-2xl`;
 
     if (step === 1) {
       return (
@@ -246,10 +207,10 @@ const OnboardingFlow = () => {
                   <img
                     src={previewUrl}
                     alt={formData.username || 'Profile'}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-2xl"
                   />
                 ) : (
-                  <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
+                  <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center rounded-2xl">
                     <div className="text-center">
                       <div className="w-20 h-20 rounded-full bg-[#525252] flex items-center justify-center mx-auto">
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
@@ -278,7 +239,7 @@ const OnboardingFlow = () => {
                 </button>
               </div>
 
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 pointer-events-none rounded-2xl" />
               
               <div className="absolute bottom-0 left-0 right-0 p-6">
                 <div className="flex justify-between items-start">
@@ -291,14 +252,12 @@ const OnboardingFlow = () => {
                     onChange={handleBioChange}
                     placeholder="Write a short bio..."
                     className="w-full px-0 py-1 bg-transparent text-white border-b border-white/30 focus:border-white resize-none focus:outline-none text-md"
-                    maxLength={150}
                     rows={2}
+                    style={{
+                      overflow: 'hidden',
+                      lineHeight: '1.5'
+                    }}
                   />
-                  <div className="flex justify-end mt-1">
-                    <p className="text-sm text-white/60">
-                      {formData.bio.length}/150
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
@@ -310,32 +269,30 @@ const OnboardingFlow = () => {
     if (step === 2) {
       return (
         <div className={cardClass}>
-          <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6">
+          <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
             <div className="h-full flex flex-col">
-              <div className="flex-1 flex items-center">
-                <div className="w-full space-y-6">
-                  <div className="bg-black/30 rounded-lg p-6">
-                    <div className="text-white">
-                      <h4 className="font-medium mb-4">Our Community Standards</h4>
-                      <ul className="font-medium space-y-4 text-gray-300">
-                        <li>Be respectful and kind to others</li>
-                        <li>No hate speech or bullying</li>
-                        <li>Protect your privacy and others'</li>
-                        <li>Share appropriate content only</li>
-                      </ul>
-                    </div>
+              <div className="w-full space-y-6">
+                <div className="bg-black/30 rounded-lg p-6">
+                  <div className="text-white">
+                    <h4 className="font-medium mb-4">Our Community Standards</h4>
+                    <ul className="font-medium space-y-4 text-gray-300">
+                      <li>Be respectful and kind to others</li>
+                      <li>No hate speech or bullying</li>
+                      <li>Protect your privacy and others'</li>
+                      <li>Share appropriate content only</li>
+                    </ul>
                   </div>
-                  <div className="pt-4">
-                    <Checkbox
-                      labelText={<span style={{ color: 'white' }}>I agree to follow the community guidelines</span>}
-                      id="guidelines"
-                      checked={formData.acceptedGuidelines}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        acceptedGuidelines: e.target.checked 
-                      })}
-                    />
-                  </div>
+                </div>
+                <div className="pt-4">
+                  <Checkbox
+                    labelText={<span style={{ color: 'white' }}>I agree to follow the community guidelines</span>}
+                    id="guidelines"
+                    checked={formData.acceptedGuidelines}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      acceptedGuidelines: e.target.checked 
+                    })}
+                  />
                 </div>
               </div>
             </div>
@@ -347,40 +304,38 @@ const OnboardingFlow = () => {
     if (step === 3) {
       return (
         <div className={cardClass}>
-          <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6">
+          <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
             <div className="h-full flex flex-col">
-              <div className="flex-1 flex items-center">
-                <div className="w-full max-w-md mx-auto space-y-6">
-                  <div className="text-center mb-8">
-                    <h2 className="text-2xl font-headlines text-white mb-2">Free Beta Access</h2>
-                    <p className="text-gray-400">Get early access to all features during our beta period</p>
-                  </div>
-                  <div className="bg-black/30 rounded-lg p-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-                          </svg>
-                        </div>
-                        <span className="text-white">Full access to all features</span>
+              <div className="w-full max-w-md mx-auto space-y-6">
+                <div className="text-left mb-8">
+                  <h2 className="text-2xl font-headlines text-white mb-2">Free Beta Access</h2>
+                  <p className="text-gray-400">Get early access to all features during our beta period</p>
+                </div>
+                <div className="bg-black/30 rounded-lg p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
+                        </svg>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-                          </svg>
-                        </div>
-                        <span className="text-white">Early adopter benefits</span>
+                      <span className="text-white">Full access to all features</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
+                        </svg>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-                          </svg>
-                        </div>
-                        <span className="text-white">Help shape the future</span>
+                      <span className="text-white">Early adopter benefits</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[#ae52e3] flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
+                        </svg>
                       </div>
+                      <span className="text-white">Help shape the future</span>
                     </div>
                   </div>
                 </div>
@@ -393,20 +348,18 @@ const OnboardingFlow = () => {
 
     return (
       <div className={cardClass}>
-        <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6">
+        <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
           <div className="h-full flex flex-col">
-            <div className="flex-1 flex items-center">
-              <div className="w-full space-y-6">
-                <div className="bg-black/30 rounded-lg p-6">
-                  <div className="space-y-4">
-                    <p className="font-medium text-gray-200">
-                      Welcome to Vestige beta! You currently have access to all features 
-                      free of charge while we're in beta testing. <br/><br/>
-                      Please remember that features may not work as expected
-                      and we need your help. <br/><br/>
-                      If you find a problem, email support@vestigeapp.com and we'll fix it.
-                    </p>
-                  </div>
+            <div className="w-full space-y-6">
+              <div className="bg-black/30 rounded-lg p-6">
+                <div className="space-y-4">
+                  <p className="font-medium text-gray-200">
+                    Welcome to Vestige beta! You currently have access to all features 
+                    free of charge while we're in beta testing. <br/><br/>
+                    Please remember that features may not work as expected
+                    and we need your help. <br/><br/>
+                    If you find a problem, email support@vestigeapp.com and we'll fix it.
+                  </p>
                 </div>
               </div>
             </div>
@@ -418,10 +371,10 @@ const OnboardingFlow = () => {
 
   return (
     <Theme theme="g100">
-      <div className="min-h-screen bg-black flex items-center justify-center p-4 font-headlines overflow-hidden">
+      <div className="min-h-screen bg-black flex items-center justify-center p-4 font-headlines">
         <div className="w-[85vw] h-[80vh] bg-[#262626] rounded-2xl flex flex-col">
           {renderNavigation()}
-          <div className={`${styles.cardContainer} overflow-hidden`}>
+          <div className={styles.cardContainer}>
             {renderCard()}
           </div>
 
