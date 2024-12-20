@@ -17,17 +17,25 @@ const ActivityFeed = () => {
 
   const fetchNotifications = async () => {
     try {
+      console.log('Fetching notifications...');
+      console.log('Token:', localStorage.getItem('token')); // Debug log
+      
       const response = await fetch(`${API_URL}/api/notifications`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
 
+      console.log('Response status:', response.status); // Debug log
+
       if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error response:', errorData); // Debug log
         throw new Error('Failed to fetch notifications');
       }
 
       const data = await response.json();
+      console.log('Notifications data:', data); // Debug log
       setNotifications(data);
       setLoading(false);
 

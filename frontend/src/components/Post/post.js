@@ -49,6 +49,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
       }
 
       const updatedPost = await response.json();
+      // Update the entire localPost state with the server response
       setLocalPost(updatedPost);
     } catch (error) {
       console.error('Error liking post:', error);
