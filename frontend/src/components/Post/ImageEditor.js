@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { BrightnessRegular, ContrastRegular, ColorRegular } from '@fluentui/react-icons';
+import { WeatherSunnyRegular, CircleRegular, ColorFillRegular } from '@fluentui/react-icons';
 
 const filters = [
   { name: 'Normal', filter: '' },
@@ -135,7 +135,7 @@ const ImageEditor = ({ image, onSave }) => {
               activeAdjustment === 'brightness' ? 'bg-[#ae52e3]' : 'bg-[#262626]'
             }`}
           >
-            <BrightnessRegular className="w-6 h-6 text-white" />
+            <WeatherSunnyRegular className="w-6 h-6 text-white" />
           </button>
           <button
             onClick={() => setActiveAdjustment(activeAdjustment === 'contrast' ? null : 'contrast')}
@@ -143,7 +143,7 @@ const ImageEditor = ({ image, onSave }) => {
               activeAdjustment === 'contrast' ? 'bg-[#ae52e3]' : 'bg-[#262626]'
             }`}
           >
-            <ContrastRegular className="w-6 h-6 text-white" />
+            <CircleRegular className="w-6 h-6 text-white" />
           </button>
           <button
             onClick={() => setActiveAdjustment(activeAdjustment === 'saturation' ? null : 'saturation')}
@@ -151,7 +151,7 @@ const ImageEditor = ({ image, onSave }) => {
               activeAdjustment === 'saturation' ? 'bg-[#ae52e3]' : 'bg-[#262626]'
             }`}
           >
-            <ColorRegular className="w-6 h-6 text-white" />
+            <ColorFillRegular className="w-6 h-6 text-white" />
           </button>
         </div>
 

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   HeartRegular,
-  ChatRegular,
-  SendRegular,
+  HeartFilled,
+  CommentRegular,
+  ShareRegular,
   BookmarkRegular,
+  BookmarkFilled,
   ImageRegular,
 } from '@fluentui/react-icons';
 import axios from 'axios';
@@ -151,10 +153,10 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                     <HeartRegular className="w-6 h-6" />
                   </button>
                   <button className="text-white hover:text-[#ae52e3] transition-colors">
-                    <ChatRegular className="w-6 h-6" />
+                    <CommentRegular className="w-6 h-6" />
                   </button>
                   <button className="text-white hover:text-[#ae52e3] transition-colors">
-                    <SendRegular className="w-6 h-6" />
+                    <ShareRegular className="w-6 h-6" />
                   </button>
                 </div>
                 <button className="text-white hover:text-[#ae52e3] transition-colors">
