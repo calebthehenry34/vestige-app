@@ -5,7 +5,6 @@ import { ThemeContext } from '../../App';
 import { 
   HeartRegular, 
   HeartFilled,
-  MoreVerticalRegular,
   PersonRegular,
   DeleteRegular
 } from '@fluentui/react-icons';

@@ -26,7 +26,6 @@ const SinglePost = () => {
   const [isZoomed, setIsZoomed] = useState(false);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [dragStart, setDragStart] = useState(null);
-  const [showComments, setShowComments] = useState(true);
 
   const getMediaUrl = (mediaPath) => {
     if (!mediaPath) return '';
@@ -316,7 +315,7 @@ const SinglePost = () => {
             {/* Comments */}
             <PostComments
               post={post}
-              isOpen={showComments}
+              isOpen={true}
               onComment={(updatedPost) => setPost(updatedPost)}
               onReply={(updatedPost) => setPost(updatedPost)}
             />
