@@ -132,22 +132,40 @@ const OnboardingFlow = () => {
       if (!token) {
         throw new Error('No authentication token found');
       }
-  
+
+      console.log('Sending onboarding request to:', `${API_URL}/api/profile/complete-onboarding`);
+      console.log('Token:', token);
+      
       const response = await fetch(`${API_URL}/api/profile/complete-onboarding`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
         },
-        body: formDataToSend,
-        credentials: 'include'
+        credentials: 'include',
+        body: formDataToSend
       });
+
+      console.log('Response status:', response.status);
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
   
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to complete onboarding');
+        let errorMessage;
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.message || 'Failed to complete onboarding';
+        } catch (e) {
+          errorMessage = responseText || 'Failed to complete onboarding';
+        }
+        throw new Error(errorMessage);
       }
   
-      const data = await response.json();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error('Invalid response from server');
+      }
   
       // Update user context
       await updateUser({ 
@@ -171,6 +189,7 @@ const OnboardingFlow = () => {
     } catch (error) {
       console.error('Onboarding error:', error);
       setError(error.message);
+    } finally {
       setLoading(false);
     }
   };
@@ -199,7 +218,11 @@ const OnboardingFlow = () => {
           disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
           className="w-10 h-10 rounded-md border-2 border-[#262626] bg-transparent hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
         >
-          <ArrowRight className="w-5 h-5 text-gray" />
+          {loading ? (
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+          ) : (
+            <ArrowRight className="w-5 h-5 text-gray" />
+          )}
         </button>
       </div>
     </div>
