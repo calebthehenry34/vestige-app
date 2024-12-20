@@ -124,6 +124,8 @@ const SinglePost = () => {
   };
 
   const renderText = (text) => {
+    if (!text) return ''; // Add null check for text
+    
     return text.split(' ').map((word, index) => {
       if (word.startsWith('#')) {
         return (
@@ -308,7 +310,7 @@ const SinglePost = () => {
             }`}>
               <p>
                 <span className="font-medium mr-2">{post.user?.username || 'Unknown User'}</span>
-                {renderText(post.caption)}
+                {post.caption ? renderText(post.caption) : ''}
               </p>
             </div>
 
