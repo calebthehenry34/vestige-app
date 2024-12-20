@@ -428,6 +428,7 @@ const Home = () => {
                 </div>
 
                 {/* Media Content */}
+                <Link to={`/post/${post._id}`}>
                 {post.mediaType === 'video' ? (
                   <video
                     src={post.media}
@@ -451,6 +452,7 @@ const Home = () => {
                     />
                   </div>
                 )}
+                </Link>
 
                 {/* Post Menu Button */}
                 <button 
