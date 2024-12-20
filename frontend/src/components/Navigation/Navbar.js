@@ -131,7 +131,7 @@ const Navbar = () => {
       className: `${theme === 'dark-theme' ? 'bg-gray-800' : 'bg-gray-100'} border-2 border-purple-500 p-4 flex items-center justify-center`
     },
     { 
-      action: () => handleNavigation('/notifications'),
+      action: () => handleNavigation('/activity'),
       icon: <HeartRegular className="w-7 h-7" />,
       label: 'Notifications' 
     },
@@ -149,7 +149,7 @@ const Navbar = () => {
       label: 'Account',
       items: [
         { icon: <PersonRegular />, label: 'Profile', action: () => user?.username && handleNavigation(`/profile/${user.username}`) },
-        { icon: <HeartRegular />, label: 'Notifications', action: () => handleNavigation('/notifications') },
+        { icon: <HeartRegular />, label: 'Notifications', action: () => handleNavigation('/activity') },
         { icon: <SettingsRegular />, label: 'Settings', action: () => handleNavigation('/settings') },
       ]
     },
