@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Theme, Button, Checkbox, Tile } from '@carbon/react';
+import { Theme, Checkbox } from '@carbon/react';
 import { ErrorFilled, Add, ArrowRight } from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
@@ -8,7 +8,7 @@ import ProfileImageEditor from './ProfileImageEditor';
 import styles from './OnboardingFlow.module.css';
 
 const StepIndicator = ({ label }) => (
-  <div className="text-white/60 text-sm">
+  <div className="text-white font-medium">
     {label}
   </div>
 );
@@ -168,25 +168,26 @@ const OnboardingFlow = () => {
   const getStepLabel = () => {
     switch (step) {
       case 1: return "Setup Profile";
-      case 2: return "Our Guidelines";
+      case 2: return "Community Guidelines";
       case 3: return "Choose Plan";
-      case 4: return "Welcome to Vestige";
+      case 4: return "Complete Setup";
       default: return "";
     }
   };
 
   const renderNavigation = () => (
-    <div className="p-6 border-b border-[#333333] flex items-center">
-      <div className="flex items-center gap-4">
-        <img src="/logos/logo.svg" alt="Vestige" className="h-6" />
-
+    <div className="p-6 border-b border-[#333333] grid grid-cols-3 items-center">
+      <div className="flex items-center">
+        <img src="/logos/logo.svg" alt="Vestige" className="h-8" />
       </div>
-      <StepIndicator label={getStepLabel()} />
-      <div className="ml-auto">
+      <div className="flex justify-center">
+        <StepIndicator label={getStepLabel()} />
+      </div>
+      <div className="flex justify-end">
         <button
           onClick={step < 4 ? handleNext : handleComplete}
           disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
-          className="w-12 h-12 rounded-md bg-[#ae52e3] hover:bg-[#9a3dd0] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+          className="w-12 h-12 rounded-full border-2 border-white bg-transparent hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
         >
           <ArrowRight className="w-6 h-6 text-white" />
         </button>
@@ -295,7 +296,6 @@ const OnboardingFlow = () => {
                   <div className="text-white">
                     <h4 className="font-medium mb-4">Our Community Standards</h4>
                     <ul className="font-medium space-y-4 text-gray-300">
-                      <li>You MUST be 18 or older</li>
                       <li>Be respectful and kind to others</li>
                       <li>No hate speech or bullying</li>
                       <li>Protect your privacy and others'</li>
