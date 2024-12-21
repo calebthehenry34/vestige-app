@@ -54,32 +54,46 @@ const Explore = () => {
 
   const getImageUrls = (post) => {
     if (!post?.media) return null;
-    
-    const baseUrl = typeof post.media === 'string' && post.media
-      ? (post.media.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`)
-      : null;
-    
-    if (!baseUrl) return null;
-    const ext = supportsWebP ? 'webp' : 'jpg';
-    
-    // If the URL already includes size suffixes, use them
-    if (baseUrl.includes('_medium') || baseUrl.includes('_small') || baseUrl.includes('_thumbnail')) {
+
+    // Handle new optimized media structure
+    if (post.media.variants) {
+      const format = supportsWebP ? 'webp' : 'jpeg';
       return {
-        thumbnail: baseUrl.replace(`.${ext}`, `_thumbnail.${ext}`),
-        small: baseUrl.replace(`.${ext}`, `_small.${ext}`),
-        medium: baseUrl.replace(`.${ext}`, `_medium.${ext}`),
-        large: baseUrl,
+        thumbnail: post.media.variants.thumbnail?.urls[format],
+        small: post.media.variants.small?.urls[format],
+        medium: post.media.variants.medium?.urls[format],
+        large: post.media.variants.large?.urls[format]
       };
     }
     
-    // Otherwise, use the same URL for all sizes
-    // The image will still be responsive thanks to the srcSet and sizes attributes
-    return {
-      thumbnail: baseUrl,
-      small: baseUrl,
-      medium: baseUrl,
-      large: baseUrl,
-    };
+    // Handle legacy media structure
+    if (post.media.legacy?.url || typeof post.media === 'string') {
+      const mediaUrl = post.media.legacy?.url || post.media;
+      if (!mediaUrl || typeof mediaUrl !== 'string') return null;
+      
+      const baseUrl = mediaUrl.startsWith('http') ? mediaUrl : `${API_URL}/uploads/${mediaUrl}`;
+      const ext = supportsWebP ? 'webp' : 'jpg';
+      
+      // If the URL already includes size suffixes, use them
+      if (baseUrl.includes('_medium') || baseUrl.includes('_small') || baseUrl.includes('_thumbnail')) {
+        return {
+          thumbnail: baseUrl.replace(`.${ext}`, `_thumbnail.${ext}`),
+          small: baseUrl.replace(`.${ext}`, `_small.${ext}`),
+          medium: baseUrl.replace(`.${ext}`, `_medium.${ext}`),
+          large: baseUrl,
+        };
+      }
+      
+      // Otherwise, use the same URL for all sizes
+      return {
+        thumbnail: baseUrl,
+        small: baseUrl,
+        medium: baseUrl,
+        large: baseUrl,
+      };
+    }
+
+    return null;
   };
 
   if (loading) {

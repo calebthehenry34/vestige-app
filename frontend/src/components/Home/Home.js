@@ -15,7 +15,6 @@ import {
   PersonRegular,
 } from '@fluentui/react-icons';
 import PostComments from '../Post/PostComments';
-import PostCreator from '../Post/PostCreator';
 import { Link, useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config';
 import { 
@@ -35,7 +34,6 @@ const Home = () => {
   const [showComments, setShowComments] = useState({});
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharePostId, setSharePostId] = useState(null);
-  const [showPostCreator, setShowPostCreator] = useState(false);
   const [supportsWebP, setSupportsWebP] = useState(false);
   const scrollRestoredRef = useRef(false);
 
@@ -182,11 +180,6 @@ const Home = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [fetchPosts]);
-
-  const handlePostCreated = async (newPost) => {
-    await fetchPosts(); // Refresh the feed
-    setShowPostCreator(false); // Close the creator
-  };
 
   const togglePostMenu = (postId) => {
     setActivePostMenu(activePostMenu === postId ? null : postId);
@@ -408,19 +401,6 @@ const Home = () => {
 
   return (
     <div className="max-w-xl mx-auto p-4 m-50">
-      <button
-        onClick={() => setShowPostCreator(true)}
-        className="w-full mb-6 py-3 bg-[#ae52e3] text-white rounded-lg hover:bg-[#9745c5] transition-colors"
-      >
-        Create Post
-      </button>
-
-      <PostCreator
-        isOpen={showPostCreator}
-        onClose={() => setShowPostCreator(false)}
-        onPostCreated={handlePostCreated}
-      />
-
       <div className="space-y-6">
         {Array.isArray(posts) && posts.map((post) => (
           <div key={post._id} className="bg-[#1a1a1a] rounded-lg shadow-md overflow-hidden">
@@ -436,7 +416,7 @@ const Home = () => {
             >
               <div className="relative">
                 {/* User Info and Menu Overlay at Top */}
-                <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-black/50 to-transparent flex justify-between items-center">
+                <div className="absolute top-0 left-0 right-0 z-20 p-4 bg-gradient-to-b from-black/70 to-transparent flex justify-between items-center">
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center">
                       {post.user ? (
@@ -533,8 +513,8 @@ const Home = () => {
                 </button>
 
                 {/* Bottom Action Bar */}
-                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent">
-                  <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center text-white">
+                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 to-transparent">
+                  <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center text-white z-20">
                     <div className="flex space-x-4">
                       <button onClick={(e) => {
                         e.preventDefault();
@@ -589,7 +569,7 @@ const Home = () => {
 
             {/* Post Menu */}
             {activePostMenu === post._id && (
-              <div className="absolute right-4 top-12 w-48 bg-[#262626] rounded-lg shadow-lg z-20 py-1">
+              <div className="absolute right-4 top-12 w-48 bg-[#262626] rounded-lg shadow-lg z-30 py-1">
                 {post.user?._id === user?.id ? (
                   <>
                     <button
@@ -643,7 +623,8 @@ const Home = () => {
             </div>
 
             {/* Comments Section */}
-            <PostComments
+            <div className="border-t border-[#262626] relative">
+              <PostComments
               post={post}
               isOpen={showComments[post._id]}
               onComment={(text) => {
@@ -734,7 +715,8 @@ const Home = () => {
                 })
                 .catch(error => console.error('Error posting reply:', error));
               }}
-            />
+              />
+            </div>
           </div>
         ))}
       </div>

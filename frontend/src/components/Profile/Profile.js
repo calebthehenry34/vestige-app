@@ -10,11 +10,80 @@ import {
 import { Link } from 'react-router-dom';
 import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
-import { getProfileImageUrl } from '../../utils/imageUtils';
+import { getProfileImageUrl, createImageProps, checkWebPSupport } from '../../utils/imageUtils';
 import FollowButton from '../Common/FollowButton';
 import FollowersModal from './FollowersModal';
 
 const Profile = () => {
+  const [supportsWebP, setSupportsWebP] = useState(false);
+
+  const getMediaUrl = (media) => {
+    if (!media) return '';
+    
+    // Handle new optimized media structure
+    if (media.variants && media.variants.large) {
+      return media.variants.large.urls.webp || media.variants.large.urls.jpeg;
+    }
+    
+    // Handle legacy media structure
+    const mediaUrl = media.legacy?.url || (typeof media === 'string' ? media : '');
+    if (!mediaUrl || typeof mediaUrl !== 'string') return '';
+    if (mediaUrl.startsWith('http')) return mediaUrl;
+    return `${API_URL}/uploads/${mediaUrl}`;
+  };
+
+  const getImageUrls = (post) => {
+    if (!post?.media) return null;
+
+    // Handle new optimized media structure
+    if (post.media.variants) {
+      const format = supportsWebP ? 'webp' : 'jpeg';
+      return {
+        thumbnail: post.media.variants.thumbnail?.urls[format],
+        small: post.media.variants.small?.urls[format],
+        medium: post.media.variants.medium?.urls[format],
+        large: post.media.variants.large?.urls[format]
+      };
+    }
+    
+    // Handle legacy media structure
+    if (post.media.legacy?.url || typeof post.media === 'string') {
+      const mediaUrl = post.media.legacy?.url || post.media;
+      if (!mediaUrl || typeof mediaUrl !== 'string') return null;
+      
+      const baseUrl = mediaUrl.startsWith('http') ? mediaUrl : `${API_URL}/uploads/${mediaUrl}`;
+      const ext = supportsWebP ? 'webp' : 'jpg';
+      
+      // If the URL already includes size suffixes, use them
+      if (baseUrl.includes('_medium') || baseUrl.includes('_small') || baseUrl.includes('_thumbnail')) {
+        return {
+          thumbnail: baseUrl.replace(`.${ext}`, `_thumbnail.${ext}`),
+          small: baseUrl.replace(`.${ext}`, `_small.${ext}`),
+          medium: baseUrl.replace(`.${ext}`, `_medium.${ext}`),
+          large: baseUrl,
+        };
+      }
+      
+      // Otherwise, use the same URL for all sizes
+      return {
+        thumbnail: baseUrl,
+        small: baseUrl,
+        medium: baseUrl,
+        large: baseUrl,
+      };
+    }
+
+    return null;
+  };
+
+  useEffect(() => {
+    const checkWebP = async () => {
+      const isSupported = await checkWebPSupport();
+      setSupportsWebP(isSupported);
+    };
+    checkWebP();
+  }, []);
+
   const { username } = useParams();
   const { user: currentUser } = useAuth();
   const [profileData, setProfileData] = useState(null);
@@ -266,34 +335,60 @@ const Profile = () => {
               {post.mediaType === 'video' ? (
                 <div className="w-full h-full bg-black">
                   <video
-                    src={post.media.startsWith('http') 
-                      ? post.media 
-                      : `${API_URL}/uploads/${post.media}`}
+                    src={getMediaUrl(post.media)}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error('Video load error:', post.media);
+                      e.target.style.display = 'none';
+                    }}
                   />
                 </div>
               ) : (
-                <img
-                  src={post.media.startsWith('http') 
-                    ? post.media 
-                    : `${API_URL}/uploads/${post.media}`}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = '/api/placeholder/400/400';
-                  }}
-                />
+                <div className="relative w-full h-full">
+                  {/* Blur Placeholder */}
+                  {post.blurPlaceholder && (
+                    <div
+                      className="absolute inset-0 bg-cover bg-center blur-lg"
+                      style={{
+                        backgroundImage: `url(${post.blurPlaceholder})`,
+                        opacity: 1,
+                        transition: 'opacity 0.3s ease-in-out'
+                      }}
+                    />
+                  )}
+                  
+                  {/* Main Image */}
+                  <img
+                    alt={`Post by ${profileData?.username || 'unknown'}`}
+                    className="w-full h-full object-cover relative z-10"
+                    onLoad={(e) => {
+                      // Fade out blur placeholder when main image loads
+                      if (e.target.previousSibling) {
+                        e.target.previousSibling.style.opacity = '0';
+                      }
+                    }}
+                    onError={(e) => {
+                      console.error('Image load error:', post.media);
+                      e.target.src = 'https://via.placeholder.com/400';
+                    }}
+                    {...createImageProps(
+                      getImageUrls(post),
+                      `Post by ${profileData?.username || 'unknown'}`,
+                      'medium'
+                    )}
+                  />
+                </div>
               )}
               
               {/* Hover Overlay */}
               <div className="opacity-0 group-hover:opacity-100 absolute inset-0 bg-black/50 flex items-center justify-center space-x-6 transition-opacity">
                 <div className="flex items-center text-white">
                   <HeartRegular className="w-6 h-6 mr-2" />
-                  <span className="font-semibold">{post.likes?.length || 0}</span>
+                  <span className="font-headlines">{post.likes?.length || 0}</span>
                 </div>
                 <div className="flex items-center text-white">
                   <ChatRegular className="w-6 h-6 mr-2" />
-                  <span className="font-semibold">{post.comments?.length || 0}</span>
+                  <span className="font-headlines">{post.comments?.length || 0}</span>
                 </div>
               </div>
             </Link>
