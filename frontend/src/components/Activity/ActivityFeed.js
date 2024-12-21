@@ -238,14 +238,14 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="font-headlines fixed inset-0 bg-black/60 z-[200] flex items-end justify-center backdrop-blur-sm">
+    <div className="font-headlines fixed inset-0 bg-black/60 z-[200] flex items-center justify-center backdrop-blur-sm">
       <div 
         className={`${
           theme === 'dark-theme' 
             ? 'bg-black border-zinc-800 text-white' 
             : 'bg-white border-gray-200 text-black'
-        } min-h-screen w-[95vw] max-w-md rounded-t-2xl transform transition-transform duration-300 ease-out shadow-lg ${
-          isAnimating ? 'translate-y-0' : 'translate-y-full'
+        } w-[95vw] max-w-md h-[80vh] rounded-2xl transform transition-transform duration-300 ease-out shadow-lg ${
+          isAnimating ? 'translate-y-0 scale-100' : 'translate-y-full scale-95'
         }`}
       >
         <div className={`flex items-center justify-between p-4 border-b ${
@@ -297,7 +297,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
           </button>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto">
+        <div className="h-[calc(80vh-8rem)] overflow-y-auto">
           {loading ? (
             <div className="flex justify-center items-center p-4">
               <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
