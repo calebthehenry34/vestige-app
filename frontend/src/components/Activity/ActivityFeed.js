@@ -4,7 +4,7 @@ import { API_URL } from '../../config';
 import FollowButton from '../Common/FollowButton';
 import { ThemeContext } from '../../App';
 
-const ActivityFeed = () => {
+const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   const navigate = useNavigate();
   const { theme } = useContext(ThemeContext);
   const [activeTab, setActiveTab] = useState('all');
@@ -12,43 +12,49 @@ const ActivityFeed = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchNotifications();
-  }, []);
+    if (isOpen) {
+      fetchNotifications();
+    }
+  }, [isOpen]);
 
   const fetchNotifications = async () => {
     try {
-      console.log('Fetching notifications...');
-      console.log('Token:', localStorage.getItem('token')); // Debug log
-      
       const response = await fetch(`${API_URL}/api/notifications`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
 
-      console.log('Response status:', response.status); // Debug log
-
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error response:', errorData); // Debug log
         throw new Error('Failed to fetch notifications');
       }
 
       const data = await response.json();
-      console.log('Notifications data:', data); // Debug log
       setNotifications(data);
+      const unreadCount = data.filter(n => !n.read).length;
+      onNotificationsUpdate?.(unreadCount);
       setLoading(false);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      setLoading(false);
+    }
+  };
 
-      // Mark all as read
-      await fetch(`${API_URL}/api/notifications/read-all`, {
+  const markAllAsRead = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/notifications/read-all`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
+
+      if (response.ok) {
+        setNotifications(notifications.map(n => ({ ...n, read: true })));
+        onNotificationsUpdate?.(0);
+      }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
-      setLoading(false);
+      console.error('Error marking notifications as read:', error);
     }
   };
 
@@ -72,6 +78,7 @@ const ActivityFeed = () => {
     } else if (notification.type === 'follow' && notification.sender) {
       navigate(`/profile/${notification.sender.username}`);
     }
+    onClose();
   };
 
   const renderActivity = (notification) => {
@@ -101,7 +108,7 @@ const ActivityFeed = () => {
     const baseUserInfo = (
       <div className="flex items-center">
         <img
-          src={sender.profilePicture || '/default-avatar.png'}
+          src={sender.profilePicture ? `${API_URL}${sender.profilePicture}` : '/default-avatar.png'}
           alt={sender.username}
           className="w-10 h-10 rounded-full mr-3 object-cover"
           onClick={(e) => {
@@ -142,7 +149,7 @@ const ActivityFeed = () => {
       <div 
         className={`flex items-center justify-between py-4 cursor-pointer hover:${
           theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'
-        }`}
+        } ${!notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
         onClick={() => handleNotificationClick(notification)}
       >
         <div className="flex items-center flex-1">
@@ -184,11 +191,32 @@ const ActivityFeed = () => {
   }
 
   return (
-    <div className={`max-w-2xl mx-auto px-4 mb-100 font-headlines ${
+    <div className={`max-w-2xl mx-auto px-4 font-headlines ${
       theme === 'dark-theme' ? 'bg-black' : 'bg-white'
     }`}>
+      {/* Header with Mark All as Read */}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className={`text-xl font-semibold ${
+          theme === 'dark-theme' ? 'text-white' : 'text-black'
+        }`}>
+          Notifications
+        </h2>
+        {notifications.length > 0 && (
+          <button
+            onClick={markAllAsRead}
+            className={`text-sm px-3 py-1 rounded ${
+              theme === 'dark-theme' 
+                ? 'text-gray-300 hover:text-white' 
+                : 'text-gray-600 hover:text-black'
+            }`}
+          >
+            Mark all as read
+          </button>
+        )}
+      </div>
+
       {/* Tabs */}
-      <div className={`flex border-b mb-4 ${
+      <div className={`m-50 flex border-b mb-4 ${
         theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
       }`}>
         <button

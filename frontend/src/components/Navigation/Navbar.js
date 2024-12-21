@@ -31,6 +31,9 @@ import { useAuth } from '../../context/AuthContext';
 import { ThemeContext } from '../../App';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 import PostCreator from '../Post/PostCreator';
+import { API_URL } from '../../config';
+import ActivityFeed from '../Activity/ActivityFeed';
+
 
 const Navbar = () => {
   const { theme, toggleTheme } = useContext(ThemeContext);
@@ -46,8 +49,31 @@ const Navbar = () => {
   const [startY, setStartY] = useState(null);
   const [currentY, setCurrentY] = useState(0);
   const mobileNavRef = useRef(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   const isSettingsPage = location.pathname === '/settings';
+
+
+  useEffect(() => {
+    fetchUnreadNotificationsCount();
+  }, []);
+
+  const fetchUnreadNotificationsCount = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/notifications/unread-count`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const { count } = await response.json();
+        setUnreadNotifications(count);
+      }
+    } catch (error) {
+      console.error('Error fetching unread notifications:', error);
+    }
+  };
 
   useEffect(() => {
     if (showDrawer || showFeedMenu) {
@@ -131,8 +157,15 @@ const Navbar = () => {
       className: `${theme === 'dark-theme' ? 'bg-gray-800' : 'bg-gray-100'} border-2 border-purple-500 p-4 flex items-center justify-center`
     },
     { 
-      action: () => handleNavigation('/activity'),
-      icon: <HeartRegular className="w-7 h-7" />,
+      action: () => setShowNotifications(!showNotifications),
+      icon: (
+        <div className="relative">
+          <HeartRegular className="w-7 h-7" />
+          {unreadNotifications > 0 && (
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full" />
+          )}
+        </div>
+      ),
       label: 'Notifications' 
     },
     {
@@ -402,7 +435,7 @@ const Navbar = () => {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="max-w-xs mx-auto relative">
+          <div className="max-w- mx-auto relative">
             <div className={`${
               theme === 'dark-theme'
                 ? 'bg-gray-900'
@@ -494,6 +527,25 @@ const Navbar = () => {
           </div>
         </div>
       )}
+            {showNotifications && (
+              <div 
+                className="fixed inset-0 bg-black/50 z-[91] md:hidden flex items-end justify-center"
+                onClick={() => setShowNotifications(false)}
+              >
+                <div 
+                  className={`w-full h-[80vh] rounded-t-xl overflow-hidden transform transition-all duration-500 ease-in-out ${
+                    theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
+                  }`}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <ActivityFeed 
+                    isOpen={showNotifications} 
+                    onClose={() => setShowNotifications(false)}
+                    onNotificationsUpdate={(count) => setUnreadNotifications(count)}
+                  />
+                </div>
+              </div>
+            )}
 
       <PostCreator
         isOpen={showPostCreator}
