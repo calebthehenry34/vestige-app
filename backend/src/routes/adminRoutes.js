@@ -6,6 +6,8 @@ import Post from '../models/Post.js';
 import Blacklist from '../models/Blacklist.js';
 import Follow from '../models/Follow.js'; 
 import mongoose from 'mongoose';
+import { deleteUser } from '../controllers/userController.js';
+
 
 
 const router = express.Router();
@@ -449,12 +451,17 @@ router.get('/analytics', auth, adminAuth, async (req, res) => {
     }
   });
   
-  router.delete('/blacklist/:id', auth, adminAuth, async (req, res) => {
+  router.delete('/users/:id', auth, adminAuth, async (req, res) => {
     try {
-      await Blacklist.findByIdAndDelete(req.params.id);
-      res.json({ message: 'Removed from blacklist' });
+      const userId = req.params.id;
+      const result = await deleteUser(userId);
+      res.json(result);
     } catch (error) {
-      res.status(500).json({ error: 'Error removing from blacklist' });
+      console.error('Error deleting user:', error);
+      if (error.message === 'User not found') {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      res.status(500).json({ error: 'Error deleting user and associated data' });
     }
   });
   

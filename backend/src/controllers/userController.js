@@ -1,43 +1,87 @@
-// backend/src/controllers/userController.js
-export const searchUsers = async (req, res) => {
-    try {
-      const { term } = req.query;
-      
-      const users = await User.find({
-        username: { $regex: term, $options: 'i' },
-        _id: { $ne: req.user.userId }
-      })
-      .select('username profilePicture')
-      .limit(10);
-  
-      res.json(users);
-    } catch (error) {
-      res.status(500).json({ error: 'Error searching users' });
-    }
-  };
+import User from '../models/User.js';
+import Post from '../models/Post.js';
+import Follow from '../models/Follow.js';
+import Message from '../models/message.js';
+import Notification from '../models/notification.js';
+import mongoose from 'mongoose';
+import { deleteFile } from '../config/s3.js';
 
-  const getSuggestedUsers = async (req, res) => {
-    try {
-      // Get current user's information from auth middleware
-      const currentUserId = req.user.userId;
-      
-      // Find users that the current user is not following
-      // Limit to 10 suggestions and exclude current user
-      const suggestedUsers = await User.find({
-        _id: { $ne: currentUserId },
-        // Exclude users that the current user is already following
-        followers: { $nin: [currentUserId] }
-      })
-      .select('username profilePicture')
-      .limit(10);
-  
-      res.json(suggestedUsers);
-    } catch (error) {
-      console.error('Error getting suggested users:', error);
-      res.status(500).json({ error: 'Failed to fetch suggested users' });
+export const deleteUser = async (userId) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // 1. Delete user's posts and their media
+    const userPosts = await Post.find({ user: userId });
+    for (const post of userPosts) {
+      if (post.mediaKey) {
+        // Delete media file from S3
+        await deleteFile(post.mediaKey);
+      }
     }
-  };
-  
-  // Export the controller
-  export { getSuggestedUsers };
-  
+    await Post.deleteMany({ user: userId }, { session });
+
+    // 2. Remove user's comments and replies from other posts
+    await Post.updateMany(
+      { 'comments.user': userId },
+      { $pull: { comments: { user: userId } } },
+      { session }
+    );
+    await Post.updateMany(
+      { 'comments.replies.user': userId },
+      { $pull: { 'comments.$[].replies': { user: userId } } },
+      { session }
+    );
+
+    // 3. Remove user's likes from posts and comments
+    await Post.updateMany(
+      { likes: userId },
+      { $pull: { likes: userId } },
+      { session }
+    );
+    await Post.updateMany(
+      { 'comments.likes': userId },
+      { $pull: { 'comments.$[].likes': userId } },
+      { session }
+    );
+
+    // 4. Delete follow relationships
+    await Follow.deleteMany({
+      $or: [
+        { follower: userId },
+        { following: userId }
+      ]
+    }, { session });
+
+    // 5. Delete messages
+    await Message.deleteMany({
+      $or: [
+        { sender: userId },
+        { recipient: userId }
+      ]
+    }, { session });
+
+    // 6. Delete notifications
+    await Notification.deleteMany({
+      $or: [
+        { sender: userId },
+        { recipient: userId }
+      ]
+    }, { session });
+
+    // 7. Finally delete the user
+    const deletedUser = await User.findByIdAndDelete(userId, { session });
+    if (!deletedUser) {
+      await session.abortTransaction();
+      throw new Error('User not found');
+    }
+
+    await session.commitTransaction();
+    return { success: true, message: 'User and all associated data deleted successfully' };
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
