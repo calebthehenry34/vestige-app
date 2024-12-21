@@ -48,8 +48,6 @@ const Navbar = () => {
   const [prevScrollPos, setPrevScrollPos] = useState(0);
   const [visible, setVisible] = useState(true);
   const [expandedSection, setExpandedSection] = useState(null);
-  const [startY, setStartY] = useState(null);
-  const [currentY, setCurrentY] = useState(0);
   const mobileNavRef = useRef(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -110,32 +108,10 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [prevScrollPos]);
 
-  const handleTouchStart = (e) => {
-    setStartY(e.touches[0].clientY);
-  };
+  
 
-  const handleTouchMove = (e) => {
-    if (!startY) return;
-    
-    const deltaY = startY - e.touches[0].clientY;
-    if (deltaY > 0 && visible) {
-      // Swiping up while visible
-      setCurrentY(Math.min(deltaY, 100));
-    } else if (deltaY < 0 && !visible) {
-      // Swiping down while hidden
-      setCurrentY(Math.max(deltaY, -100));
-    }
-  };
 
-  const handleTouchEnd = () => {
-    if (currentY > 50) {
-      setVisible(false);
-    } else if (currentY < -50) {
-      setVisible(true);
-    }
-    setStartY(null);
-    setCurrentY(0);
-  };
+
 
   const handleNavigation = (path) => {
     setShowDrawer(false);
@@ -545,7 +521,7 @@ const Navbar = () => {
                 onClick={() => setShowNotifications(false)}
               >
                 <div 
-                  className={`w-full h-[80vh] rounded-t-xl overflow-hidden transform transition-all duration-500 ease-in-out ${
+                  className={`w-full h-[65vh] rounded-t-xl overflow-hidden transform transition-all duration-500 ease-in-out ${
                     theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
                   }`}
                   onClick={e => e.stopPropagation()}
