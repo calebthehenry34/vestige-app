@@ -14,6 +14,7 @@ router.post('/', auth, upload.handleUpload('media'), postController.createPost);
 router.put('/:postId', auth, postController.updatePost);
 router.delete('/:postId', auth, postController.deletePost);
 router.post('/:postId/like', auth, postController.likePost);
+router.post('/:postId/report', auth, postController.reportPost);
 
 // Hashtag routes
 router.get('/hashtag/:hashtag', auth, postController.getPostsByHashtag);

@@ -1,5 +1,6 @@
 import Post from '../models/Post.js';
 import User from '../models/User.js';
+import Report from '../models/Report.js';
 import Notification from '../models/notification.js';
 import s3, { isS3Available, getCredentials, getS3BucketName } from '../config/s3.js';
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
@@ -884,6 +885,45 @@ export const deleteReply = async (req, res) => {
   } catch (error) {
     console.error('Delete reply error:', error);
     res.status(500).json({ error: 'Error deleting reply' });
+  }
+};
+
+export const reportPost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { reason } = req.body;
+
+    if (!reason) {
+      return res.status(400).json({ error: 'Report reason is required' });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    // Check if user has already reported this post
+    const existingReport = await Report.findOne({
+      post: postId,
+      reporter: req.user.userId
+    });
+
+    if (existingReport) {
+      return res.status(400).json({ error: 'You have already reported this post' });
+    }
+
+    const report = new Report({
+      post: postId,
+      reporter: req.user.userId,
+      reason
+    });
+
+    await report.save();
+
+    res.status(201).json({ message: 'Post reported successfully' });
+  } catch (error) {
+    console.error('Report post error:', error);
+    res.status(500).json({ error: 'Error reporting post' });
   }
 };
 

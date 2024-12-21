@@ -12,7 +12,10 @@ import {
   PersonRegular,
   LocationRegular,
   TagRegular,
-  CalendarRegular
+  MoreHorizontalRegular,
+  DeleteRegular,
+  EditRegular,
+  ReportRegular
 } from '@fluentui/react-icons';
 import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
@@ -65,7 +68,92 @@ const SinglePost = () => {
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [dragStart, setDragStart] = useState(null);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [caption, setCaption] = useState('');
+  const [reportReason, setReportReason] = useState('');
   const imageRef = useRef(null);
+  const contextMenuRef = useRef(null);
+
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) {
+        setShowContextMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleEdit = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/posts/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ caption }),
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const updatedPost = await response.json();
+        setPost(updatedPost);
+        setShowEditModal(false);
+        setShowContextMenu(false);
+      }
+    } catch (error) {
+      console.error('Error updating post:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/posts/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        navigate(-1);
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error);
+    }
+  };
+
+  const handleReport = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/posts/${id}/report`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason: reportReason }),
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        setShowReportModal(false);
+        setShowContextMenu(false);
+        setReportReason('');
+      }
+    } catch (error) {
+      console.error('Error reporting post:', error);
+    }
+  };
 
   useEffect(() => {
     // Set up intersection observer for lazy loading
@@ -298,14 +386,152 @@ const SinglePost = () => {
               }`}>{post.user?.username || 'Unknown User'}</span>
             </button>
           </div>
-          <button 
-            onClick={() => navigate(-1)} 
-            className={`hover:bg-gray-100 p-2 rounded-full transition-colors ${
-              theme === 'dark-theme' ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-gray-100'
-            }`}
-          >
-            <DismissRegular className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowContextMenu(!showContextMenu)}
+              className={`hover:bg-gray-100 p-2 rounded-full transition-colors ${
+                theme === 'dark-theme' ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              <MoreHorizontalRegular className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={() => navigate(-1)} 
+              className={`hover:bg-gray-100 p-2 rounded-full transition-colors ${
+                theme === 'dark-theme' ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              <DismissRegular className="w-5 h-5" />
+            </button>
+
+            {/* Context Menu */}
+            {showContextMenu && (
+              <div 
+                ref={contextMenuRef}
+                className={`absolute right-12 top-14 w-48 py-2 rounded-lg shadow-lg z-50 ${
+                  theme === 'dark-theme' ? 'bg-gray-800' : 'bg-white'
+                } border ${
+                  theme === 'dark-theme' ? 'border-gray-700' : 'border-gray-200'
+                }`}
+              >
+                {post.user?.id === user?.id ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        setCaption(post.caption || '');
+                        setShowEditModal(true);
+                      }}
+                      className={`w-full px-4 py-2 text-left flex items-center gap-2 hover:bg-gray-100 ${
+                        theme === 'dark-theme' ? 'text-white hover:bg-gray-700' : 'text-gray-900'
+                      }`}
+                    >
+                      <EditRegular className="w-5 h-5" />
+                      Edit Post
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      className="w-full px-4 py-2 text-left flex items-center gap-2 text-red-500 hover:bg-red-50"
+                    >
+                      <DeleteRegular className="w-5 h-5" />
+                      Delete Post
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setShowReportModal(true)}
+                    className={`w-full px-4 py-2 text-left flex items-center gap-2 text-red-500 hover:bg-red-50 ${
+                      theme === 'dark-theme' ? 'hover:bg-gray-700' : ''
+                    }`}
+                  >
+                    <ReportRegular className="w-5 h-5" />
+                    Report Post
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Edit Modal */}
+            {showEditModal && (
+              <div className={`fixed inset-0 z-[200] flex items-center justify-center bg-black bg-opacity-50`}>
+                <div className={`w-full max-w-lg p-6 rounded-lg ${
+                  theme === 'dark-theme' ? 'bg-gray-800' : 'bg-white'
+                }`}>
+                  <h2 className={`text-xl font-bold mb-4 ${
+                    theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
+                  }`}>Edit Post</h2>
+                  <textarea
+                    value={caption}
+                    onChange={(e) => setCaption(e.target.value)}
+                    className={`w-full h-32 p-3 rounded-lg border mb-4 ${
+                      theme === 'dark-theme' 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'bg-white border-gray-300'
+                    }`}
+                    placeholder="Edit your caption..."
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => setShowEditModal(false)}
+                      className={`px-4 py-2 rounded-lg ${
+                        theme === 'dark-theme' 
+                          ? 'bg-gray-700 text-white hover:bg-gray-600' 
+                          : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                      }`}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleEdit}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Report Modal */}
+            {showReportModal && (
+              <div className={`fixed inset-0 z-[200] flex items-center justify-center bg-black bg-opacity-50`}>
+                <div className={`w-full max-w-lg p-6 rounded-lg ${
+                  theme === 'dark-theme' ? 'bg-gray-800' : 'bg-white'
+                }`}>
+                  <h2 className={`text-xl font-bold mb-4 ${
+                    theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
+                  }`}>Report Post</h2>
+                  <textarea
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    className={`w-full h-32 p-3 rounded-lg border mb-4 ${
+                      theme === 'dark-theme' 
+                        ? 'bg-gray-700 border-gray-600 text-white' 
+                        : 'bg-white border-gray-300'
+                    }`}
+                    placeholder="Why are you reporting this post?"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => setShowReportModal(false)}
+                      className={`px-4 py-2 rounded-lg ${
+                        theme === 'dark-theme' 
+                          ? 'bg-gray-700 text-white hover:bg-gray-600' 
+                          : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                      }`}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleReport}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                    >
+                      Submit Report
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Main Content */}
@@ -474,14 +700,16 @@ const SinglePost = () => {
                     )}
                   </button>
                 </div>
-                <div className={`font-bold text-sm ${
+                <div className={`flex items-center gap-2 text-sm ${
                   theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`}>
-                  {post.likes?.length || 0} Likes
+                  <span className="font-bold">{post.likes?.length || 0} Likes</span>
+                  <span className="text-gray-500">|</span>
+                  <span className="text-gray-500">{formatDate(post.createdAt)}</span>
                 </div>
               </div>
 
               {/* Post Details */}
-              <div className={`px-4 pb-4 space-y-2 ${
+              <div className={`px-4 pb-4 space-y-2 relative ${
                 theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
               }`}>
                 {/* Caption */}
@@ -532,11 +760,6 @@ const SinglePost = () => {
                   </div>
                 )}
 
-                {/* Creation Date */}
-                <div className="flex items-center text-sm text-gray-500">
-                  <CalendarRegular className="w-4 h-4 mr-1" />
-                  <span>{formatDate(post.createdAt)}</span>
-                </div>
               </div>
             </div>
 
