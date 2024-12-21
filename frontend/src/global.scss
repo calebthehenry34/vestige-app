@@ -181,13 +181,13 @@ body {
   }
 
   .activity-modal {
-    width: 100%;
-    max-width: 768px;
+    width: 90vw;
     height: 60vh;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
+    padding:25px;
     animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
     &.closing {
