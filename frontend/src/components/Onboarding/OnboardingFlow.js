@@ -387,128 +387,49 @@ const OnboardingFlow = () => {
           <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
             <div className="h-full flex flex-col">
               <div className="w-full max-w-4xl mx-auto space-y-6">
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-headlines text-white mb-2">Choose Your Plan</h2>
+                <div className="text-center mb-12">
                   <p className="text-gray-400">Select a subscription plan that works for you</p>
                 </div>
-                <div className="flex flex-col space-y-4 max-w-lg mx-auto">
+                <div className="flex flex-col gap-3 mx-auto w-full max-w-md">
                   {/* Beta Access Plan */}
-                  <div className="bg-[#1a1a1a] rounded-lg p-6 border-2 border-[#ae52e3] hover:border-opacity-80 transition-all">
-                    <div className="space-y-4">
-                      <div className="text-center">
-                        <h3 className="text-xl font-headlines text-white">Free Beta Access</h3>
-                        <p className="text-gray-400 mt-2">Early access to all features</p>
-                        <div className="mt-4">
-                          <span className="text-2xl font-bold text-white">Free</span>
-                        </div>
+                  <div className="bg-[#1a1a1a] rounded-lg p-8 border-2 border-[#ae52e3] hover:border-opacity-80 transition-all relative shadow-lg">
+                    <div className="text-center space-y-4">
+                      <h3 className="text-xl font-headlines text-white">Beta</h3>
+                      <div>
+                        <span className="text-2xl font-bold text-white">Free</span>
                       </div>
-                      <div className="space-y-3 mt-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full bg-[#ae52e3] flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-                            </svg>
-                          </div>
-                          <span className="text-white text-sm">Full feature access</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full bg-[#ae52e3] flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-                            </svg>
-                          </div>
-                          <span className="text-white text-sm">Early adopter benefits</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full bg-[#ae52e3] flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-                            </svg>
-                          </div>
-                          <span className="text-white text-sm">Shape the future</span>
-                        </div>
-                      </div>
-                      <div className="mt-6">
-                        <p className="text-gray-400 text-xs text-center">30-day free trial</p>
+                      <div className="flex flex-col gap-2">
+                        <span className="text-white text-sm">Full Access</span>
+                        <span className="text-white text-sm">Early Benefits</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Monthly Plan (Disabled) */}
-                  <div className="bg-[#1a1a1a] rounded-lg p-6 border border-[#262626] opacity-50 cursor-not-allowed">
-                    <div className="space-y-4">
-                      <div className="text-center">
-                        <h3 className="text-xl font-headlines text-white">Monthly</h3>
-                        <p className="text-gray-400 mt-2">Coming soon</p>
-                        <div className="mt-4">
-                          <span className="text-2xl font-bold text-white">$9.99</span>
-                          <span className="text-gray-400">/month</span>
-                        </div>
+                  <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#262626] opacity-40 cursor-not-allowed relative scale-90 origin-top">
+                    <div className="text-center space-y-4">
+                      <h3 className="text-xl font-headlines text-white">Monthly</h3>
+                      <div>
+                        <span className="text-2xl font-bold text-white">$7.99</span>
+                        <span className="text-gray-400">/mo</span>
                       </div>
-                      <div className="space-y-3 mt-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-                            </svg>
-                          </div>
-                          <span className="text-white text-sm">All features</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-                            </svg>
-                          </div>
-                          <span className="text-white text-sm">Priority support</span>
-                        </div>
+                      <div className="flex flex-col gap-2">
                       </div>
-                      <div className="mt-6">
-                        <p className="text-gray-400 text-xs text-center">Available after beta</p>
-                      </div>
+                      <p className="text-gray-400 text-xs">Coming Soon</p>
                     </div>
                   </div>
 
                   {/* Yearly Plan (Disabled) */}
-                  <div className="bg-[#1a1a1a] rounded-lg p-6 border border-[#262626] opacity-50 cursor-not-allowed">
-                    <div className="space-y-4">
-                      <div className="text-center">
-                        <h3 className="text-xl font-headlines text-white">Yearly</h3>
-                        <p className="text-gray-400 mt-2">Coming soon</p>
-                        <div className="mt-4">
-                          <span className="text-2xl font-bold text-white">$99.99</span>
-                          <span className="text-gray-400">/year</span>
-                        </div>
+                  <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#262626] opacity-40 cursor-not-allowed relative scale-90 origin-top">
+                    <div className="text-center space-y-4">
+                      <h3 className="text-xl font-headlines text-white">Yearly</h3>
+                      <div>
+                        <span className="text-2xl font-bold text-white">$74.99</span>
+                        <span className="text-gray-400">/yr</span>
                       </div>
-                      <div className="space-y-3 mt-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full bg-[#262626] flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-                            </svg>
-                          </div>
-                          <span className="text-white text-sm">All features</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-                            </svg>
-                          </div>
-                          <span className="text-white text-sm">Priority support</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white"/>
-                            </svg>
-                          </div>
-                          <span className="text-white text-sm">Save 17%</span>
-                        </div>
+                      <div className="flex flex-col gap-2">
                       </div>
-                      <div className="mt-6">
-                        <p className="text-gray-400 text-xs text-center">Available after beta</p>
-                      </div>
+                      <p className="text-gray-400 text-xs">Coming Soon</p>
                     </div>
                   </div>
                 </div>
