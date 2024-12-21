@@ -4,8 +4,24 @@ import upload from '../middleware/upload.js';
 import User from '../models/User.js';
 import Follow from '../models/Follow.js';
 import Notification from '../models/notification.js';
+import { generatePresignedUrl } from '../config/s3.js';
 
 const router = express.Router();
+
+// Helper function to process user data with pre-signed URLs
+const processUserWithPresignedUrl = async (user) => {
+  if (!user) return null;
+  const userData = user.toObject ? user.toObject() : { ...user };
+  
+  if (userData.profilePicture && userData.profilePicture.startsWith('profile-pictures/')) {
+    const presignedUrl = await generatePresignedUrl(userData.profilePicture);
+    if (presignedUrl) {
+      userData.profilePicture = presignedUrl;
+    }
+  }
+  
+  return userData;
+};
 
 // Get all users
 router.get('/suggestions', auth, async (req, res) => {
@@ -15,7 +31,12 @@ router.get('/suggestions', auth, async (req, res) => {
       'username profilePicture bio'
     ).limit(20);
     
-    res.json(users);
+    // Process each user to include pre-signed URLs
+    const processedUsers = await Promise.all(
+      users.map(user => processUserWithPresignedUrl(user))
+    );
+    
+    res.json(processedUsers);
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Error fetching users' });
@@ -124,11 +145,13 @@ router.get('/:userId/followers', auth, async (req, res) => {
     
     const followingIds = currentUserFollowing.map(f => f.following.toString());
 
-    // Update isFollowing status for each follower
-    const followersWithStatus = validFollowers.map(follower => ({
-      ...follower,
-      isFollowing: followingIds.includes(follower._id.toString())
-    }));
+    // Update isFollowing status and process pre-signed URLs for each follower
+    const followersWithStatus = await Promise.all(
+      validFollowers.map(async follower => ({
+        ...(await processUserWithPresignedUrl(follower)),
+        isFollowing: followingIds.includes(follower._id.toString())
+      }))
+    );
 
     res.json(followersWithStatus);
   } catch (error) {
@@ -153,7 +176,12 @@ router.get('/:userId/following', auth, async (req, res) => {
         isFollowing: true // These are users that are being followed by the requested user
       }));
 
-    res.json(validFollowing);
+    // Process pre-signed URLs for each following user
+    const processedFollowing = await Promise.all(
+      validFollowing.map(user => processUserWithPresignedUrl(user))
+    );
+
+    res.json(processedFollowing);
   } catch (error) {
     console.error('Error fetching following:', error);
     res.status(500).json({ error: 'Error fetching following' });
@@ -170,7 +198,7 @@ router.post('/profile-picture', auth, upload.handleUpload('profilePicture'), asy
     // Update user's profile picture URL
     const user = await User.findByIdAndUpdate(
       req.user.userId,
-      { profilePicture: req.file.location }, // S3 file location
+      { profilePicture: req.file.key }, // Store S3 key instead of location
       { new: true }
     );
 
@@ -178,9 +206,12 @@ router.post('/profile-picture', auth, upload.handleUpload('profilePicture'), asy
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Generate pre-signed URL for the response
+    const processedUser = await processUserWithPresignedUrl(user);
+
     res.json({
       message: 'Profile picture updated successfully',
-      profilePicture: user.profilePicture
+      profilePicture: processedUser.profilePicture
     });
   } catch (error) {
     console.error('Profile picture upload error:', error);
