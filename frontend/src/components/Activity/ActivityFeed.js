@@ -154,11 +154,11 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
         <div className={`flex items-center justify-between px-6 py-4 ${
           theme === 'dark-theme' ? 'text-gray-500' : 'text-gray-400'
         }`}>
-          <div className="flex items-center">
+          <div className="flex items-center space-x-4">
             <img
               src="/default-avatar.png"
               alt="Deleted User"
-              className="w-12 h-12 rounded-xl mr-4 object-cover opacity-50"
+              className="w-12 h-12 rounded-xl object-cover opacity-50"
             />
             <div>
               <span className="font-headlines">Deleted User</span>
@@ -170,7 +170,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
     }
 
     const baseUserInfo = (
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-4 flex-grow">
         <img
           src={getProfileImageUrl(sender.profilePicture, sender.username)}
           alt={sender.username}
@@ -214,7 +214,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
         onClick={() => handleNotificationClick(notification)}
       >
         {baseUserInfo}
-        <div className="flex items-center space-x-4 flex-shrink-0">
+        <div className="flex items-center ml-4 flex-shrink-0">
           {type === 'follow' ? (
             <div onClick={e => e.stopPropagation()}>
               <FollowButton 

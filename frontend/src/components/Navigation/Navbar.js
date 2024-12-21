@@ -521,7 +521,7 @@ const Navbar = () => {
                 onClick={() => setShowNotifications(false)}
               >
                 <div 
-                  className={`w-full h-[65vh] rounded-t-xl overflow-hidden transform transition-all duration-500 ease-in-out ${
+                  className={`w-full h-[60vh] rounded-t-xl overflow-hidden transform transition-all duration-500 ease-in-out ${
                     theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
                   }`}
                   onClick={e => e.stopPropagation()}
