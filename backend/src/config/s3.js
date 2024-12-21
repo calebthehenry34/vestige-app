@@ -1,9 +1,11 @@
-import { S3Client, HeadBucketCommand } from '@aws-sdk/client-s3';
+import { S3Client, HeadBucketCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -151,6 +153,24 @@ export const generatePresignedUrl = async (key, expiresIn = 3600) => {
   } catch (error) {
     console.error('Error generating pre-signed URL:', error);
     return null;
+  }
+};
+
+// Delete an object from S3
+export const deleteS3Object = async (key) => {
+  if (!s3 || !key) return false;
+
+  try {
+    const command = new DeleteObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: key
+    });
+    
+    await s3.send(command);
+    return true;
+  } catch (error) {
+    console.error('Error deleting object from S3:', error);
+    return false;
   }
 };
 

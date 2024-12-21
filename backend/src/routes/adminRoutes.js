@@ -210,30 +210,17 @@ router.put('/users/:id', auth, adminAuth, async (req, res) => {
 });
 
 // Delete user
-router.delete('/users/:id', auth, async (req, res) => {
+router.delete('/users/:id', auth, adminAuth, async (req, res) => {
   try {
     const userId = req.params.id;
-
-    // Only try to delete follows if the collection exists
-    if (mongoose.connection.collections['follows']) {
-      await Follow.deleteMany({ 
-        $or: [
-          { follower: userId },
-          { following: userId }
-        ]
-      });
-    }
-
-    // Delete the user
-    const deletedUser = await User.findByIdAndDelete(userId);
-    if (!deletedUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    res.json({ message: 'User deleted successfully' });
+    const result = await deleteUser(userId);
+    res.json(result);
   } catch (error) {
     console.error('Error deleting user:', error);
-    res.status(500).json({ error: 'Error deleting user' });
+    if (error.message === 'User not found') {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.status(500).json({ error: 'Error deleting user and associated data' });
   }
 });
 

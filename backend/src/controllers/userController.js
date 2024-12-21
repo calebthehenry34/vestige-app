@@ -4,7 +4,7 @@ import Follow from '../models/Follow.js';
 import Message from '../models/message.js';
 import Notification from '../models/notification.js';
 import mongoose from 'mongoose';
-import { deleteFile } from '../config/s3.js';
+import { deleteS3Object } from '../config/s3.js';
 
 export const deleteUser = async (userId) => {
   const session = await mongoose.startSession();
@@ -15,8 +15,7 @@ export const deleteUser = async (userId) => {
     const userPosts = await Post.find({ user: userId });
     for (const post of userPosts) {
       if (post.mediaKey) {
-        // Delete media file from S3
-        await deleteFile(post.mediaKey);
+        await deleteS3Object(post.mediaKey);
       }
     }
     await Post.deleteMany({ user: userId }, { session });
