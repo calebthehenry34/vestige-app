@@ -11,6 +11,12 @@ export const deleteUser = async (userId) => {
   session.startTransaction();
 
   try {
+    // Find the user first
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
     // 1. Delete user's posts and their media
     const userPosts = await Post.find({ user: userId });
     for (const post of userPosts) {
@@ -68,12 +74,21 @@ export const deleteUser = async (userId) => {
       ]
     }, { session });
 
-    // 7. Finally delete the user
-    const deletedUser = await User.findByIdAndDelete(userId, { session });
-    if (!deletedUser) {
-      await session.abortTransaction();
-      throw new Error('User not found');
+    // 7. Remove user references from other users' saved posts
+    await User.updateMany(
+      { savedPosts: { $in: userPosts.map(post => post._id) } },
+      { $pull: { savedPosts: { $in: userPosts.map(post => post._id) } } },
+      { session }
+    );
+
+    // 8. Remove profile picture from S3 if it exists
+    if (user.profilePicture && user.profilePicture.includes('amazonaws.com')) {
+      const key = user.profilePicture.split('/').pop();
+      await deleteS3Object(key);
     }
+
+    // 9. Finally delete the user using remove() to trigger pre-remove middleware
+    await user.remove({ session });
 
     await session.commitTransaction();
     return { success: true, message: 'User and all associated data deleted successfully' };

@@ -9,6 +9,8 @@ import Register from './components/Auth/Register';
 import Home from './components/Home/Home';
 import Profile from './components/Profile/Profile';
 import Explore from './components/Explore/Explore';
+import HashtagSearch from './components/Explore/HashtagSearch';
+import UsersPage from './components/Explore/UsersPage';
 import ActivityFeed from './components/Activity/ActivityFeed';
 import Navbar from './components/Navigation/Navbar';
 import OnboardingFlow from './components/Onboarding/OnboardingFlow';
@@ -171,6 +173,9 @@ function App() {
                     {[
                       { path: "/", element: <Home /> },
                       { path: "/explore", element: <Explore /> },
+                      { path: "/explore/users", element: <UsersPage /> },
+                      { path: "/explore/hashtags", element: <HashtagSearch /> },
+                      { path: "/explore/hashtag/:hashtag", element: <HashtagSearch /> },
                       { path: "/activity", element: <ActivityFeed /> },
                       { path: "/chat", element: <Chat /> },
                       { path: "/settings", element: <ProfileSettings /> },

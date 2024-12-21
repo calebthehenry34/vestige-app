@@ -5,6 +5,7 @@ import { ErrorFilled, Add, ArrowRight, Reset } from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
 import ProfileImageEditor from './ProfileImageEditor';
+import UserSuggestions from '../Explore/UserSuggestions';
 import styles from './OnboardingFlow.module.css';
 
 const StepIndicator = ({ label }) => (
@@ -415,19 +416,7 @@ const OnboardingFlow = () => {
       <div className={cardClass}>
         <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
           <div className="h-full flex flex-col">
-            <div className="w-full space-y-6">
-              <div className="bg-black/30 rounded-lg p-6">
-                <div className="space-y-4">
-                  <p className="font-medium text-gray-200">
-                    Welcome to Vestige beta! You currently have access to all features 
-                    free of charge while we're in beta testing. <br/><br/>
-                    Please remember that features may not work as expected
-                    and we need your help. <br/><br/>
-                    If you find a problem, email support@vestigeapp.com and we'll fix it.
-                  </p>
-                </div>
-              </div>
-            </div>
+            <UserSuggestions />
           </div>
           {renderBackButton()}
         </div>
