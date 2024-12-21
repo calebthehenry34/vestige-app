@@ -53,14 +53,27 @@ const Explore = () => {
   }, [fetchExplorePosts]);
 
   const getImageUrls = (post) => {
+    if (!post.media) return null;
+    
     const baseUrl = post.media.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`;
     const ext = supportsWebP ? 'webp' : 'jpg';
     
-    // Assuming the backend provides different sizes with these suffixes
+    // If the URL already includes size suffixes, use them
+    if (baseUrl.includes('_medium') || baseUrl.includes('_small') || baseUrl.includes('_thumbnail')) {
+      return {
+        thumbnail: baseUrl.replace(`.${ext}`, `_thumbnail.${ext}`),
+        small: baseUrl.replace(`.${ext}`, `_small.${ext}`),
+        medium: baseUrl.replace(`.${ext}`, `_medium.${ext}`),
+        large: baseUrl,
+      };
+    }
+    
+    // Otherwise, use the same URL for all sizes
+    // The image will still be responsive thanks to the srcSet and sizes attributes
     return {
-      thumbnail: baseUrl.replace(`.${ext}`, `_thumbnail.${ext}`),
-      small: baseUrl.replace(`.${ext}`, `_small.${ext}`),
-      medium: baseUrl.replace(`.${ext}`, `_medium.${ext}`),
+      thumbnail: baseUrl,
+      small: baseUrl,
+      medium: baseUrl,
       large: baseUrl,
     };
   };
@@ -158,11 +171,7 @@ const Explore = () => {
                   
                   {/* Main Image */}
                   <img
-                    {...createImageProps(
-                      getImageUrls(post),
-                      `Post by ${post.author?.username || 'unknown'}`,
-                      'medium'
-                    )}
+                    alt={`Post by ${post.author?.username || 'unknown'}`}
                     className="w-full h-full object-cover rounded-lg relative z-10"
                     onLoad={(e) => {
                       // Fade out blur placeholder when main image loads
@@ -170,10 +179,16 @@ const Explore = () => {
                         e.target.previousSibling.style.opacity = '0';
                       }
                     }}
-                    onError={(e) => {
-                      console.log('Image load error:', post.media);
-                      e.target.src = `https://ui-avatars.com/api/?name=Post&size=400`;
-                    }}
+                    {...createImageProps(
+                      getImageUrls(post) || {
+                        thumbnail: `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.username || 'Post')}&size=100`,
+                        small: `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.username || 'Post')}&size=400`,
+                        medium: `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.username || 'Post')}&size=800`,
+                        large: `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.username || 'Post')}&size=1200`
+                      },
+                      `Post by ${post.author?.username || 'unknown'}`,
+                      'medium'
+                    )}
                   />
                 </div>
               )}

@@ -466,11 +466,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
               />
             )}
             <img
-              {...createImageProps(
-                { medium: state.editedMedia.url },
-                'Preview',
-                'medium'
-              )}
+              alt="Post preview"
               className="w-full h-full object-contain relative z-10"
               style={{ 
                 filter: `${state.editedMedia.filter} ${state.editedMedia.adjustments}`,
@@ -480,6 +476,11 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
               onLoad={(e) => {
                 e.target.style.opacity = '1';
               }}
+              {...createImageProps(
+                { medium: state.editedMedia.url },
+                'Post preview',
+                'medium'
+              )}
             />
           </div>
           

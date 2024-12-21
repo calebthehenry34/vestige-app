@@ -16,14 +16,14 @@ import {
 } from '@fluentui/react-icons';
 import PostComments from '../Post/PostComments';
 import PostCreator from '../Post/PostCreator';
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config';
 import { 
   getProfileImageUrl, 
   createImageProps, 
   checkWebPSupport 
 } from '../../utils/imageUtils';
+import ShareModal from '../Post/ShareModal';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -58,6 +58,45 @@ const Home = () => {
       medium: baseUrl.replace(`.${ext}`, `_medium.${ext}`),
       large: baseUrl
     };
+  };
+
+  const renderText = (text) => {
+    if (!text || typeof text !== 'string') return '';
+    
+    return text.split(' ').map((word, index) => {
+      if (word.startsWith('#')) {
+        return (
+          <React.Fragment key={index}>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigate(`/explore/hashtag/${word.slice(1)}`);
+              }}
+              className="text-blue-500 hover:underline"
+            >
+              {word}
+            </button>{' '}
+          </React.Fragment>
+        );
+      } else if (word.startsWith('@')) {
+        return (
+          <React.Fragment key={index}>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigate(`/profile/${word.slice(1)}`);
+              }}
+              className="text-blue-500 hover:underline"
+            >
+              {word}
+            </button>{' '}
+          </React.Fragment>
+        );
+      }
+      return word + ' ';
+    });
   };
 
   const fetchPosts = useCallback(async () => {
@@ -267,28 +306,31 @@ const Home = () => {
   };
 
   const handleEditCaption = (postId) => {
-    console.log('Edit caption for post:', postId);
-    setActivePostMenu(null);
-  };
-
-  const handleReportPost = async (postId) => {
-    if (!postId) return;
-
-    try {
-      const response = await fetch(`${API_URL}/api/posts/${postId}/report`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        alert('Post reported successfully');
-      }
-    } catch (error) {
-      console.error('Error reporting post:', error);
-    }
+    const post = posts.find(p => p._id === postId);
+    if (!post) return;
+  
+    const newCaption = prompt('Edit caption:', post.caption);
+    if (newCaption === null || newCaption === post.caption) return;
+  
+    fetch(`${API_URL}/api/posts/${postId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ caption: newCaption })
+    })
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to update caption');
+        return response.json();
+      })
+      .then(updatedPost => {
+        setPosts(prevPosts => prevPosts.map(p => 
+          p._id === postId ? updatedPost : p
+        ));
+      })
+      .catch(error => console.error('Error updating caption:', error));
+    
     setActivePostMenu(null);
   };
 
@@ -304,6 +346,27 @@ const Home = () => {
     setShowShareModal(true);
   };
 
+  const handleReportPost = async (postId) => {
+    if (!postId) return;
+    
+    try {
+      const response = await fetch(`${API_URL}/api/posts/${postId}/report`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to report post');
+      }
+  
+      setActivePostMenu(null); // Close the menu after reporting
+    } catch (error) {
+      console.error('Error reporting post:', error);
+    }
+  };
+  
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -322,7 +385,13 @@ const Home = () => {
 
   return (
     <div className="max-w-xl mx-auto p-4 m-50">
-      {/* Post Creator Modal */}
+      <button
+        onClick={() => setShowPostCreator(true)}
+        className="w-full mb-6 py-3 bg-[#ae52e3] text-white rounded-lg hover:bg-[#9745c5] transition-colors"
+      >
+        Create Post
+      </button>
+
       <PostCreator
         isOpen={showPostCreator}
         onClose={() => setShowPostCreator(false)}
@@ -332,12 +401,16 @@ const Home = () => {
       <div className="space-y-6">
         {Array.isArray(posts) && posts.map((post) => (
           <div key={post._id} className="bg-[#1a1a1a] rounded-lg shadow-md overflow-hidden">
-            <Link to={`/post/${post._id}`} className="block relative" onClick={(e) => {
-              if (e.target.closest('button')) {
-                e.preventDefault();
-                e.stopPropagation();
-              }
-            }}>
+            <Link 
+              to={`/post/${post._id}`} 
+              className="block relative" 
+              onClick={(e) => {
+                if (e.target.closest('button')) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              }}
+            >
               <div className="relative">
                 {/* User Info and Menu Overlay at Top */}
                 <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-black/50 to-transparent flex justify-between items-center">
@@ -345,13 +418,15 @@ const Home = () => {
                     <div className="flex items-center">
                       {post.user ? (
                         <img
-                          {...createImageProps(
-                            { small: getProfileImageUrl(post.user.profilePicture, post.user.username) },
-                            post.user.username,
-                            'small'
-                          )}
-                          className="h-6 w-6 rounded-md object-cover"
-                        />
+                        {...createImageProps(
+                          { small: getProfileImageUrl(post.user.profilePicture, post.user.username) },
+                          post.user.username,
+                          'small'
+                        )}
+                        alt={`${post.user.username}'s profile`}
+                        className="h-6 w-6 rounded-md object-cover"
+                        loading="lazy"
+                      />
                       ) : (
                         <div className="h-6 w-6 rounded-md bg-gray-200 flex items-center justify-center">
                           <PersonRegular className="w-4 h-4 text-gray-400" />
@@ -365,7 +440,6 @@ const Home = () => {
                 </div>
 
                 {/* Media Content */}
-                <Link to={`/post/${post._id}`}>
                 {post.mediaType === 'video' ? (
                   <video
                     src={post.media}
@@ -393,12 +467,9 @@ const Home = () => {
                     
                     {/* Main Image */}
                     <img
-                      {...createImageProps(
-                        getImageUrls(post.media),
-                        'Post content',
-                        'medium'
-                      )}
+                      alt={`Post by ${post.user?.username || 'unknown user'}`}
                       className="w-full h-auto relative z-10"
+                      loading="lazy"
                       onLoad={(e) => {
                         // Fade out blur placeholder when main image loads
                         if (e.target.previousSibling) {
@@ -409,10 +480,14 @@ const Home = () => {
                         console.error('Image load error:', post.media);
                         e.target.src = 'https://via.placeholder.com/400';
                       }}
+                      {...createImageProps(
+                        getImageUrls(post.media),
+                        `Post by ${post.user?.username || 'unknown user'}`,
+                        'medium'
+                      )}
                     />
                   </div>
                 )}
-                </Link>
 
                 {/* Post Menu Button */}
                 <button 
@@ -425,49 +500,6 @@ const Home = () => {
                 >
                   <MoreHorizontalRegular className="w-6 h-6" />
                 </button>
-
-                {activePostMenu === post._id && (
-                  <div className="absolute right-4 top-12 w-48 bg-[#262626] rounded-lg shadow-lg z-20 py-1">
-                    {post.user?._id === user?.id ? (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleEditCaption(post._id);
-                          }}
-                          className="w-full text-left px-4 py-2 hover:bg-[#333333] text-white flex items-center"
-                        >
-                          <EditRegular className="w-5 h-5 mr-2" />
-                          Edit Caption
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleDeletePost(post._id);
-                          }}
-                          className="w-full text-left px-4 py-2 hover:bg-[#333333] text-red-500 flex items-center"
-                        >
-                          <DeleteRegular className="w-5 h-5 mr-2" />
-                          Delete Post
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleReportPost(post._id);
-                        }}
-                        className="w-full text-left px-4 py-2 hover:bg-[#333333] text-red-500 flex items-center"
-                      >
-                        <FlagRegular className="w-5 h-5 mr-2" />
-                        Report Post
-                      </button>
-                    )}
-                  </div>
-                )}
 
                 {/* Bottom Action Bar */}
                 <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent">
@@ -524,6 +556,61 @@ const Home = () => {
               </div>
             </Link>
 
+            {/* Post Menu */}
+            {activePostMenu === post._id && (
+              <div className="absolute right-4 top-12 w-48 bg-[#262626] rounded-lg shadow-lg z-20 py-1">
+                {post.user?._id === user?.id ? (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleEditCaption(post._id);
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-[#333333] text-white flex items-center"
+                    >
+                      <EditRegular className="w-5 h-5 mr-2" />
+                      Edit Caption
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDeletePost(post._id);
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-[#333333] text-red-500 flex items-center"
+                    >
+                      <DeleteRegular className="w-5 h-5 mr-2" />
+                      Delete Post
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleReportPost(post._id);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-[#333333] text-red-500 flex items-center"
+                  >
+                    <FlagRegular className="w-5 h-5 mr-2" />
+                    Report Post
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Caption */}
+            <div className="p-4 text-white">
+              <span 
+                className="font-semibold mr-2 cursor-pointer"
+                onClick={() => navigate(`/profile/${post.user?.username}`)}
+              >
+                {post.user?.username}
+              </span>
+              {renderText(post.caption)}
+            </div>
+
             {/* Comments Section */}
             <PostComments
               post={post}
@@ -551,9 +638,9 @@ const Home = () => {
                   setPosts(prevPosts => prevPosts.map(p => 
                     p._id === post._id ? data : p
                   ));
-              
+                
                   if (post?.user?._id && post.user._id !== user?.id) {
-                    return fetch(`${API_URL}/api/notifications`, {
+                    fetch(`${API_URL}/api/notifications`, {
                       method: 'POST',
                       headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -562,9 +649,10 @@ const Home = () => {
                       body: JSON.stringify({
                         recipientId: post.user._id,
                         type: 'comment',
-                        postId: post._id
+                        postId: post._id,
+                        commentId: data.comments[data.comments.length - 1]._id
                       })
-                    });
+                    }).catch(error => console.error('Error sending notification:', error));
                   }
                 })
                 .catch(error => console.error('Error posting comment:', error));
@@ -595,6 +683,23 @@ const Home = () => {
                   setPosts(prevPosts => prevPosts.map(p => 
                     p._id === post._id ? data : p
                   ));
+                
+                  const comment = data.comments.find(c => c._id === commentId);
+                  if (comment?.user && comment.user !== user?.id) {
+                    fetch(`${API_URL}/api/notifications`, {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        recipientId: comment.user,
+                        type: 'reply',
+                        postId: post._id,
+                        commentId: commentId
+                      })
+                    }).catch(error => console.error('Error sending notification:', error));
+                  }
                 })
                 .catch(error => console.error('Error posting reply:', error));
               }}
@@ -604,35 +709,15 @@ const Home = () => {
       </div>
 
       {/* Share Modal */}
-      {showShareModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-[#1a1a1a] rounded-lg p-4 w-80">
-            <h3 className="text-lg font-semibold mb-4 text-white">Share Post</h3>
-            <div className="space-y-4">
-              <button 
-                onClick={async () => {
-                  try {
-                    const postUrl = `${window.location.origin}/post/${sharePostId}`;
-                    await navigator.clipboard.writeText(postUrl);
-                    alert('Link copied to clipboard!');
-                  } catch (error) {
-                    console.error('Failed to copy link:', error);
-                  }
-                  setShowShareModal(false);
-                }}
-                className="w-full text-left px-4 py-2 hover:bg-[#262626] rounded text-white"
-              >
-                Copy Link
-              </button>
-              <button 
-                onClick={() => setShowShareModal(false)}
-                className="w-full px-4 py-2 bg-[#262626] rounded text-white"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+      {showShareModal && sharePostId && (
+        <ShareModal
+          isOpen={showShareModal}
+          postId={sharePostId}
+          onClose={() => {
+            setShowShareModal(false);
+            setSharePostId(null);
+          }}
+        />
       )}
     </div>
   );
