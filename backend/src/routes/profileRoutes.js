@@ -153,7 +153,7 @@ router.get('/:username', auth, async (req, res) => {
     const profile = await User.findOne({ 
       username: new RegExp(`^${username}$`, 'i') 
     })
-    .select('username email bio profilePicture onboardingComplete')
+    .select('username email bio profilePicture onboardingComplete followersCount followingCount')
     .lean();
 
     if (!profile) {
@@ -214,7 +214,9 @@ router.post('/update', auth, async (req, res) => {
         bio: user.bio,
         location: user.location,
         website: user.website,
-        profilePicture: profilePictureUrl
+        profilePicture: profilePictureUrl,
+        followersCount: user.followersCount,
+        followingCount: user.followingCount
       }
     });
   } catch (error) {

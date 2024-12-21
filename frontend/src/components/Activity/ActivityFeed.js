@@ -76,7 +76,32 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
     return `${seconds}s`;
   };
 
-  const handleNotificationClick = (notification) => {
+  const handleNotificationClick = async (notification) => {
+    // Mark notification as read
+    try {
+      const response = await fetch(`${API_URL}/api/notifications/${notification._id}/read`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        // Update local state
+        setNotifications(notifications.map(n => 
+          n._id === notification._id ? { ...n, read: true } : n
+        ));
+        // Update unread count
+        const unreadCount = notifications.filter(n => !n.read && n._id !== notification._id).length;
+        if (onNotificationsUpdate) {
+          onNotificationsUpdate(unreadCount);
+        }
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+
+    // Navigate based on notification type
     if (notification.post) {
       navigate(`/post/${notification.post._id}`);
     } else if (notification.type === 'follow' && notification.sender) {

@@ -458,7 +458,7 @@ const Navbar = () => {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="max-w-sm mx-auto relative">
+          <div className="max-w-xs mx-auto relative">
             <div className={`${
               theme === 'dark-theme'
                 ? 'bg-gray-900'
