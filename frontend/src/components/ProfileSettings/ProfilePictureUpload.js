@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
+import { getProfileImageUrl } from '../../utils/imageUtils';
 
 const ProfilePictureUpload = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -53,8 +54,13 @@ const ProfilePictureUpload = () => {
       const data = await response.json();
       updateUser({ ...user, profilePicture: data.profilePicture });
       
-      // Update preview URL to show the new image
-      setPreviewUrl(API_URL + '/uploads/' + data.profilePicture);
+      // If the response includes a pre-signed URL, use it directly
+      if (data.profilePicture?.startsWith('http')) {
+        setPreviewUrl(data.profilePicture);
+      } else {
+        // Otherwise, use the helper function to construct the URL
+        setPreviewUrl(getProfileImageUrl(data.profilePicture, user?.username));
+      }
 
     } catch (error) {
       console.error('Error uploading profile picture:', error);
@@ -64,16 +70,12 @@ const ProfilePictureUpload = () => {
     }
   };
 
-  const currentProfilePicture = user?.profilePicture 
-    ? API_URL + '/uploads/' + user.profilePicture
-    : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
-
   return (
     <div className="space-y-4">
       <div className="flex items-center space-x-4">
         <div className="relative">
           <img
-            src={previewUrl || currentProfilePicture}
+            src={previewUrl || getProfileImageUrl(user?.profilePicture, user?.username)}
             alt="Profile"
             className="w-24 h-24 rounded-full object-cover"
             onError={(e) => {

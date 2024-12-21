@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config';
 import FollowButton from '../Common/FollowButton';
 import { ThemeContext } from '../../App';
+import { getProfileImageUrl } from '../../utils/imageUtils';
+import { DismissRegular } from '@fluentui/react-icons';
 
 const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   const navigate = useNavigate();
@@ -10,12 +12,12 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   const [activeTab, setActiveTab] = useState('all');
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isClosing, setIsClosing] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
+      setIsAnimating(true);
       document.body.style.overflow = 'hidden';
-      setIsClosing(false);
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -25,10 +27,10 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   }, [isOpen]);
 
   const handleClose = () => {
-    setIsClosing(true);
+    setIsAnimating(false);
     setTimeout(() => {
       onClose();
-    }, 200); // Match the animation duration
+    }, 300); // Match the animation duration
   };
 
   const fetchNotifications = useCallback(async () => {
@@ -126,12 +128,31 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
     handleClose();
   };
 
+  const getNotificationText = (type, commentData) => {
+    switch (type) {
+      case 'follow':
+        return 'started following you';
+      case 'like':
+        return 'liked your post';
+      case 'comment':
+        return commentData ? `commented: "${commentData.text}"` : 'commented on your post';
+      case 'reply':
+        return commentData ? `replied: "${commentData.text}"` : 'replied to your comment';
+      case 'commentLike':
+        return 'liked your comment';
+      case 'tag':
+        return commentData ? 'mentioned you in a comment' : 'tagged you in a post';
+      default:
+        return '';
+    }
+  };
+
   const renderActivity = (notification) => {
     const { type, sender, post, commentData, createdAt } = notification;
 
     if (!sender) {
       return (
-        <div className={`mb-50 flex items-center justify-between py-4 ${
+        <div className={`flex items-center justify-between p-4 ${
           theme === 'dark-theme' ? 'text-gray-500' : 'text-gray-400'
         }`}>
           <div className="flex items-center">
@@ -150,68 +171,56 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
     }
 
     const baseUserInfo = (
-      <div className="flex items-center">
+      <div className="flex items-center flex-1">
         <img
-          src={sender.profilePicture ? `${API_URL}${sender.profilePicture}` : '/default-avatar.png'}
+          src={getProfileImageUrl(sender.profilePicture, sender.username)}
           alt={sender.username}
-          className="w-10 h-10 rounded-full mr-3 object-cover"
+          className={`w-10 h-10 rounded-full object-cover ${
+            theme === 'dark-theme' ? 'bg-zinc-900' : 'bg-gray-100'
+          }`}
           onClick={(e) => {
             e.stopPropagation();
             navigate(`/profile/${sender.username}`);
           }}
         />
-        <div>
-          <span className={`font-semibold ${
-            theme === 'dark-theme' ? 'text-white' : 'text-black'
-          }`}>
+        <div className="ml-3">
+          <div className="font-semibold">
             {sender.username}
-          </span>
+          </div>
+          <div className={`text-sm ${
+            theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            {getNotificationText(type, commentData)}
+          </div>
+          <div className={`text-xs ${
+            theme === 'dark-theme' ? 'text-gray-500' : 'text-gray-400'
+          }`}>
+            {getTimeAgo(createdAt)}
+          </div>
         </div>
       </div>
     );
 
-    const getNotificationText = () => {
-      switch (type) {
-        case 'follow':
-          return 'started following you.';
-        case 'like':
-          return 'liked your post.';
-        case 'comment':
-          return commentData ? `commented: "${commentData.text}"` : 'commented on your post.';
-        case 'reply':
-          return commentData ? `replied: "${commentData.text}"` : 'replied to your comment.';
-        case 'commentLike':
-          return 'liked your comment.';
-        case 'tag':
-          return commentData ? 'mentioned you in a comment.' : 'tagged you in a post.';
-        default:
-          return '';
-      }
-    };
-
     return (
       <div 
-        className={`flex items-center justify-between py-4 cursor-pointer hover:${
-          theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'
-        } ${!notification.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+        className={`flex items-center justify-between p-4 cursor-pointer transition-colors duration-200 ${
+          theme === 'dark-theme' 
+            ? 'hover:bg-zinc-900' 
+            : 'hover:bg-gray-50'
+        } ${!notification.read ? (
+          theme === 'dark-theme' 
+            ? 'bg-blue-900/20' 
+            : 'bg-blue-50'
+        ) : ''}`}
         onClick={() => handleNotificationClick(notification)}
       >
-        <div className="flex items-center flex-1">
-          {baseUserInfo}
-          <div className="ml-1 flex flex-col">
-            <span className={theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-700'}>
-              {getNotificationText()}
-            </span>
-            <div className={`text-sm ${
-              theme === 'dark-theme' ? 'text-gray-500' : 'text-gray-400'
-            }`}>
-              {getTimeAgo(createdAt)}
-            </div>
-          </div>
-        </div>
+        {baseUserInfo}
         {type === 'follow' ? (
           <div onClick={e => e.stopPropagation()}>
-            <FollowButton userId={sender._id} />
+            <FollowButton 
+              userId={sender._id} 
+              theme={theme}
+            />
           </div>
         ) : post?.media && (
           <img
@@ -224,108 +233,112 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
     );
   };
 
-  if (loading) {
-    return (
-      <div className={`activity-modal mb-50 max-w-2xl mx-auto px-4 py-8 text-center ${
-        theme === 'dark-theme' ? 'text-white' : 'text-black'
-      }`}>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-      </div>
-    );
-  }
+  if (!isOpen) return null;
 
   return (
-    <div className={`activity-modal-overlay ${isClosing ? 'closing' : ''}`}>
-      <div className={`activity-modal ${isClosing ? 'closing' : ''} ${
-        theme === 'dark-theme' ? 'bg-black' : 'bg-white'
-      }`}>
-        <div className={`card-header flex justify-between items-center`}>
-          <h2 className={`text-lg font-headlines ${
-            theme === 'dark-theme' ? 'text-white' : 'text-black'
-          }`}>
-            Notifications
-          </h2>
+    <div className="fixed inset-0 bg-black/60 z-[200] flex items-end justify-center backdrop-blur-sm">
+      <div 
+        className={`${
+          theme === 'dark-theme' 
+            ? 'bg-black border-zinc-800 text-white' 
+            : 'bg-white border-gray-200 text-black'
+        } w-full max-w-md rounded-t-2xl transform transition-transform duration-300 ease-out shadow-lg ${
+          isAnimating ? 'translate-y-0' : 'translate-y-full'
+        }`}
+      >
+        <div className={`flex items-center justify-between p-4 border-b ${
+          theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
+        }`}>
+          <h2 className="text-xl font-semibold">Notifications</h2>
           <button
             onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none"
+            className={`p-2 rounded-full transition-colors duration-200 ${
+              theme === 'dark-theme' 
+                ? 'hover:bg-zinc-900 text-gray-400 hover:text-gray-200' 
+                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+            }`}
           >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <DismissRegular className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="activity-modal-content p-6">
-          {/* Mark all as read button */}
-          {notifications.length > 0 && (
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={markAllAsRead}
-                className={`text-sm px-3 py-1 rounded ${
-                  theme === 'dark-theme' 
-                    ? 'text-gray-300 hover:text-white' 
-                    : 'text-gray-600 hover:text-black'
-                }`}
-              >
-                Mark all as read
-              </button>
+        <div className={`flex border-b ${
+          theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
+        }`}>
+          <button
+            className={`flex-1 px-4 py-3 font-semibold ${
+              activeTab === 'all' 
+                ? theme === 'dark-theme'
+                  ? 'border-b-2 border-white text-white'
+                  : 'border-b-2 border-black text-black'
+                : theme === 'dark-theme'
+                  ? 'text-gray-500'
+                  : 'text-gray-500'
+            }`}
+            onClick={() => setActiveTab('all')}
+          >
+            All
+          </button>
+          <button
+            className={`flex-1 px-4 py-3 font-semibold ${
+              activeTab === 'follows'
+                ? theme === 'dark-theme'
+                  ? 'border-b-2 border-white text-white'
+                  : 'border-b-2 border-black text-black'
+                : theme === 'dark-theme'
+                  ? 'text-gray-500'
+                  : 'text-gray-500'
+            }`}
+            onClick={() => setActiveTab('follows')}
+          >
+            Follows
+          </button>
+        </div>
+
+        <div className="max-h-[70vh] overflow-y-auto">
+          {loading ? (
+            <div className="flex justify-center items-center p-4">
+              <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
+                theme === 'dark-theme' ? 'border-blue-400' : 'border-blue-500'
+              }`}></div>
             </div>
-          )}
-
-          {/* Tabs */}
-          <div className={`flex border-b mb-4 ${
-            theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
-          }`}>
-            <button
-              className={`px-8 py-4 font-headlines ${
-                activeTab === 'all' 
-                  ? theme === 'dark-theme'
-                    ? 'border-b-2 border-white text-white'
-                    : 'border-b-2 border-black text-black'
-                  : theme === 'dark-theme'
-                    ? 'text-gray-500'
-                    : 'text-gray-500'
-              }`}
-              onClick={() => setActiveTab('all')}
-            >
-              All
-            </button>
-            <button
-              className={`px-8 py-4 font-semibold ${
-                activeTab === 'follows'
-                  ? theme === 'dark-theme'
-                    ? 'border-b-2 border-white text-white'
-                    : 'border-b-2 border-black text-black'
-                  : theme === 'dark-theme'
-                    ? 'text-gray-500'
-                    : 'text-gray-500'
-              }`}
-              onClick={() => setActiveTab('follows')}
-            >
-              Follows
-            </button>
-          </div>
-
-          {/* Activity List */}
-          <div className={`notifications-list divide-y ${
-            theme === 'dark-theme' ? 'divide-gray-800' : 'divide-gray-200'
-          }`}>
-            {notifications.length === 0 ? (
-              <div className={`py-8 text-center ${
-                theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
+          ) : notifications.length === 0 ? (
+            <div className={`text-center p-4 ${
+              theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
+            }`}>
+              No notifications yet
+            </div>
+          ) : (
+            <>
+              {notifications.length > 0 && (
+                <div className={`flex justify-end p-2 border-b ${
+                  theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
+                }`}>
+                  <button
+                    onClick={markAllAsRead}
+                    className={`text-sm px-3 py-1 rounded ${
+                      theme === 'dark-theme' 
+                        ? 'text-gray-400 hover:text-white' 
+                        : 'text-gray-600 hover:text-black'
+                    }`}
+                  >
+                    Mark all as read
+                  </button>
+                </div>
+              )}
+              <div className={`divide-y ${
+                theme === 'dark-theme' ? 'divide-zinc-800' : 'divide-gray-200'
               }`}>
-                No notifications yet
+                {notifications
+                  .filter(notification => activeTab === 'all' || notification.type === 'follow')
+                  .map(notification => (
+                    <div key={notification._id}>
+                      {renderActivity(notification)}
+                    </div>
+                  ))}
               </div>
-            ) : (
-              notifications
-                .filter(notification => activeTab === 'all' || notification.type === 'follow')
-                .map(notification => (
-                  <div key={notification._id}>
-                    {renderActivity(notification)}
-                  </div>
-                ))
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>

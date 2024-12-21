@@ -76,7 +76,7 @@ const ProfileSettings = () => {
     }
   };
 
-  const handleImageChange = async (e) => {
+const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
   
@@ -99,17 +99,14 @@ const ProfileSettings = () => {
       }
   
       const data = await response.json();
-      const fullImageUrl = data.profilePicture.startsWith('http') 
-        ? data.profilePicture 
-        : `${API_URL}/uploads/${data.profilePicture}`;
-  
+      // Update the user state with the new profile picture
       const updatedUser = {
         ...user,
         profilePicture: data.profilePicture
       };
       
       updateUser(updatedUser);
-      console.log('Profile picture updated:', fullImageUrl);
+      console.log('Profile picture updated:', getProfileImageUrl(data.profilePicture, user?.username));
   
     } catch (error) {
       console.error('Error uploading profile picture:', error);

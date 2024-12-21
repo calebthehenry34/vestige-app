@@ -5,6 +5,7 @@ import { ChevronDownRegular, ChevronUpRegular } from '@fluentui/react-icons';
 import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
 import { debounce } from 'lodash';
+import { getProfileImageUrl } from '../../utils/imageUtils';
 
 const UserSuggestions = () => {
   const { theme } = useContext(ThemeContext);
@@ -199,7 +200,7 @@ const UserSuggestions = () => {
                 <Link to={`/profile/${user._id}`} className="block relative">
                   <div className="aspect-square relative">
                     <img 
-                      src={user.profilePicture ? `${API_URL}/uploads/${user.profilePicture}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}`}
+                      src={getProfileImageUrl(user.profilePicture, user.username)}
                       alt={user.username}
                       className="w-full h-full object-cover"
                       onError={(e) => {
