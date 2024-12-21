@@ -6,6 +6,42 @@ const imageCache = localforage.createInstance({
   name: 'imageCache'
 });
 
+// Check WebP support
+export const checkWebPSupport = async () => {
+  if (typeof window === 'undefined') return false;
+  
+  const elem = document.createElement('canvas');
+  if (elem.getContext && elem.getContext('2d')) {
+    return elem.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+  }
+  return false;
+};
+
+// Generate blur placeholder
+export const generateBlurPlaceholder = async (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Tiny size for blur placeholder
+        canvas.width = 20;
+        canvas.height = (img.height * 20) / img.width;
+        
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // Convert to base64 and resolve
+        resolve(canvas.toDataURL('image/jpeg', 0.1));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 // Compression options for different sizes
 const compressionOptions = {
   small: {
@@ -28,6 +64,23 @@ const compressionOptions = {
     maxWidthOrHeight: 100,
     useWebWorker: true
   }
+};
+
+// Generate srcset string for responsive images
+export const generateSrcSet = (imageUrls) => {
+  return Object.entries(imageUrls)
+    .map(([size, url]) => {
+      const width = compressionOptions[size].maxWidthOrHeight;
+      return `${url} ${width}w`;
+    })
+    .join(', ');
+};
+
+// Generate sizes attribute for responsive images
+export const generateSizes = (defaultSize = 'medium') => {
+  return '(max-width: 400px) 100vw, ' +
+         '(max-width: 800px) 800px, ' +
+         `${compressionOptions[defaultSize].maxWidthOrHeight}px`;
 };
 
 // Generate a cache key for an image
@@ -68,11 +121,15 @@ export const generateImageSizes = async (file) => {
       sizes.map(size => compressImage(file, size))
     );
     
+    // Generate blur placeholder
+    const blurPlaceholder = await generateBlurPlaceholder(file);
+    
     return {
       thumbnail: compressedImages[0],
       small: compressedImages[1],
       medium: compressedImages[2],
-      large: compressedImages[3]
+      large: compressedImages[3],
+      blurPlaceholder
     };
   } catch (error) {
     console.error('Error generating image sizes:', error);
@@ -103,4 +160,19 @@ export const getProfileImageUrl = (profilePicture, username) => {
     return `https://ui-avatars.com/api/?name=${username}&background=random`;
   }
   return profilePicture;
+};
+
+// Create optimized image component props
+export const createImageProps = (imageUrls, alt, defaultSize = 'medium') => {
+  return {
+    src: imageUrls[defaultSize],
+    srcSet: generateSrcSet(imageUrls),
+    sizes: generateSizes(defaultSize),
+    loading: 'lazy',
+    alt,
+    style: { backgroundColor: '#f0f0f0' }, // Placeholder background
+    onError: (e) => {
+      e.target.style.backgroundColor = '#e0e0e0';
+    }
+  };
 };

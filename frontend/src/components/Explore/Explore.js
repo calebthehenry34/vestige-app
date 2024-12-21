@@ -3,12 +3,22 @@ import { Link } from 'react-router-dom';
 import { ChatRegular, HeartRegular } from '@fluentui/react-icons';
 import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
+import { createImageProps, checkWebPSupport } from '../../utils/imageUtils';
 
 const Explore = () => {
   const { theme } = useContext(ThemeContext);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [supportsWebP, setSupportsWebP] = useState(false);
+
+  useEffect(() => {
+    const checkWebP = async () => {
+      const isSupported = await checkWebPSupport();
+      setSupportsWebP(isSupported);
+    };
+    checkWebP();
+  }, []);
 
   const fetchExplorePosts = useCallback(async () => {
     try {
@@ -41,6 +51,19 @@ const Explore = () => {
   useEffect(() => {
     fetchExplorePosts();
   }, [fetchExplorePosts]);
+
+  const getImageUrls = (post) => {
+    const baseUrl = post.media.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`;
+    const ext = supportsWebP ? 'webp' : 'jpg';
+    
+    // Assuming the backend provides different sizes with these suffixes
+    return {
+      thumbnail: baseUrl.replace(`.${ext}`, `_thumbnail.${ext}`),
+      small: baseUrl.replace(`.${ext}`, `_small.${ext}`),
+      medium: baseUrl.replace(`.${ext}`, `_medium.${ext}`),
+      large: baseUrl,
+    };
+  };
 
   if (loading) {
     return (
@@ -116,20 +139,43 @@ const Explore = () => {
                       ? post.media 
                       : API_URL + '/uploads/' + post.media}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 </div>
               ) : (
-                <img
-                  src={post.media.startsWith('http') 
-                    ? post.media 
-                    : API_URL + '/uploads/' + post.media}
-                  alt=""
-                  className="w-full h-full object-cover rounded-lg"
-                  onError={(e) => {
-                    console.log('Image load error:', post.media);
-                    e.target.src = `https://ui-avatars.com/api/?name=Post&size=400`;
-                  }}
-                />
+                <div className="relative w-full h-full">
+                  {/* Blur Placeholder */}
+                  {post.blurPlaceholder && (
+                    <div
+                      className="absolute inset-0 bg-cover bg-center blur-lg"
+                      style={{
+                        backgroundImage: `url(${post.blurPlaceholder})`,
+                        opacity: 1,
+                        transition: 'opacity 0.3s ease-in-out'
+                      }}
+                    />
+                  )}
+                  
+                  {/* Main Image */}
+                  <img
+                    {...createImageProps(
+                      getImageUrls(post),
+                      `Post by ${post.author?.username || 'unknown'}`,
+                      'medium'
+                    )}
+                    className="w-full h-full object-cover rounded-lg relative z-10"
+                    onLoad={(e) => {
+                      // Fade out blur placeholder when main image loads
+                      if (e.target.previousSibling) {
+                        e.target.previousSibling.style.opacity = '0';
+                      }
+                    }}
+                    onError={(e) => {
+                      console.log('Image load error:', post.media);
+                      e.target.src = `https://ui-avatars.com/api/?name=Post&size=400`;
+                    }}
+                  />
+                </div>
               )}
               
               {/* Hover Overlay */}

@@ -19,7 +19,11 @@ import PostCreator from '../Post/PostCreator';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config';
-import { getProfileImageUrl } from '../../utils/imageUtils';
+import { 
+  getProfileImageUrl, 
+  createImageProps, 
+  checkWebPSupport 
+} from '../../utils/imageUtils';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -32,7 +36,29 @@ const Home = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharePostId, setSharePostId] = useState(null);
   const [showPostCreator, setShowPostCreator] = useState(false);
+  const [supportsWebP, setSupportsWebP] = useState(false);
   const scrollRestoredRef = useRef(false);
+
+  useEffect(() => {
+    const checkWebP = async () => {
+      const isSupported = await checkWebPSupport();
+      setSupportsWebP(isSupported);
+    };
+    checkWebP();
+  }, []);
+
+  const getImageUrls = (mediaUrl) => {
+    if (!mediaUrl) return null;
+    const baseUrl = mediaUrl.startsWith('http') ? mediaUrl : `${API_URL}/uploads/${mediaUrl}`;
+    const ext = supportsWebP ? 'webp' : 'jpg';
+    
+    return {
+      thumbnail: baseUrl.replace(`.${ext}`, `_thumbnail.${ext}`),
+      small: baseUrl.replace(`.${ext}`, `_small.${ext}`),
+      medium: baseUrl.replace(`.${ext}`, `_medium.${ext}`),
+      large: baseUrl
+    };
+  };
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -319,8 +345,11 @@ const Home = () => {
                     <div className="flex items-center">
                       {post.user ? (
                         <img
-                          src={getProfileImageUrl(post.user.profilePicture, post.user.username)}
-                          alt={post.user.username}
+                          {...createImageProps(
+                            { small: getProfileImageUrl(post.user.profilePicture, post.user.username) },
+                            post.user.username,
+                            'small'
+                          )}
                           className="h-6 w-6 rounded-md object-cover"
                         />
                       ) : (
@@ -342,6 +371,7 @@ const Home = () => {
                     src={post.media}
                     controls
                     className="w-full h-auto"
+                    loading="lazy"
                     onError={(e) => {
                       console.error('Video load error:', post.media);
                       e.target.style.display = 'none';
@@ -349,10 +379,32 @@ const Home = () => {
                   />
                 ) : (
                   <div className="relative">
+                    {/* Blur Placeholder */}
+                    {post.blurPlaceholder && (
+                      <div
+                        className="absolute inset-0 bg-cover bg-center blur-lg"
+                        style={{
+                          backgroundImage: `url(${post.blurPlaceholder})`,
+                          opacity: 1,
+                          transition: 'opacity 0.3s ease-in-out'
+                        }}
+                      />
+                    )}
+                    
+                    {/* Main Image */}
                     <img
-                      src={post.media}
-                      alt="Post content"
-                      className="w-full h-auto"
+                      {...createImageProps(
+                        getImageUrls(post.media),
+                        'Post content',
+                        'medium'
+                      )}
+                      className="w-full h-auto relative z-10"
+                      onLoad={(e) => {
+                        // Fade out blur placeholder when main image loads
+                        if (e.target.previousSibling) {
+                          e.target.previousSibling.style.opacity = '0';
+                        }
+                      }}
                       onError={(e) => {
                         console.error('Image load error:', post.media);
                         e.target.src = 'https://via.placeholder.com/400';

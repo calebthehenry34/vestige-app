@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Cropper from 'react-easy-crop';
 import {
@@ -16,7 +16,13 @@ import axios from 'axios';
 import { API_URL } from '../../config';
 import styles from '../Onboarding/OnboardingFlow.module.css';
 import LocationAutocomplete from '../Common/LocationAutocomplete';
-import { generateImageSizes, clearOldCache } from '../../utils/imageUtils';
+import { 
+  generateImageSizes, 
+  clearOldCache, 
+  checkWebPSupport,
+  generateBlurPlaceholder,
+  createImageProps 
+} from '../../utils/imageUtils';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
@@ -87,16 +93,27 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     crop: { x: 0, y: 0 },
     zoom: 1,
     croppedAreaPixels: null,
-    originalFile: null
+    originalFile: null,
+    blurPlaceholder: null,
+    supportsWebP: false,
+    processedImages: null
   };
 
   const [state, setState] = useState(initialState);
+
+  useEffect(() => {
+    const checkWebP = async () => {
+      const webpSupported = await checkWebPSupport();
+      setState(prev => ({ ...prev, supportsWebP: webpSupported }));
+    };
+    checkWebP();
+  }, []);
 
   const resetState = () => {
     setState(initialState);
   };
 
-  const onDrop = useCallback((acceptedFiles, rejectedFiles) => {
+  const onDrop = useCallback(async (acceptedFiles, rejectedFiles) => {
     setState(prev => ({ ...prev, error: null }));
     
     if (rejectedFiles.length > 0) {
@@ -111,23 +128,38 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
     const file = acceptedFiles[0];
     if (file) {
-      setState(prev => ({ ...prev, originalFile: file }));
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setState(prev => ({
-          ...prev,
-          media: reader.result,
-          slideDirection: styles.slideLeft
+      try {
+        // Generate blur placeholder immediately
+        const blurPlaceholder = await generateBlurPlaceholder(file);
+        setState(prev => ({ 
+          ...prev, 
+          originalFile: file,
+          blurPlaceholder
         }));
-        setTimeout(() => {
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
           setState(prev => ({
             ...prev,
-            step: 'crop',
-            slideDirection: styles.slideNext
+            media: reader.result,
+            slideDirection: styles.slideLeft
           }));
-        }, 300);
-      };
-      reader.readAsDataURL(file);
+          setTimeout(() => {
+            setState(prev => ({
+              ...prev,
+              step: 'crop',
+              slideDirection: styles.slideNext
+            }));
+          }, 300);
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error processing image:', error);
+        setState(prev => ({
+          ...prev,
+          error: 'Failed to process image. Please try again.'
+        }));
+      }
     }
   }, []);
 
@@ -154,10 +186,14 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
       const croppedFile = await getCroppedImg(state.media, state.croppedAreaPixels);
       const croppedUrl = URL.createObjectURL(croppedFile);
       
+      // Generate new blur placeholder for cropped image
+      const blurPlaceholder = await generateBlurPlaceholder(croppedFile);
+      
       setState(prev => ({
         ...prev,
         croppedMedia: croppedUrl,
         originalFile: croppedFile,
+        blurPlaceholder,
         slideDirection: styles.slideLeft
       }));
 
@@ -218,7 +254,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
           ctx.drawImage(img, 0, 0);
           
           canvas.toBlob(async (blob) => {
-            const finalFile = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+            const finalFile = new File([blob], 'image.jpg', { type: state.supportsWebP ? 'image/webp' : 'image/jpeg' });
             
             try {
               // Generate and compress different sizes
@@ -227,7 +263,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
             } catch (error) {
               reject(error);
             }
-          }, 'image/jpeg', 0.85);
+          }, state.supportsWebP ? 'image/webp' : 'image/jpeg', 0.85);
         };
         
         img.onerror = reject;
@@ -243,6 +279,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
       formData.append('media_small', processedImage.small);
       formData.append('media_medium', processedImage.medium);
       formData.append('media_thumbnail', processedImage.thumbnail);
+      formData.append('blur_placeholder', processedImage.blurPlaceholder);
       formData.append('caption', state.caption);
       if (state.location) {
         formData.append('location', state.location);
@@ -416,14 +453,32 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
       <div className={`${styles.card} overflow-auto`}>
         <div className="h-full flex flex-col">
-          {/* Preview Image */}
+          {/* Preview Image with Blur Placeholder */}
           <div className="relative w-full" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+            {state.blurPlaceholder && (
+              <div
+                className="absolute inset-0 bg-cover bg-center blur-lg"
+                style={{
+                  backgroundImage: `url(${state.blurPlaceholder})`,
+                  opacity: state.editedMedia ? 0 : 1,
+                  transition: 'opacity 0.3s ease-in-out'
+                }}
+              />
+            )}
             <img
-              src={state.editedMedia.url}
-              alt="Preview"
-              className="w-full h-full object-contain"
+              {...createImageProps(
+                { medium: state.editedMedia.url },
+                'Preview',
+                'medium'
+              )}
+              className="w-full h-full object-contain relative z-10"
               style={{ 
-                filter: `${state.editedMedia.filter} ${state.editedMedia.adjustments}`
+                filter: `${state.editedMedia.filter} ${state.editedMedia.adjustments}`,
+                opacity: state.editedMedia ? 1 : 0,
+                transition: 'opacity 0.3s ease-in-out'
+              }}
+              onLoad={(e) => {
+                e.target.style.opacity = '1';
               }}
             />
           </div>
