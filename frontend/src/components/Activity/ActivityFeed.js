@@ -202,7 +202,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
           <img
             src={post.media}
             alt="Post"
-            className="w-12 h-12 object-cover rounded"
+            className="w-12 h-12 object-cover rounded-md"
           />
         )}
       </div>
@@ -220,12 +220,12 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   }
 
   return (
-    <div className={`max-w-2xl mx-auto px-4 font-headlines ${
+    <div className={`h-[50vh] max-w-2xl mx-auto p-10 font-headlines ${
       theme === 'dark-theme' ? 'bg-black' : 'bg-white'
     }`}>
       {/* Header with Mark All as Read */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className={`text-xl font-semibold ${
+        <h2 className={`text-lg  ${
           theme === 'dark-theme' ? 'text-white' : 'text-black'
         }`}>
           Notifications

@@ -48,7 +48,16 @@ const io = new SocketServer(httpServer, {
       'http://localhost:3000',
       'http://localhost:3001'
     ],
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
+  },
+  allowEIO3: true, // Allow Engine.IO version 3 clients
+  cookie: {
+    name: "io",
+    httpOnly: true,
+    sameSite: "none",
+    secure: true
   }
 });
 
