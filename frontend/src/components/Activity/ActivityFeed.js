@@ -9,7 +9,6 @@ import { DismissRegular } from '@fluentui/react-icons';
 const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   const navigate = useNavigate();
   const { theme } = useContext(ThemeContext);
-  const [activeTab, setActiveTab] = useState('all');
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -238,7 +237,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end justify-center">
+    <div className="fixed inset-0 z-[200] flex items-start justify-center pt-20">
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={handleClose}
@@ -248,13 +247,10 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
           theme === 'dark-theme' 
             ? 'bg-black border-zinc-800 text-white' 
             : 'bg-white border-gray-200 text-black'
-        } w-[95vw] max-w-md rounded-t-2xl transform transition-all duration-300 ease-out shadow-xl relative ${
-          isAnimating ? 'translate-y-0' : 'translate-y-full'
+        } w-[95vw] max-w-md rounded-2xl transform transition-all duration-300 ease-out shadow-xl relative ${
+          isAnimating ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
         }`}
       >
-        {/* Handle bar for bottom sheet */}
-        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-12 h-1.5 bg-gray-300 rounded-full mx-auto" />
-
         <div className={`flex items-center justify-between px-6 py-4 border-b ${
           theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
         }`}>
@@ -271,40 +267,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
           </button>
         </div>
 
-        <div className={`flex border-b ${
-          theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
-        }`}>
-          <button
-            className={`flex-1 px-6 py-3 font-semibold ${
-              activeTab === 'all' 
-                ? theme === 'dark-theme'
-                  ? 'border-b-2 border-white text-white'
-                  : 'border-b-2 border-black text-black'
-                : theme === 'dark-theme'
-                  ? 'text-gray-500'
-                  : 'text-gray-500'
-            }`}
-            onClick={() => setActiveTab('all')}
-          >
-            All
-          </button>
-          <button
-            className={`flex-1 px-6 py-3 font-semibold ${
-              activeTab === 'follows'
-                ? theme === 'dark-theme'
-                  ? 'border-b-2 border-white text-white'
-                  : 'border-b-2 border-black text-black'
-                : theme === 'dark-theme'
-                  ? 'text-gray-500'
-                  : 'text-gray-500'
-            }`}
-            onClick={() => setActiveTab('follows')}
-          >
-            Follows
-          </button>
-        </div>
-
-        <div className="max-h-[60vh] overflow-y-auto">
+        <div className="max-h-[50vh] overflow-y-auto">
           {loading ? (
             <div className="flex justify-center items-center p-6">
               <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
@@ -338,13 +301,11 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
               <div className={`divide-y ${
                 theme === 'dark-theme' ? 'divide-zinc-800' : 'divide-gray-200'
               }`}>
-                {notifications
-                  .filter(notification => activeTab === 'all' || notification.type === 'follow')
-                  .map(notification => (
-                    <div key={notification._id}>
-                      {renderActivity(notification)}
-                    </div>
-                  ))}
+                {notifications.map(notification => (
+                  <div key={notification._id}>
+                    {renderActivity(notification)}
+                  </div>
+                ))}
               </div>
             </>
           )}

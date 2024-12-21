@@ -5,7 +5,7 @@ import FollowButton from '../Common/FollowButton';
 import { Link } from 'react-router-dom';
 import { DismissRegular } from '@fluentui/react-icons';
 
-const FollowersModal = ({ isOpen, onClose, userId, type, theme }) => {
+const FollowersModal = ({ isOpen, onClose, userId, type, theme, onFollowChange }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -58,7 +58,7 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme }) => {
     setTimeout(onClose, 300); // Wait for animation to complete
   };
 
-  const handleFollowChange = async () => {
+  const handleFollowChangeLocal = async (newFollowState, userId) => {
     try {
       setLoading(true);
       const response = await fetch(
@@ -76,6 +76,11 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme }) => {
 
       const data = await response.json();
       setUsers(data);
+      
+      // Propagate the change to parent component
+      if (onFollowChange) {
+        onFollowChange(newFollowState);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -86,7 +91,7 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end justify-center">
+    <div className="fixed inset-0 z-[200] flex items-start justify-center pt-20">
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={handleClose}
@@ -96,13 +101,10 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme }) => {
           theme === 'dark-theme' 
             ? 'bg-black border-zinc-800 text-white' 
             : 'bg-white border-gray-200 text-black'
-        } w-[95vw] max-w-md rounded-t-2xl transform transition-all duration-300 ease-out shadow-xl relative ${
-          isAnimating ? 'translate-y-0' : 'translate-y-full'
+        } w-[95vw] max-w-md rounded-2xl transform transition-all duration-300 ease-out shadow-xl relative ${
+          isAnimating ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
         }`}
       >
-        {/* Handle bar for bottom sheet */}
-        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-12 h-1.5 bg-gray-300 rounded-full mx-auto" />
-
         <div className={`flex items-center justify-between px-6 py-4 border-b ${
           theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
         }`}>
@@ -121,7 +123,7 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme }) => {
           </button>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto">
+        <div className="max-h-[50vh] overflow-y-auto">
           {loading ? (
             <div className="flex justify-center items-center p-6">
               <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
@@ -176,7 +178,7 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme }) => {
                   <FollowButton
                     userId={user._id}
                     initialIsFollowing={user.isFollowing}
-                    onFollowChange={handleFollowChange}
+                    onFollowChange={(newFollowState) => handleFollowChangeLocal(newFollowState, user._id)}
                     theme={theme}
                   />
                 </div>

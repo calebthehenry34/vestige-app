@@ -114,7 +114,12 @@ const Profile = () => {
 
   const handleFollowChange = async (newFollowState) => {
     setIsFollowing(newFollowState);
-    // Refetch profile data to get updated counts
+    // Update local state immediately for better UX
+    setProfileData(prev => ({
+      ...prev,
+      followersCount: prev.followersCount + (newFollowState ? 1 : -1)
+    }));
+    // Refetch profile data to ensure accuracy
     await fetchProfileData();
   };
 
@@ -309,6 +314,7 @@ const Profile = () => {
         userId={profileData._id}
         type="followers"
         theme={theme}
+        onFollowChange={handleFollowChange}
       />
       <FollowersModal
         isOpen={followingModalOpen}
@@ -316,6 +322,7 @@ const Profile = () => {
         userId={profileData._id}
         type="following"
         theme={theme}
+        onFollowChange={handleFollowChange}
       />
     </div>
   );

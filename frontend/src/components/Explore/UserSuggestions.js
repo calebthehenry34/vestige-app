@@ -42,16 +42,22 @@ const UserSuggestions = () => {
 
   const handleFollow = async (userId) => {
     try {
-      const response = await fetch(`${API_URL}/api/users/${userId}/follow`, {
-        method: 'POST',
+      const method = users.find(u => u._id === userId)?.isFollowing ? 'DELETE' : 'POST';
+      const response = await fetch(`${API_URL}/api/users/follow/${userId}`, {
+        method,
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      if (!response.ok) {
-        throw new Error('Failed to follow user');
-      }
       
+      if (!response.ok) {
+        throw new Error('Failed to update follow status');
+      }
+
+      // Wait for the response to complete
+      await response.json();
+      
+      // Update local state
       setUsers(prevUsers => 
         prevUsers.map(user => 
           user._id === userId 
@@ -60,7 +66,7 @@ const UserSuggestions = () => {
         )
       );
     } catch (error) {
-      console.error('Error following user:', error);
+      console.error('Error updating follow status:', error);
     }
   };
 
@@ -197,7 +203,7 @@ const UserSuggestions = () => {
                   theme === 'dark-theme' ? 'bg-gray-800' : 'bg-gray-50'
                 }`}
               >
-                <Link to={`/profile/${user._id}`} className="block relative">
+                <Link to={`/profile/${user.username}`} className="block relative">
                   <div className="aspect-square relative">
                     <img 
                       src={getProfileImageUrl(user.profilePicture, user.username)}
