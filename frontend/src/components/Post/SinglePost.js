@@ -9,7 +9,10 @@ import {
   BookmarkRegular, 
   BookmarkFilled, 
   DismissRegular,
-  PersonRegular 
+  PersonRegular,
+  LocationRegular,
+  TagRegular,
+  CalendarRegular
 } from '@fluentui/react-icons';
 import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
@@ -123,8 +126,19 @@ const SinglePost = () => {
     }
   };
 
+  const formatDate = (dateString) => {
+    const options = { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
   const renderText = (text) => {
-    if (!text) return ''; // Add null check for text
+    if (!text) return ''; 
     
     return text.split(' ').map((word, index) => {
       if (word.startsWith('#')) {
@@ -184,20 +198,25 @@ const SinglePost = () => {
           theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
         }`}>
           <div className="flex items-center">
-            {post.user ? (
-              <img
-                src={getProfileImageUrl(post.user.profilePicture, post.user.username)}
-                alt={post.user.username}
-                className="h-8 w-8 rounded-full object-cover"
-              />
-            ) : (
-              <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                <PersonRegular className="w-5 h-5 text-gray-400" />
-              </div>
-            )}
-            <span className={`ml-3 font-medium ${
-              theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
-            }`}>{post.user?.username || 'Unknown User'}</span>
+            <button 
+              onClick={() => navigate(`/profile/${post.user?.username}`)}
+              className="flex items-center hover:opacity-80"
+            >
+              {post.user ? (
+                <img
+                  src={getProfileImageUrl(post.user.profilePicture, post.user.username)}
+                  alt={post.user.username}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                  <PersonRegular className="w-5 h-5 text-gray-400" />
+                </div>
+              )}
+              <span className={`ml-3 font-medium ${
+                theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
+              }`}>{post.user?.username || 'Unknown User'}</span>
+            </button>
           </div>
           <button 
             onClick={() => navigate(-1)} 
@@ -264,12 +283,13 @@ const SinglePost = () => {
             )}
           </div>
 
-          {/* Comments & Actions Section */}
+          {/* Info & Comments Section */}
           <div className="w-full md:w-5/12 flex flex-col min-h-0">
-            {/* Actions Bar */}
+            {/* Post Info */}
             <div className={`shrink-0 border-b ${
               theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
             }`}>
+              {/* Actions Bar */}
               <div className="p-4">
                 <div className="flex justify-between mb-1">
                   <div className="flex space-x-4">
@@ -302,16 +322,65 @@ const SinglePost = () => {
                   {post.likes?.length || 0} Likes
                 </div>
               </div>
-            </div>
 
-            {/* Caption */}
-            <div className={`shrink-0 p-4 pt-0 border-b ${
-              theme === 'dark-theme' ? 'border-gray-800 text-white' : 'border-gray-200'
-            }`}>
-              <p>
-                <span className="font-medium mr-2">{post.user?.username || 'Unknown User'}</span>
-                {post.caption ? renderText(post.caption) : ''}
-              </p>
+              {/* Post Details */}
+              <div className={`px-4 pb-4 space-y-2 ${
+                theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
+              }`}>
+                {/* Caption */}
+                <p>
+                  <span className="font-medium mr-2">{post.user?.username || 'Unknown User'}</span>
+                  {post.caption ? renderText(post.caption) : ''}
+                </p>
+
+                {/* Location */}
+                {post.location && (
+                  <div className="flex items-center text-sm text-gray-500">
+                    <LocationRegular className="w-4 h-4 mr-1" />
+                    <span>{post.location}</span>
+                  </div>
+                )}
+
+                {/* Tagged Users */}
+                {post.taggedUsers?.length > 0 && (
+                  <div className="flex items-center text-sm text-gray-500">
+                    <TagRegular className="w-4 h-4 mr-1" />
+                    <div className="flex flex-wrap gap-1">
+                      {post.taggedUsers.map((taggedUser, index) => (
+                        <button
+                          key={taggedUser._id}
+                          onClick={() => navigate(`/profile/${taggedUser.username}`)}
+                          className="hover:underline"
+                        >
+                          {taggedUser.username}
+                          {index < post.taggedUsers.length - 1 ? ',' : ''}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Hashtags */}
+                {post.hashtags?.length > 0 && (
+                  <div className="flex flex-wrap gap-1 text-blue-500">
+                    {post.hashtags.map(hashtag => (
+                      <button
+                        key={hashtag}
+                        onClick={() => navigate(`/explore/hashtag/${hashtag}`)}
+                        className="hover:underline"
+                      >
+                        #{hashtag}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Creation Date */}
+                <div className="flex items-center text-sm text-gray-500">
+                  <CalendarRegular className="w-4 h-4 mr-1" />
+                  <span>{formatDate(post.createdAt)}</span>
+                </div>
+              </div>
             </div>
 
             {/* Comments */}

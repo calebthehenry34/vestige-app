@@ -3,25 +3,31 @@ import { useDropzone } from 'react-dropzone';
 import {
   ImageRegular,
   ArrowLeftFilled,
+  ArrowRightFilled,
   ErrorCircleRegular,
   CheckmarkCircleFilled,
   NumberSymbolFilled,
   PersonTagRegular,
+  LocationRegular,
 } from '@fluentui/react-icons';
 import ImageEditor from './ImageEditor';
+import ProfileImageEditor from '../Onboarding/ProfileImageEditor';
 import axios from 'axios';
 import { API_URL } from '../../config';
 import styles from '../Onboarding/OnboardingFlow.module.css';
+import LocationAutocomplete from '../Common/LocationAutocomplete';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
   const initialState = {
-    step: 'type',
+    step: 'upload',
     slideDirection: '',
     media: null,
+    croppedMedia: null,
     editedMedia: null,
     caption: '',
+    location: '',
     uploadProgress: 0,
     error: null,
     loading: false,
@@ -59,7 +65,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
         setTimeout(() => {
           setState(prev => ({
             ...prev,
-            step: 'editor',
+            step: 'crop',
             slideDirection: styles.slideNext
           }));
         }, 300);
@@ -78,11 +84,26 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     multiple: false
   });
 
+  const handleCropComplete = async ({ croppedImage }) => {
+    setState(prev => ({
+      ...prev,
+      croppedMedia: croppedImage,
+      slideDirection: styles.slideLeft
+    }));
+    setTimeout(() => {
+      setState(prev => ({
+        ...prev,
+        step: 'filters',
+        slideDirection: styles.slideNext
+      }));
+    }, 300);
+  };
+
   const handleEditComplete = async ({ filter, adjustments }) => {
     setState(prev => ({
       ...prev,
       editedMedia: {
-        url: prev.media,
+        url: prev.croppedMedia,
         filter: filter || '',
         adjustments: adjustments ? 
           `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%)` 
@@ -93,7 +114,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     setTimeout(() => {
       setState(prev => ({
         ...prev,
-        step: 'details',
+        step: 'caption',
         slideDirection: styles.slideNext
       }));
     }, 300);
@@ -129,6 +150,9 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
       const formData = new FormData();
       formData.append('media', processedImage);
       formData.append('caption', state.caption);
+      if (state.location) {
+        formData.append('location', state.location);
+      }
 
       const token = localStorage.getItem('token');
       const result = await axios.post(`${API_URL}/api/posts`, formData, {
@@ -145,7 +169,6 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
       setState(prev => ({ ...prev, success: true, loading: false }));
       
-      // Show success message for 2 seconds before closing
       setTimeout(() => {
         resetState();
         onClose();
@@ -165,52 +188,71 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     }
   };
 
+  const handleNext = () => {
+    if (state.step === 'filters') {
+      handleEditComplete({ filter: '', adjustments: null });
+    }
+  };
+
   const handleBack = () => {
+    setState(prev => ({
+      ...prev,
+      slideDirection: styles.slideRight
+    }));
+    setTimeout(() => {
+      setState(prev => {
+        let newStep;
+        switch (prev.step) {
+          case 'crop':
+            newStep = 'upload';
+            break;
+          case 'filters':
+            newStep = 'crop';
+            break;
+          case 'caption':
+            newStep = 'filters';
+            break;
+          default:
+            return prev;
+        }
+        return {
+          ...prev,
+          step: newStep,
+          slideDirection: styles.slideNext
+        };
+      });
+    }, 300);
+  };
+
+  const getStepLabel = () => {
     switch (state.step) {
-      case 'editor':
-        setState(prev => ({
-          ...prev,
-          slideDirection: styles.slideRight
-        }));
-        setTimeout(() => {
-          setState(prev => ({
-            ...prev,
-            step: 'type',
-            slideDirection: styles.slideNext
-          }));
-        }, 300);
-        break;
-      case 'details':
-        setState(prev => ({
-          ...prev,
-          slideDirection: styles.slideRight
-        }));
-        setTimeout(() => {
-          setState(prev => ({
-            ...prev,
-            step: 'editor',
-            slideDirection: styles.slideNext
-          }));
-        }, 300);
-        break;
-      default:
-        resetState();
-        onClose();
+      case 'upload': return 'New Post';
+      case 'crop': return 'Crop Photo';
+      case 'filters': return 'Edit Photo';
+      case 'caption': return 'Share Post';
+      default: return '';
     }
   };
 
   const renderNavigation = () => (
     <div className="p-6 border-b border-[#333333] grid grid-cols-3 items-center">
       <div className="flex items-center">
-        <button onClick={handleBack} className="text-white hover:text-gray-300 transition-colors">
-          <ArrowLeftFilled className="w-6 h-6" />
-        </button>
+        {state.step !== 'upload' && (
+          <button onClick={handleBack} className="text-white hover:text-gray-300 transition-colors">
+            <ArrowLeftFilled className="w-6 h-6" />
+          </button>
+        )}
       </div>
       <div className="flex text-xs justify-center text-gray-200">
-        {state.step === 'type' ? 'New Post' : state.step === 'editor' ? 'Edit Photo' : 'Share Post'}
+        {getStepLabel()}
       </div>
       <div className="flex justify-end">
-        {state.step === 'details' && (
+        {state.step === 'filters' && (
+          <button onClick={handleNext} className="text-white hover:text-gray-300 transition-colors">
+            <ArrowRightFilled className="w-6 h-6" />
+          </button>
+        )}
+        {state.step === 'caption' && (
           <button
             onClick={handleShare}
             disabled={state.loading || state.uploadProgress > 0}
@@ -223,10 +265,10 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     </div>
   );
 
-  const renderTypeSelection = () => (
+  const renderUpload = () => (
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-auto p-4`}>
-        <div {...getRootProps()} className="p-8 mb-4 rounded-lg border-2 border-dashed cursor-pointer transition-all hover:border-[#ae52e3] border-gray-800 bg-[#1a1a1a]">
+      <div className={`${styles.card} overflow-auto p-4 flex flex-col h-full`}>
+        <div {...getRootProps()} className="flex-1 p-8 mb-4 rounded-lg border-2 border-dashed cursor-pointer transition-all hover:border-[#ae52e3] border-gray-800 bg-[#1a1a1a] flex items-center justify-center">
           <input {...getInputProps()} />
           <div className="text-center">
             <ImageRegular className="w-12 h-12 mx-auto mb-4 text-[#ae52e3]" />
@@ -239,7 +281,31 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     </div>
   );
 
-  const renderDetails = () => (
+  const renderCrop = () => (
+    <div className={`${styles.cardContainer} ${state.slideDirection}`}>
+      <div className={`${styles.card} overflow-hidden`}>
+        <ProfileImageEditor
+          image={state.media}
+          onSave={handleCropComplete}
+          aspectRatio={4/5}
+          circular={false}
+        />
+      </div>
+    </div>
+  );
+
+  const renderFilters = () => (
+    <div className={`${styles.cardContainer} ${state.slideDirection}`}>
+      <div className={`${styles.card} overflow-hidden`}>
+        <ImageEditor 
+          image={state.croppedMedia}
+          onSave={handleEditComplete}
+        />
+      </div>
+    </div>
+  );
+
+  const renderCaption = () => (
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
       <div className={`${styles.card} overflow-auto`}>
         <div className="h-full flex flex-col">
@@ -256,17 +322,28 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
           </div>
           
           {/* Caption Section */}
-          <div className="p-4 flex-shrink-0">
+          <div className="p-4 flex-shrink-0 space-y-4">
             <textarea
               placeholder="Write a caption..."
               value={state.caption}
               onChange={(e) => setState(prev => ({ ...prev, caption: e.target.value }))}
               className="w-full p-3 rounded-lg resize-none border bg-[#1a1a1a] border-gray-800 text-white placeholder-gray-500"
-              rows={4}
+              rows={3}
             />
+
+            {/* Location */}
+            <div className="relative">
+              <LocationAutocomplete
+                onSelect={(location) => setState(prev => ({ ...prev, location }))}
+                value={state.location}
+                placeholder="Add location"
+                className="w-full p-3 rounded-lg border bg-[#1a1a1a] border-gray-800 text-white placeholder-gray-500"
+              />
+              <LocationRegular className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            </div>
             
             {/* Tag Helpers */}
-            <div className="mt-4 space-y-2 text-gray-400">
+            <div className="space-y-2 text-gray-400">
               <div className="flex items-center">
                 <NumberSymbolFilled className="w-5 h-5 mr-2" />
                 <span>Use # to add hashtags</span>
@@ -286,18 +363,13 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
   
   return (
     <div className="fixed inset-0 z-[100] bg-black">
-      <div className="h-[100vh] flex flex-col max-h-screen">
+      <div className="h-screen flex flex-col">
         {renderNavigation()}
         <div className="flex-1 relative overflow-hidden">
-          {state.step === 'type' && renderTypeSelection()}
-          {state.step === 'editor' && state.media && (
-            <ImageEditor 
-              image={state.media} 
-              onSave={handleEditComplete} 
-              onBack={handleBack} 
-            />
-          )}
-          {state.step === 'details' && state.editedMedia && renderDetails()}
+          {state.step === 'upload' && renderUpload()}
+          {state.step === 'crop' && state.media && renderCrop()}
+          {state.step === 'filters' && state.croppedMedia && renderFilters()}
+          {state.step === 'caption' && state.editedMedia && renderCaption()}
         </div>
 
         {/* Loading Overlay */}

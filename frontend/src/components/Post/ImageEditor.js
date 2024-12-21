@@ -24,8 +24,6 @@ const ImageEditor = ({ image, onSave }) => {
     saturation: 100
   });
   const [activeAdjustment, setActiveAdjustment] = useState(null);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
   const filtersContainerRef = useRef(null);
 
   const handleFilterScroll = (direction) => {
@@ -40,27 +38,25 @@ const ImageEditor = ({ image, onSave }) => {
       ...prev,
       [type]: value
     }));
+    // Auto-save adjustments
+    const filter = filters.find(f => f.name === selectedFilter)?.filter || '';
+    onSave({ 
+      filter, 
+      adjustments: {
+        ...adjustments,
+        [type]: value
+      }
+    });
   };
 
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      const filter = filters.find(f => f.name === selectedFilter)?.filter || '';
-      await onSave({ 
-        filter, 
-        adjustments: {
-          brightness: adjustments.brightness,
-          contrast: adjustments.contrast,
-          saturation: adjustments.saturation
-        }
-      });
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2000);
-    } catch (error) {
-      console.error('Error saving image:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleFilterSelect = (filterName) => {
+    setSelectedFilter(filterName);
+    // Auto-save filter
+    const filter = filters.find(f => f.name === filterName)?.filter || '';
+    onSave({ 
+      filter, 
+      adjustments
+    });
   };
 
   return (
@@ -82,115 +78,96 @@ const ImageEditor = ({ image, onSave }) => {
         />
       </div>
 
-      {/* Filters Section */}
-      <div className="bg-[#1a1a1a] p-4">
-        <h3 className="text-white text-sm mb-2">Filters</h3>
-        <div className="relative">
-          <button
-            onClick={() => handleFilterScroll('left')}
-            className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 p-2 rounded-full text-white"
-          >
-            ←
-          </button>
-          <div
-            ref={filtersContainerRef}
-            className="flex overflow-x-auto hide-scrollbar space-x-4 relative"
-          >
-            {filters.map(filter => (
-              <div
-                key={filter.name}
-                onClick={() => setSelectedFilter(filter.name)}
-                className={`flex-shrink-0 cursor-pointer ${
-                  selectedFilter === filter.name ? 'border-2 border-[#ae52e3]' : ''
+      {/* Bottom Controls */}
+      <div className="bg-[#1a1a1a] border-t border-[#333333]">
+        {/* Filters Section */}
+        <div className="p-4 pb-2">
+          <div className="relative">
+            <button
+              onClick={() => handleFilterScroll('left')}
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 p-2 rounded-full text-white"
+            >
+              ←
+            </button>
+            <div
+              ref={filtersContainerRef}
+              className="flex overflow-x-auto hide-scrollbar space-x-4 relative px-8"
+            >
+              {filters.map(filter => (
+                <div
+                  key={filter.name}
+                  onClick={() => handleFilterSelect(filter.name)}
+                  className={`flex-shrink-0 cursor-pointer ${
+                    selectedFilter === filter.name ? 'border-2 border-[#ae52e3]' : ''
+                  }`}
+                >
+                  <div className="w-16 h-16 relative">
+                    <img
+                      src={image}
+                      alt={filter.name}
+                      className="w-full h-full object-cover"
+                      style={{ filter: filter.filter }}
+                    />
+                  </div>
+                  <p className="text-white text-xs text-center mt-1">{filter.name}</p>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => handleFilterScroll('right')}
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 p-2 rounded-full text-white"
+            >
+              →
+            </button>
+          </div>
+        </div>
+
+        {/* Adjustments Section */}
+        <div className="p-4 pt-2">
+          <div className="flex items-center space-x-4">
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setActiveAdjustment(activeAdjustment === 'brightness' ? null : 'brightness')}
+                className={`p-2 rounded-full ${
+                  activeAdjustment === 'brightness' ? 'bg-[#ae52e3]' : 'bg-[#262626]'
                 }`}
               >
-                <div className="w-20 h-20 relative">
-                  <img
-                    src={image}
-                    alt={filter.name}
-                    className="w-full h-full object-cover"
-                    style={{ filter: filter.filter }}
-                  />
-                </div>
-                <p className="text-white text-xs text-center mt-1">{filter.name}</p>
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={() => handleFilterScroll('right')}
-            className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-black/50 p-2 rounded-full text-white"
-          >
-            →
-          </button>
-        </div>
-      </div>
-
-      {/* Adjustments Section */}
-      <div className="bg-[#1a1a1a] p-4">
-        <h3 className="text-white text-sm mb-2">Adjustments</h3>
-        <div className="flex space-x-4">
-          <button
-            onClick={() => setActiveAdjustment(activeAdjustment === 'brightness' ? null : 'brightness')}
-            className={`p-2 rounded-full ${
-              activeAdjustment === 'brightness' ? 'bg-[#ae52e3]' : 'bg-[#262626]'
-            }`}
-          >
-            <WeatherSunnyRegular className="w-6 h-6 text-white" />
-          </button>
-          <button
-            onClick={() => setActiveAdjustment(activeAdjustment === 'contrast' ? null : 'contrast')}
-            className={`p-2 rounded-full ${
-              activeAdjustment === 'contrast' ? 'bg-[#ae52e3]' : 'bg-[#262626]'
-            }`}
-          >
-            <CircleRegular className="w-6 h-6 text-white" />
-          </button>
-          <button
-            onClick={() => setActiveAdjustment(activeAdjustment === 'saturation' ? null : 'saturation')}
-            className={`p-2 rounded-full ${
-              activeAdjustment === 'saturation' ? 'bg-[#ae52e3]' : 'bg-[#262626]'
-            }`}
-          >
-            <ColorFillRegular className="w-6 h-6 text-white" />
-          </button>
-        </div>
-
-        {activeAdjustment && (
-          <div className="mt-4">
-            <input
-              type="range"
-              min="0"
-              max="200"
-              value={adjustments[activeAdjustment]}
-              onChange={(e) => handleAdjustmentChange(activeAdjustment, parseInt(e.target.value))}
-              className="w-full"
-            />
-            <div className="flex justify-between text-white text-xs mt-1">
-              <span>0%</span>
-              <span>{adjustments[activeAdjustment]}%</span>
-              <span>200%</span>
+                <WeatherSunnyRegular className="w-5 h-5 text-white" />
+              </button>
+              <button
+                onClick={() => setActiveAdjustment(activeAdjustment === 'contrast' ? null : 'contrast')}
+                className={`p-2 rounded-full ${
+                  activeAdjustment === 'contrast' ? 'bg-[#ae52e3]' : 'bg-[#262626]'
+                }`}
+              >
+                <CircleRegular className="w-5 h-5 text-white" />
+              </button>
+              <button
+                onClick={() => setActiveAdjustment(activeAdjustment === 'saturation' ? null : 'saturation')}
+                className={`p-2 rounded-full ${
+                  activeAdjustment === 'saturation' ? 'bg-[#ae52e3]' : 'bg-[#262626]'
+                }`}
+              >
+                <ColorFillRegular className="w-5 h-5 text-white" />
+              </button>
             </div>
+
+            {activeAdjustment && (
+              <div className="flex-1 flex items-center space-x-2">
+                <input
+                  type="range"
+                  min="0"
+                  max="200"
+                  value={adjustments[activeAdjustment]}
+                  onChange={(e) => handleAdjustmentChange(activeAdjustment, parseInt(e.target.value))}
+                  className="flex-1"
+                />
+                <span className="text-white text-xs w-8">{adjustments[activeAdjustment]}%</span>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-
-      {/* Save Button */}
-      <div className="bg-[#1a1a1a] p-4">
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          className="w-full bg-[#ae52e3] text-white py-2 rounded-lg disabled:opacity-50"
-        >
-          {loading ? 'Processing...' : 'Next'}
-        </button>
-      </div>
-
-      {/* Success Message */}
-      {showSuccess && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg">
-          Changes saved successfully!
         </div>
-      )}
+      </div>
     </div>
   );
 };
