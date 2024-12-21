@@ -386,11 +386,10 @@ const OnboardingFlow = () => {
         <div className={cardClass}>
           <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
             <div className="h-full flex flex-col">
-              <div className="w-full max-w-4xl mx-auto space-y-6">
+              <div className="w-full max-w-3xl mx-auto space-y-6">
                 <div className="text-center mb-12">
-                  <p className="text-gray-400">Select a subscription plan that works for you</p>
                 </div>
-                <div className="flex flex-col gap-3 mx-auto w-full max-w-md">
+                <div className="grid grid-cols-2 gap-4 mx-auto w-full max-w-3xl">
                   {/* Beta Access Plan */}
                   <div className="bg-[#1a1a1a] rounded-lg p-8 border-2 border-[#ae52e3] hover:border-opacity-80 transition-all relative shadow-lg">
                     <div className="text-center space-y-4">
@@ -400,36 +399,32 @@ const OnboardingFlow = () => {
                       </div>
                       <div className="flex flex-col gap-2">
                         <span className="text-white text-sm">Full Access</span>
-                        <span className="text-white text-sm">Early Benefits</span>
+                        <span className="text-white text-sm">Early Adopter Benefits</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Monthly Plan (Disabled) */}
-                  <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#262626] opacity-40 cursor-not-allowed relative scale-90 origin-top">
+                  <div className="bg-[#1a1a1a] rounded-lg p-8 border border-[#262626] opacity-40 cursor-not-allowed">
                     <div className="text-center space-y-4">
                       <h3 className="text-xl font-headlines text-white">Monthly</h3>
                       <div>
                         <span className="text-2xl font-bold text-white">$7.99</span>
                         <span className="text-gray-400">/mo</span>
                       </div>
-                      <div className="flex flex-col gap-2">
-                      </div>
-                      <p className="text-gray-400 text-xs">Coming Soon</p>
+                      <p className="text-gray-400 text-sm mt-2">Coming Soon</p>
                     </div>
                   </div>
 
                   {/* Yearly Plan (Disabled) */}
-                  <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#262626] opacity-40 cursor-not-allowed relative scale-90 origin-top">
+                  <div className="col-span-2 bg-[#1a1a1a] rounded-lg p-8 border border-[#262626] opacity-40 cursor-not-allowed">
                     <div className="text-center space-y-4">
-                      <h3 className="text-xl font-headlines text-white">Yearly</h3>
+                      <h3 className="text-xl font-headlines text-white">Annual</h3>
                       <div>
                         <span className="text-2xl font-bold text-white">$74.99</span>
                         <span className="text-gray-400">/yr</span>
                       </div>
-                      <div className="flex flex-col gap-2">
-                      </div>
-                      <p className="text-gray-400 text-xs">Coming Soon</p>
+                      <p className="text-gray-400 text-sm mt-2">Coming Soon</p>
                     </div>
                   </div>
                 </div>
