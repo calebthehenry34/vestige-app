@@ -55,9 +55,11 @@ const Explore = () => {
   const getImageUrls = (post) => {
     if (!post?.media) return null;
     
-    const baseUrl = typeof post.media === 'string' && post.media.startsWith('http') 
-      ? post.media 
-      : `${API_URL}/uploads/${post.media}`;
+    const baseUrl = typeof post.media === 'string' 
+      ? (post.media.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`)
+      : null;
+    
+    if (!baseUrl) return null;
     const ext = supportsWebP ? 'webp' : 'jpg';
     
     // If the URL already includes size suffixes, use them
@@ -150,9 +152,9 @@ const Explore = () => {
               {post.mediaType === 'video' ? (
                 <div className="w-full h-full bg-black rounded-lg overflow-hidden">
                   <video
-                    src={typeof post.media === 'string' && post.media.startsWith('http')
-                      ? post.media 
-                      : `${API_URL}/uploads/${post.media}`}
+                    src={typeof post.media === 'string' 
+                      ? (post.media.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`)
+                      : ''}
                     className="w-full h-full object-cover"
                     loading="lazy"
                   />
@@ -182,7 +184,7 @@ const Explore = () => {
                       }
                     }}
                     {...createImageProps(
-                      getImageUrls(post) || {
+                      getImageUrls(post) ?? {
                         thumbnail: `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.username || 'Post')}&size=100`,
                         small: `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.username || 'Post')}&size=400`,
                         medium: `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.username || 'Post')}&size=800`,
@@ -199,11 +201,11 @@ const Explore = () => {
               <div className="opacity-0 group-hover:opacity-100 absolute inset-0 bg-black/50 hidden md:flex items-center justify-center space-x-6 transition-opacity rounded-lg">
                 <div className="flex items-center text-white">
                   <HeartRegular className="w-6 h-6 mr-2" />
-                  <span className="font-semibold">{post.likes?.length || 0}</span>
+                  <span className="font-semibold">{post.likes?.length ?? 0}</span>
                 </div>
                 <div className="flex items-center text-white">
                   <ChatRegular className="w-6 h-6 mr-2" />
-                  <span className="font-semibold">{post.comments?.length || 0}</span>
+                  <span className="font-semibold">{post.comments?.length ?? 0}</span>
                 </div>
               </div>
             </Link>
