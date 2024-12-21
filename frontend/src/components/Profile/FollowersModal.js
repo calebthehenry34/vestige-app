@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 import FollowButton from '../Common/FollowButton';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { DismissRegular } from '@fluentui/react-icons';
 
 const FollowersModal = ({ isOpen, onClose, userId, type, theme, onFollowChange }) => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -55,7 +56,7 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme, onFollowChange }
 
   const handleClose = () => {
     setIsAnimating(false);
-    setTimeout(onClose, 300); // Wait for animation to complete
+    setTimeout(onClose, 300);
   };
 
   const handleFollowChangeLocal = async (newFollowState, userId) => {
@@ -77,7 +78,6 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme, onFollowChange }
       const data = await response.json();
       setUsers(data);
       
-      // Propagate the change to parent component
       if (onFollowChange) {
         onFollowChange(newFollowState);
       }
@@ -86,6 +86,11 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme, onFollowChange }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUserClick = (username) => {
+    navigate(`/profile/${username}`);
+    handleClose();
   };
 
   if (!isOpen) return null;
@@ -126,7 +131,7 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme, onFollowChange }
         <div className="max-h-[500px] overflow-y-auto">
           {loading ? (
             <div className="flex justify-center items-center p-6">
-              <div className={`animate-spin rounded-full h-8 w-8 ${
+              <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
                 theme === 'dark-theme' ? 'border-blue-400' : 'border-blue-500'
               }`}></div>
             </div>
@@ -143,23 +148,24 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme, onFollowChange }
               {users.map(user => (
                 <div 
                   key={user._id} 
-                  className={`flex items-center justify-between px-6 py-4 transition-colors duration-200 ${
+                  className={`flex items-center justify-between px-6 py-4 cursor-pointer transition-colors duration-200 ${
                     theme === 'dark-theme' 
                       ? 'hover:bg-zinc-900' 
                       : 'hover:bg-gray-50'
                   }`}
+                  onClick={() => handleUserClick(user.username)}
                 >
-                  <Link
-                    to={`/profile/${user.username}`}
-                    className="flex items-center space-x-4 flex-1"
-                    onClick={handleClose}
-                  >
+                  <div className="flex items-center space-x-4">
                     <img
                       src={getProfileImageUrl(user.profilePicture, user.username)}
                       alt={user.username}
                       className={`w-12 h-12 rounded-xl object-cover flex-shrink-0 ${
                         theme === 'dark-theme' ? 'bg-zinc-900' : 'bg-gray-100'
                       }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUserClick(user.username);
+                      }}
                       onError={(e) => {
                         e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=random`;
                       }}
@@ -174,8 +180,11 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme, onFollowChange }
                         {user.bio || ''}
                       </div>
                     </div>
-                  </Link>
-                  <div className="flex-shrink-0">
+                  </div>
+                  <div 
+                    className="flex-shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <FollowButton
                       userId={user._id}
                       initialIsFollowing={user.isFollowing}
