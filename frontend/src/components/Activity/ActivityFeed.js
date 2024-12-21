@@ -244,7 +244,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
           theme === 'dark-theme' 
             ? 'bg-black border-zinc-800 text-white' 
             : 'bg-white border-gray-200 text-black'
-        } max-w-md h-[50vh] rounded-2xl transform transition-transform duration-300 ease-out shadow-lg ${
+        } w-[95vw] max-w-md h-[70vh] rounded-2xl transform transition-transform duration-300 ease-out shadow-lg ${
           isAnimating ? 'translate-y-0 scale-100' : 'translate-y-full scale-95'
         }`}
       >
