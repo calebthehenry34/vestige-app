@@ -78,10 +78,6 @@ const UserSuggestions = () => {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
     fetchUsers(page);
   }, [page]);
 

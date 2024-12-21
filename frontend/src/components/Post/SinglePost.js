@@ -673,7 +673,8 @@ const SinglePost = () => {
               theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
             }`}>
               {/* Actions Bar */}
-              <div className="p-4">
+              <div className="p-4 relative">
+                <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-gray-100/50 to-transparent dark:from-gray-800/50 pointer-events-none"></div>
                 <div className="flex justify-between mb-1">
                   <div className="flex space-x-4">
                     <button onClick={handleLike} className={`hover:opacity-70 transition-opacity ${
