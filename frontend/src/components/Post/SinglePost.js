@@ -20,22 +20,29 @@ import PostComments from './PostComments';
 
 // Function to generate different image sizes
 const getResponsiveImageUrl = (mediaPath, size) => {
-  if (!mediaPath) return '';
-  if (typeof mediaPath !== 'string') return '';
+  // Early return if mediaPath is invalid
+  if (!mediaPath || typeof mediaPath !== 'string') return '';
+  
+  // Return original URL for external media
   if (mediaPath.startsWith('http')) return mediaPath;
   
-  // Extract base path and extension
-  const lastDot = mediaPath.lastIndexOf('.');
-  if (lastDot === -1) return ''; // Invalid path without extension
-  
-  const basePath = mediaPath.substring(0, lastDot);
-  const ext = mediaPath.substring(lastDot);
-  
-  // Validate size parameter
-  const validSizes = ['thumbnail', 'small', 'medium', 'large'];
-  if (!validSizes.includes(size)) return '';
-  
-  return `${API_URL}/uploads/${basePath}-${size}${ext}`;
+  try {
+    // Extract base path and extension
+    const lastDot = mediaPath.lastIndexOf('.');
+    if (lastDot === -1) return ''; // Invalid path without extension
+    
+    const basePath = mediaPath.substring(0, lastDot);
+    const ext = mediaPath.substring(lastDot);
+    
+    // Validate size parameter
+    const validSizes = ['thumbnail', 'small', 'medium', 'large'];
+    if (!validSizes.includes(size)) return '';
+    
+    return `${API_URL}/uploads/${basePath}-${size}${ext}`;
+  } catch (error) {
+    console.error('Error generating responsive image URL:', error);
+    return '';
+  }
 };
 
 const SinglePost = () => {
@@ -336,7 +343,7 @@ const SinglePost = () => {
                 onDoubleClick={() => setIsZoomed(false)}
               >
                 {/* Blur placeholder */}
-                {!isImageLoaded && (
+                {!isImageLoaded && post?.media && (
                   <div 
                     className="absolute inset-0 bg-gray-200 animate-pulse"
                     style={{
@@ -350,8 +357,15 @@ const SinglePost = () => {
                 
                 <img
                   ref={imageRef}
-                  data-src={getMediaUrl(post.media)}
-                  data-srcset={`${getResponsiveImageUrl(post.media, 'small')} 400w, ${getResponsiveImageUrl(post.media, 'medium')} 800w, ${getResponsiveImageUrl(post.media, 'large')} 1200w`}
+                  data-src={getMediaUrl(post?.media)}
+                  data-srcset={(() => {
+                    if (!post?.media) return '';
+                    const small = getResponsiveImageUrl(post.media, 'small');
+                    const medium = getResponsiveImageUrl(post.media, 'medium');
+                    const large = getResponsiveImageUrl(post.media, 'large');
+                    if (!small || !medium || !large) return '';
+                    return `${small} 400w, ${medium} 800w, ${large} 1200w`;
+                  })()}
                   sizes="(max-width: 768px) 100vw, 58.333vw"
                   alt="Post content"
                   className={`transition-transform duration-300 ${
