@@ -47,17 +47,37 @@ const Home = () => {
     checkWebP();
   }, []);
 
-  const getImageUrls = (mediaUrl) => {
-    if (!mediaUrl || typeof mediaUrl !== 'string') return null;
-    const baseUrl = mediaUrl.startsWith('http') ? mediaUrl : `${API_URL}/uploads/${mediaUrl}`;
-    const ext = supportsWebP ? 'webp' : 'jpg';
+  const getImageUrls = (media) => {
+    if (!media) return null;
+
+    // Handle new optimized media structure
+    if (media.variants) {
+      const format = supportsWebP ? 'webp' : 'jpeg';
+      return {
+        thumbnail: media.variants.thumbnail?.urls[format],
+        small: media.variants.small?.urls[format],
+        medium: media.variants.medium?.urls[format],
+        large: media.variants.large?.urls[format]
+      };
+    }
     
-    return {
-      thumbnail: baseUrl.replace(`.${ext}`, `_thumbnail.${ext}`),
-      small: baseUrl.replace(`.${ext}`, `_small.${ext}`),
-      medium: baseUrl.replace(`.${ext}`, `_medium.${ext}`),
-      large: baseUrl
-    };
+    // Handle legacy media structure
+    if (media.legacy?.url || (typeof media === 'string')) {
+      const mediaUrl = media.legacy?.url || media;
+      if (!mediaUrl || typeof mediaUrl !== 'string') return null;
+      
+      const baseUrl = mediaUrl.startsWith('http') ? mediaUrl : `${API_URL}/uploads/${mediaUrl}`;
+      const ext = supportsWebP ? 'webp' : 'jpg';
+      
+      return {
+        thumbnail: baseUrl.replace(`.${ext}`, `_thumbnail.${ext}`),
+        small: baseUrl.replace(`.${ext}`, `_small.${ext}`),
+        medium: baseUrl.replace(`.${ext}`, `_medium.${ext}`),
+        large: baseUrl
+      };
+    }
+
+    return null;
   };
 
   const renderText = (text) => {
@@ -485,10 +505,16 @@ const Home = () => {
                         console.error('Image load error:', post.media);
                         e.target.src = 'https://via.placeholder.com/400';
                       }}
-                      {...createImageProps(
-                        getImageUrls(post.media),
-                        `Post by ${post.user?.username || 'unknown user'}`,
-                        'medium'
+                      {...(getImageUrls(post.media)
+                        ? createImageProps(
+                            getImageUrls(post.media),
+                            `Post by ${post.user?.username || 'unknown user'}`,
+                            'medium'
+                          )
+                        : {
+                            src: 'https://via.placeholder.com/400',
+                            alt: `Post by ${post.user?.username || 'unknown user'}`
+                          }
                       )}
                     />
                   </div>

@@ -19,8 +19,16 @@ import { getProfileImageUrl } from '../../utils/imageUtils';
 import PostComments from './PostComments';
 
 // Function to generate different image sizes
-const getResponsiveImageUrl = (mediaPath, size) => {
-  // Early return if mediaPath is invalid
+const getResponsiveImageUrl = (media, size) => {
+  if (!media) return '';
+  
+  // Handle new optimized media structure
+  if (media.variants && media.variants[size]) {
+    return media.variants[size].urls.webp || media.variants[size].urls.jpeg;
+  }
+  
+  // Handle legacy media structure
+  const mediaPath = media.legacy?.url || (typeof media === 'string' ? media : '');
   if (!mediaPath || typeof mediaPath !== 'string') return '';
   
   // Return original URL for external media
@@ -90,9 +98,17 @@ const SinglePost = () => {
     };
   }, [post]);
 
-  const getMediaUrl = (mediaPath) => {
-    if (!mediaPath) return '';
-    if (typeof mediaPath !== 'string') return '';
+  const getMediaUrl = (media) => {
+    if (!media) return '';
+    
+    // Handle new optimized media structure
+    if (media.variants && media.variants.large) {
+      return media.variants.large.urls.webp || media.variants.large.urls.jpeg;
+    }
+    
+    // Handle legacy media structure
+    const mediaPath = media.legacy?.url || (typeof media === 'string' ? media : '');
+    if (!mediaPath || typeof mediaPath !== 'string') return '';
     if (mediaPath.startsWith('http')) return mediaPath;
     if (!mediaPath.includes('.')) return ''; // Ensure path has an extension
     return `${API_URL}/uploads/${mediaPath}`;
@@ -360,11 +376,23 @@ const SinglePost = () => {
                   data-src={getMediaUrl(post?.media)}
                   data-srcset={(() => {
                     if (!post?.media) return '';
+                    
+                    // Get URLs for each size
                     const small = getResponsiveImageUrl(post.media, 'small');
                     const medium = getResponsiveImageUrl(post.media, 'medium');
                     const large = getResponsiveImageUrl(post.media, 'large');
+                    
+                    // Get dimensions from variants if available
+                    const getWidth = (size) => {
+                      return post.media.variants?.[size]?.dimensions?.width || {
+                        small: 400,
+                        medium: 800,
+                        large: 1200
+                      }[size];
+                    };
+                    
                     if (!small || !medium || !large) return '';
-                    return `${small} 400w, ${medium} 800w, ${large} 1200w`;
+                    return `${small} ${getWidth('small')}w, ${medium} ${getWidth('medium')}w, ${large} ${getWidth('large')}w`;
                   })()}
                   sizes="(max-width: 768px) 100vw, 58.333vw"
                   alt="Post content"
