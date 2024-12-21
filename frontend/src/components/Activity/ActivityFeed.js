@@ -237,7 +237,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-start justify-center pt-20">
+    <div className="fixed inset-0 z-[200] flex items-start justify-center">
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={handleClose}

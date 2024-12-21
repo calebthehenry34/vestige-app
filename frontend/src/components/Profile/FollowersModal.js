@@ -108,7 +108,7 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme, onFollowChange }
         <div className={`flex items-center justify-between px-6 py-4 border-b ${
           theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
         }`}>
-          <h2 className="text-xl font-semibold">
+          <h2 className="text-xl font-headlines">
             {type === 'followers' ? 'Followers' : 'Following'}
           </h2>
           <button
@@ -123,10 +123,10 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme, onFollowChange }
           </button>
         </div>
 
-        <div className="max-h-[50vh] overflow-y-auto">
+        <div className="max-h-[500px] overflow-y-auto">
           {loading ? (
             <div className="flex justify-center items-center p-6">
-              <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
+              <div className={`animate-spin rounded-full h-8 w-8 ${
                 theme === 'dark-theme' ? 'border-blue-400' : 'border-blue-500'
               }`}></div>
             </div>
@@ -151,36 +151,38 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme, onFollowChange }
                 >
                   <Link
                     to={`/profile/${user.username}`}
-                    className="flex items-center flex-1"
+                    className="flex items-center space-x-4 flex-1"
                     onClick={handleClose}
                   >
                     <img
                       src={getProfileImageUrl(user.profilePicture, user.username)}
                       alt={user.username}
-                      className={`w-12 h-12 rounded-xl object-cover ${
+                      className={`w-12 h-12 rounded-xl object-cover flex-shrink-0 ${
                         theme === 'dark-theme' ? 'bg-zinc-900' : 'bg-gray-100'
                       }`}
                       onError={(e) => {
                         e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=random`;
                       }}
                     />
-                    <div className="ml-4">
-                      <div className="font-semibold">
+                    <div className="flex flex-col min-w-0">
+                      <div className="font-headlines truncate">
                         {user.username}
                       </div>
-                      <div className={`text-sm truncate max-w-[200px] ${
+                      <div className={`text-sm truncate ${
                         theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
                       }`}>
                         {user.bio || ''}
                       </div>
                     </div>
                   </Link>
-                  <FollowButton
-                    userId={user._id}
-                    initialIsFollowing={user.isFollowing}
-                    onFollowChange={(newFollowState) => handleFollowChangeLocal(newFollowState, user._id)}
-                    theme={theme}
-                  />
+                  <div className="flex-shrink-0">
+                    <FollowButton
+                      userId={user._id}
+                      initialIsFollowing={user.isFollowing}
+                      onFollowChange={(newFollowState) => handleFollowChangeLocal(newFollowState, user._id)}
+                      theme={theme}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
