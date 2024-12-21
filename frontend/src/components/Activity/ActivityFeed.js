@@ -267,7 +267,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
           </button>
         </div>
 
-        <div className="max-h-[65vh] overflow-y-auto">
+        <div className="max-h-[50vh] overflow-y-auto">
           {loading ? (
             <div className="flex justify-center items-center p-6">
               <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${

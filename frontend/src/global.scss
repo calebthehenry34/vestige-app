@@ -5,8 +5,18 @@
 @import 'tailwindcss/utilities';
 
 body {
-    font-family: 'DM Sans', Arial, sans-serif;
+    font-family: 'Roobert-Regular', Arial, sans-serif;
+    padding-bottom: 60px;
   }
+
+  body {
+    padding-bottom: 60px; /* Add padding to account for fixed bottom navbar */
+  }
+  
+  .navbar {
+    transition: transform 0.3s ease-in-out;
+  }
+
   
 /* Light Theme */
 .light-theme {

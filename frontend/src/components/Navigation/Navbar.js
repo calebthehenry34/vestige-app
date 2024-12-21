@@ -439,59 +439,50 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Floating Mobile Navigation */}
-      {!isSettingsPage && (
-        <div 
-          ref={mobileNavRef}
-          className={`md:hidden fixed z-[90] left-4 right-4 transition-all duration-300 ease-in-out ${
-            visible ? 'bottom-6' : 'translate-y-full bottom-[-100px]'
-          }`}
-          style={{
-            transform: `translateY(${currentY}px)`,
-            touchAction: 'none'
-          }}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div className="max-w-xs mx-auto relative">
-            <div className={`${
-              theme === 'dark-theme'
-                ? 'bg-gray-900'
-                : 'bg-white'
-            } rounded-xl shadow-lg px-4 py-3`}>
-              <div className="grid grid-cols-5 items-center">
-                {navigationItems.map((item, index) => (
-                  <div key={index} className="col-span-1 flex justify-center items-center">
-                    <button
-                      onClick={item.action}
-                      className={`p-2 transition-colors ${
-                        index === 2 
-                          ? `absolute left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex items-center justify-center ${
-                            theme === 'dark-theme'
-                              ? 'bg-gray-900 text-white hover:bg-gray-800'
-                              : 'bg-white text-gray-700 hover:bg-gray-100'
-                            } shadow-lg border-4 ${
-                              theme === 'dark-theme' ? 'border-gray-800' : 'border-white'
-                            }`
-                          : 'rounded-lg'
-                      } ${
-                        theme === 'dark-theme'
-                          ? 'text-white hover:bg-gray-800'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                      disabled={item.className?.includes('cursor-not-allowed')}
-                    >
-                      {item.icon}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+    {/* Bottom Fixed Mobile Navigation */}
+{!isSettingsPage && (
+  <div 
+    ref={mobileNavRef}
+    className={`md:hidden fixed bottom-0 left-0 right-0 z-[90] transition-transform duration-300 ease-in-out ${
+      visible ? 'translate-y-0' : 'translate-y-full'
+    } ${
+      theme === 'dark-theme'
+        ? 'bg-gray-900 border-t border-gray-800'
+        : 'bg-white border-t border-gray-200'
+    }`}
+  >
+    <div className="max-w-lg mx-auto px-4 py-3">
+      <div className="grid grid-cols-5 items-center">
+        {navigationItems.map((item, index) => (
+          <div key={index} className="col-span-1 flex justify-center items-center">
+            <button
+              onClick={item.action}
+              className={`p-2 transition-colors ${
+                index === 2 
+                  ? `absolute left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex items-center justify-center ${
+                    theme === 'dark-theme'
+                      ? 'bg-gray-900 text-white hover:bg-gray-800'
+                      : 'bg-white text-gray-700 hover:bg-gray-100'
+                    } shadow-lg border-4 ${
+                      theme === 'dark-theme' ? 'border-gray-800' : 'border-white'
+                    }`
+                  : 'rounded-lg'
+              } ${
+                theme === 'dark-theme'
+                  ? 'text-white hover:bg-gray-800'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+              disabled={item.className?.includes('cursor-not-allowed')}
+            >
+              {item.icon}
+            </button>
           </div>
-        </div>
-      )}
-
+        ))}
+      </div>
+    </div>
+  </div>
+)}
+          
       {/* Feed Selection Menu */}
       {showFeedMenu && (
         <div 
@@ -545,6 +536,8 @@ const Navbar = () => {
             </div>
           </div>
         </div>
+  
+    
       )}
             {showNotifications && (
               <div 
