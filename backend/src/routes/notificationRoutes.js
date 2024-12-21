@@ -13,15 +13,13 @@ router.get('/', auth, async (req, res) => {
     const notifications = await Notification.find({ recipient: req.user.userId })
       .sort({ createdAt: -1 })
       .populate('sender', 'username profilePicture')
-      .lean() // Use lean() to get plain objects instead of Mongoose documents
+      .lean()
       .exec();
 
     const processedNotifications = await Promise.all(notifications.map(async notification => {
-      // Initialize post and commentData as null by default
       notification.post = null;
       notification.commentData = null;
       
-      // If there's a postId, try to populate post data
       if (notification.post) {
         try {
           const post = await mongoose.model('Post')
@@ -38,7 +36,6 @@ router.get('/', auth, async (req, res) => {
         }
       }
       
-      // Only process if notification has a comment ID and associated post
       if (notification?.comment && notification?.post?._id) {
         try {
           const post = await mongoose.model('Post')
@@ -46,7 +43,6 @@ router.get('/', auth, async (req, res) => {
             .lean()
             .exec();
           
-          // Check if post exists and has a valid comments array
           if (post?.comments && Array.isArray(post.comments)) {
             const comment = post.comments.find(c => 
               c && c._id && c._id.toString() === notification.comment.toString()
@@ -94,17 +90,15 @@ router.post('/', auth, async (req, res) => {
       read: false
     });
 
-    // Get populated notification data using lean() to avoid virtuals
+    // Get populated notification data
     const populatedNotification = await Notification.findById(notification._id)
       .populate('sender', 'username profilePicture')
       .lean()
       .exec();
 
-    // Initialize post and commentData
     populatedNotification.post = null;
     populatedNotification.commentData = null;
 
-    // If there's a postId, try to populate post data
     if (postId) {
       try {
         const post = await mongoose.model('Post')
@@ -121,7 +115,6 @@ router.post('/', auth, async (req, res) => {
       }
     }
 
-    // If there's a commentId and post, try to populate comment data
     if (commentId && populatedNotification.post?._id) {
       try {
         const post = await mongoose.model('Post')
@@ -145,6 +138,10 @@ router.post('/', auth, async (req, res) => {
         console.error('Error processing comment:', err);
       }
     }
+
+    // Emit socket event for real-time notification
+    const io = req.app.get('io');
+    io.to(recipientId).emit('notification', populatedNotification);
     
     res.status(201).json(populatedNotification);
   } catch (error) {
@@ -169,11 +166,9 @@ router.patch('/:id/read', auth, async (req, res) => {
       return res.status(404).json({ error: 'Notification not found' });
     }
 
-    // Initialize post and commentData
     notification.post = null;
     notification.commentData = null;
 
-    // If there's a postId, try to populate post data
     if (notification.post) {
       try {
         const post = await mongoose.model('Post')
@@ -190,7 +185,6 @@ router.patch('/:id/read', auth, async (req, res) => {
       }
     }
 
-    // If there's a comment and post, try to populate comment data
     if (notification?.comment && notification?.post?._id) {
       try {
         const post = await mongoose.model('Post')

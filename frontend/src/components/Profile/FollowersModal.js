@@ -30,11 +30,11 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme }) => {
             }
           }
         );
-
+  
         if (!response.ok) {
           throw new Error('Failed to fetch users');
         }
-
+  
         const data = await response.json();
         setUsers(data);
       } catch (error) {
@@ -50,6 +50,32 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme }) => {
   const handleClose = () => {
     setIsAnimating(false);
     setTimeout(onClose, 300); // Wait for animation to complete
+  };
+
+  const handleFollowChange = async () => {
+    // Re-implement fetchUsers here since we need it for the follow button
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `${API_URL}/api/users/${userId}/${type}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+
+      const data = await response.json();
+      setUsers(data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -138,7 +164,7 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme }) => {
                   <FollowButton
                     userId={user._id}
                     initialIsFollowing={user.isFollowing}
-                    onFollowChange={() => {}}
+                    onFollowChange={handleFollowChange}
                     theme={theme}
                   />
                 </div>

@@ -1,33 +1,41 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../../App';
+import { useNotifications } from '../../context/NotificationContext';
 
-const Toast = ({ notification, onClose }) => {
+const Toast = () => {
   const { theme } = useContext(ThemeContext);
   const navigate = useNavigate();
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
+  const { currentNotification, clearCurrentNotification } = useNotifications();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(onClose, 300); // Wait for fade out animation
-    }, 3000);
+    if (currentNotification) {
+      setIsVisible(true);
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+        setTimeout(clearCurrentNotification, 300); // Wait for fade out animation
+      }, 3000);
 
-    return () => clearTimeout(timer);
-  }, [onClose]);
+      return () => clearTimeout(timer);
+    }
+  }, [currentNotification, clearCurrentNotification]);
+
+  if (!currentNotification) return null;
 
   const handleClick = () => {
-    if (notification.post) {
-      navigate(`/post/${notification.post._id}`);
-    } else if (notification.type === 'follow' && notification.sender) {
-      navigate(`/profile/${notification.sender.username}`);
+    if (currentNotification.post) {
+      navigate(`/post/${currentNotification.post._id}`);
+    } else if (currentNotification.type === 'follow' && currentNotification.sender) {
+      navigate(`/profile/${currentNotification.sender.username}`);
     }
-    onClose();
+    setIsVisible(false);
+    setTimeout(clearCurrentNotification, 300);
   };
 
   const getNotificationText = () => {
-    const username = notification.sender?.username || 'Someone';
-    switch (notification.type) {
+    const username = currentNotification.sender?.username || 'Someone';
+    switch (currentNotification.type) {
       case 'follow':
         return `${username} started following you`;
       case 'like':
@@ -57,10 +65,10 @@ const Toast = ({ notification, onClose }) => {
           theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
         }`}
       >
-        {notification.sender?.profilePicture && (
+        {currentNotification.sender?.profilePicture && (
           <img
-            src={notification.sender.profilePicture}
-            alt={notification.sender.username}
+            src={currentNotification.sender.profilePicture}
+            alt={currentNotification.sender.username}
             className="w-8 h-8 rounded-full object-cover"
           />
         )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, createContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import './global.scss';
 import './index.css';
 import Login from './components/Auth/Login';
@@ -17,6 +18,7 @@ import Chat from './components/Chat/Chat';
 import SinglePost from './components/Post/SinglePost';
 import VideoFeed from './components/Feed/VideoFeed';
 import Roadmap from './components/Roadmap';
+import Toast from './components/Common/Toast';
 import { ScrollProvider } from './context/ScrollContext';
 import { ErrorCircleRegular } from '@fluentui/react-icons';
 
@@ -142,100 +144,103 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <ThemeContext.Provider value={{ theme, toggleTheme }}>
-          <ScrollProvider>
-            <ErrorBoundary theme={theme}>
-              <div className={`${
-                theme === 'dark-theme' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-black'
-              } min-h-screen`}>
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
+        <NotificationProvider>
+          <ThemeContext.Provider value={{ theme, toggleTheme }}>
+            <ScrollProvider>
+              <ErrorBoundary theme={theme}>
+                <div className={`${
+                  theme === 'dark-theme' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-black'
+                } min-h-screen`}>
+                  <Toast />
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
 
-                  {/* Videos Route without Navbar */}
-                  <Route
-                    path="/videos"
-                    element={
-                      <ProtectedRouteWrapper requiresNav={false}>
-                        <VideoFeed />
-                      </ProtectedRouteWrapper>
-                    }
-                  />
-
-                  {/* Protected Routes with Navbar */}
-                  {[
-                    { path: "/", element: <Home /> },
-                    { path: "/explore", element: <Explore /> },
-                    { path: "/activity", element: <ActivityFeed /> },
-                    { path: "/chat", element: <Chat /> },
-                    { path: "/settings", element: <ProfileSettings /> },
-                    { path: "/profile/:username", element: <Profile /> },
-                    { path: "/post/:id", element: <SinglePost /> },
-                    { path: "/roadmap", element: <Roadmap /> }
-                  ].map(({ path, element }) => (
+                    {/* Videos Route without Navbar */}
                     <Route
-                      key={path}
-                      path={path}
+                      path="/videos"
                       element={
-                        <ProtectedRouteWrapper>
-                          {element}
+                        <ProtectedRouteWrapper requiresNav={false}>
+                          <VideoFeed />
                         </ProtectedRouteWrapper>
                       }
                     />
-                  ))}
 
-                  {/* Special Routes */}
-                  <Route 
-                    path="/onboarding" 
-                    element={
-                      <ProtectedRouteWrapper requiresNav={false}>
-                        <OnboardingFlow />
-                      </ProtectedRouteWrapper>
-                    }
-                  />
-                  <Route
-                    path="/admin"
-                    element={
-                      <ProtectedRouteWrapper requiresNav={false} requiresAdmin={true}>
-                        <AdminDashboard />
-                      </ProtectedRouteWrapper>
-                    }
-                  />
+                    {/* Protected Routes with Navbar */}
+                    {[
+                      { path: "/", element: <Home /> },
+                      { path: "/explore", element: <Explore /> },
+                      { path: "/activity", element: <ActivityFeed /> },
+                      { path: "/chat", element: <Chat /> },
+                      { path: "/settings", element: <ProfileSettings /> },
+                      { path: "/profile/:username", element: <Profile /> },
+                      { path: "/post/:id", element: <SinglePost /> },
+                      { path: "/roadmap", element: <Roadmap /> }
+                    ].map(({ path, element }) => (
+                      <Route
+                        key={path}
+                        path={path}
+                        element={
+                          <ProtectedRouteWrapper>
+                            {element}
+                          </ProtectedRouteWrapper>
+                        }
+                      />
+                    ))}
 
-                  {/* Catch-all route */}
-                  <Route
-                    path="*"
-                    element={
-                      <div className={`min-h-screen flex items-center justify-center ${
-                        theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'
-                      }`}>
-                        <div className="text-center p-8">
-                          <h1 className={`text-xl font-bold mb-2 ${
-                            theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
-                          }`}>
-                            Page Not Found
-                          </h1>
-                          <p className={
-                            theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-600'
-                          }>
-                            The page you're looking for doesn't exist
-                          </p>
-                          <button
-                            onClick={() => window.history.back()}
-                            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                          >
-                            Go Back
-                          </button>
+                    {/* Special Routes */}
+                    <Route 
+                      path="/onboarding" 
+                      element={
+                        <ProtectedRouteWrapper requiresNav={false}>
+                          <OnboardingFlow />
+                        </ProtectedRouteWrapper>
+                      }
+                    />
+                    <Route
+                      path="/admin"
+                      element={
+                        <ProtectedRouteWrapper requiresNav={false} requiresAdmin={true}>
+                          <AdminDashboard />
+                        </ProtectedRouteWrapper>
+                      }
+                    />
+
+                    {/* Catch-all route */}
+                    <Route
+                      path="*"
+                      element={
+                        <div className={`min-h-screen flex items-center justify-center ${
+                          theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'
+                        }`}>
+                          <div className="text-center p-8">
+                            <h1 className={`text-xl font-bold mb-2 ${
+                              theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
+                            }`}>
+                              Page Not Found
+                            </h1>
+                            <p className={
+                              theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-600'
+                            }>
+                              The page you're looking for doesn't exist
+                            </p>
+                            <button
+                              onClick={() => window.history.back()}
+                              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                            >
+                              Go Back
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    }
-                  />
-                </Routes>
-              </div>
-            </ErrorBoundary>
-          </ScrollProvider>
-        </ThemeContext.Provider>
+                      }
+                    />
+                  </Routes>
+                </div>
+              </ErrorBoundary>
+            </ScrollProvider>
+          </ThemeContext.Provider>
+        </NotificationProvider>
       </AuthProvider>
     </Router>
   );

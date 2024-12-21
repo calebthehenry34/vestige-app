@@ -3,6 +3,8 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import fs from 'fs';
+import { Server as SocketServer } from 'socket.io';
+import { createServer } from 'http';
 import authRoutes from './routes/authRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
@@ -38,6 +40,35 @@ const uploadsDir = path.join(rootDir, 'uploads');
 });
 
 const app = express();
+const httpServer = createServer(app);
+const io = new SocketServer(httpServer, {
+  cors: {
+    origin: [
+      'https://gleeful-starburst-18884e.netlify.app',
+      'http://localhost:3000',
+      'http://localhost:3001'
+    ],
+    methods: ['GET', 'POST']
+  }
+});
+
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  console.log('Client connected');
+
+  // Join user's room for notifications
+  socket.on('join', (userId) => {
+    socket.join(userId);
+    console.log(`User ${userId} joined their notification room`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
+  });
+});
+
+// Make io accessible to routes
+app.set('io', io);
 
 app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
@@ -202,7 +233,7 @@ try {
     useUnifiedTopology: true
   });
   console.log('Connected to MongoDB');
-  app.listen(PORT, () => {
+  httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 } catch (error) {
@@ -218,5 +249,3 @@ process.on('unhandledRejection', (error) => {
   console.error('Unhandled Rejection:', error);
   process.exit(1);
 });
-
-export default app;
