@@ -175,7 +175,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
         <img
           src={getProfileImageUrl(sender.profilePicture, sender.username)}
           alt={sender.username}
-          className={`w-10 h-10 rounded-full object-cover flex-shrink-0 ${
+          className={`w-10 h-10 rounded-md object-cover flex-shrink-0 ${
             theme === 'dark-theme' ? 'bg-zinc-900' : 'bg-gray-100'
           }`}
           onClick={(e) => {
@@ -244,7 +244,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
           theme === 'dark-theme' 
             ? 'bg-black border-zinc-800 text-white' 
             : 'bg-white border-gray-200 text-black'
-        } w-[95vw] max-w-md h-[80vh] rounded-2xl transform transition-transform duration-300 ease-out shadow-lg ${
+        } w-[95vw]  h-[70vh] rounded-2xl transform transition-transform duration-300 ease-out shadow-lg ${
           isAnimating ? 'translate-y-0 scale-100' : 'translate-y-full scale-95'
         }`}
       >
