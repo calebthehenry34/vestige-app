@@ -34,10 +34,12 @@ import PostCreator from '../Post/PostCreator';
 import { API_URL } from '../../config';
 import ActivityFeed from '../Activity/ActivityFeed';
 import Toast from '../Common/Toast';
+import { useNotifications } from '../../context/NotificationContext';
 
 const Navbar = () => {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const { user, logout } = useAuth();
+  const { currentNotification, clearCurrentNotification } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
   const [showDrawer, setShowDrawer] = useState(false);
@@ -54,24 +56,18 @@ const Navbar = () => {
   const isSettingsPage = location.pathname === '/settings';
   const [activeToast, setActiveToast] = useState(null);
 
-
-
   useEffect(() => {
     fetchUnreadNotificationsCount();
-    
-    // Setup WebSocket connection
-    const ws = new WebSocket(API_URL.replace('http', 'ws') + '/ws');
-    
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'notification') {
-        setUnreadNotifications(prev => prev + 1);
-        setActiveToast(data);
-      }
-    };
-  
-    return () => ws.close();
   }, []);
+
+  // Handle notifications from NotificationContext
+  useEffect(() => {
+    if (currentNotification) {
+      setUnreadNotifications(prev => prev + 1);
+      setActiveToast(currentNotification);
+      clearCurrentNotification();
+    }
+  }, [currentNotification, clearCurrentNotification]);
 
   const fetchUnreadNotificationsCount = async () => {
     try {
