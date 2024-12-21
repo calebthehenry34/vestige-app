@@ -9,7 +9,7 @@ import { generatePresignedUrl } from '../config/s3.js';
 const router = express.Router();
 
 // Helper function to process user data with pre-signed URLs
-const processUserWithPresignedUrl = async (user) => {
+export const processUserWithPresignedUrl = async (user) => {
   if (!user) return null;
   const userData = user.toObject ? user.toObject() : { ...user };
   

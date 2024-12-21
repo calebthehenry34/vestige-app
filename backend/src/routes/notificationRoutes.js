@@ -2,6 +2,7 @@ import express from 'express';
 import auth from '../middleware/auth.js';
 import Notification from '../models/notification.js';
 import mongoose from 'mongoose';
+import { processUserWithPresignedUrl } from './userRoutes.js';
 
 const router = express.Router();
 
@@ -17,6 +18,11 @@ router.get('/', auth, async (req, res) => {
       .exec();
 
     const processedNotifications = await Promise.all(notifications.map(async notification => {
+      // Process sender with pre-signed URL if exists
+      if (notification.sender) {
+        notification.sender = await processUserWithPresignedUrl(notification.sender);
+      }
+
       notification.post = null;
       notification.commentData = null;
       
@@ -96,6 +102,11 @@ router.post('/', auth, async (req, res) => {
       .lean()
       .exec();
 
+    // Process sender with pre-signed URL
+    if (populatedNotification.sender) {
+      populatedNotification.sender = await processUserWithPresignedUrl(populatedNotification.sender);
+    }
+
     populatedNotification.post = null;
     populatedNotification.commentData = null;
 
@@ -164,6 +175,11 @@ router.patch('/:id/read', auth, async (req, res) => {
 
     if (!notification) {
       return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    // Process sender with pre-signed URL
+    if (notification.sender) {
+      notification.sender = await processUserWithPresignedUrl(notification.sender);
     }
 
     notification.post = null;

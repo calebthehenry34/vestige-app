@@ -99,7 +99,7 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme }) => {
           </h2>
           <button
             onClick={handleClose}
-            className={`p-2 rounded-full transition-colors duration-200 ${
+            className={`p-2 rounded-md transition-colors duration-200 ${
               theme === 'dark-theme' 
                 ? 'hover:bg-zinc-900 text-gray-400 hover:text-gray-200' 
                 : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
@@ -109,7 +109,7 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme }) => {
           </button>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto">
+        <div className="max-h-[60vh] overflow-y-auto">
           {loading ? (
             <div className="flex justify-center items-center p-4">
               <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
