@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config';
 import FollowButton from '../Common/FollowButton';
@@ -11,13 +11,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchNotifications();
-    }
-  }, [isOpen]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/api/notifications`, {
         headers: {
@@ -32,13 +26,21 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
       const data = await response.json();
       setNotifications(data);
       const unreadCount = data.filter(n => !n.read).length;
-      onNotificationsUpdate?.(unreadCount);
+      if (onNotificationsUpdate) {
+        onNotificationsUpdate(unreadCount);
+      }
       setLoading(false);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       setLoading(false);
     }
-  };
+  }, [onNotificationsUpdate]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchNotifications();
+    }
+  }, [isOpen, fetchNotifications]);
 
   const markAllAsRead = async () => {
     try {
@@ -51,7 +53,9 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
 
       if (response.ok) {
         setNotifications(notifications.map(n => ({ ...n, read: true })));
-        onNotificationsUpdate?.(0);
+        if (onNotificationsUpdate) {
+          onNotificationsUpdate(0);
+        }
       }
     } catch (error) {
       console.error('Error marking notifications as read:', error);
