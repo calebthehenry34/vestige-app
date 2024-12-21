@@ -69,13 +69,34 @@ const ActivityFeed = () => {
   const handleNotificationClick = (notification) => {
     if (notification.post) {
       navigate(`/post/${notification.post._id}`);
-    } else if (notification.type === 'follow') {
+    } else if (notification.type === 'follow' && notification.sender) {
       navigate(`/profile/${notification.sender.username}`);
     }
   };
 
   const renderActivity = (notification) => {
     const { type, sender, post, commentData, createdAt } = notification;
+
+    // Handle case where sender data is missing
+    if (!sender) {
+      return (
+        <div className={`mb-50 flex items-center justify-between py-4 ${
+          theme === 'dark-theme' ? 'text-gray-500' : 'text-gray-400'
+        }`}>
+          <div className="flex items-center">
+            <img
+              src="/default-avatar.png"
+              alt="Deleted User"
+              className="w-10 h-10 rounded-full mr-3 object-cover opacity-50"
+            />
+            <div>
+              <span className="font-semibold">Deleted User</span>
+              <div className="text-sm">{getTimeAgo(createdAt)}</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     const baseUserInfo = (
       <div className="flex items-center">
