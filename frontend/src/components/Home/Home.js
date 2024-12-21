@@ -64,6 +64,9 @@ const Home = () => {
     if (!text || typeof text !== 'string') return '';
     
     return text.split(' ').map((word, index) => {
+      // Skip if word is undefined or not a string
+      if (!word || typeof word !== 'string') return ' ';
+      
       if (word.startsWith('#')) {
         return (
           <React.Fragment key={index}>
