@@ -1,9 +1,13 @@
-import dotenv from 'dotenv';
 import Stripe from 'stripe';
 
-dotenv.config();
+const apiKey = process.env.STRIPE_SECRET_KEY;
+if (!apiKey) {
+  console.error('Please provide the Stripe API key as an environment variable:');
+  console.error('STRIPE_SECRET_KEY=sk_live_xxx node scripts/setupStripeProducts.js');
+  process.exit(1);
+}
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(apiKey);
 
 async function setupStripeProducts() {
   try {
