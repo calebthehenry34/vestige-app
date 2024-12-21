@@ -4,6 +4,10 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY environment variable is required');
 }
 
+if (!process.env.STRIPE_BETA_PRICE_ID) {
+  throw new Error('STRIPE_BETA_PRICE_ID environment variable is required');
+}
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16' // Using latest stable API version
 });
@@ -30,6 +34,18 @@ export const createCustomer = async (email, username, firstName, lastName) => {
 
 export const createBetaSubscription = async (customerId) => {
   try {
+    // Verify the beta price exists before attempting to create subscription
+    try {
+      await stripe.prices.retrieve(process.env.STRIPE_BETA_PRICE_ID);
+    } catch (error) {
+      if (error.code === 'resource_missing') {
+        console.error('Beta price ID not found in Stripe');
+        error.message = 'Beta subscription price not configured';
+        throw error;
+      }
+      throw error;
+    }
+
     // For beta users, we'll create a subscription with a 100% off coupon
     const subscription = await stripe.subscriptions.create({
       customer: customerId,

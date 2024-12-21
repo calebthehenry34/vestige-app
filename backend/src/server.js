@@ -186,9 +186,17 @@ app.use('/api/users', userRoutes);
 app.use('/api/posts/videos', videoRoutes);
 app.use('/api/notifications', notificationRoutes);
 
-// Special handling for Stripe webhook endpoint
-app.use('/api/subscriptions/webhook', express.raw({ type: 'application/json' }));
+// Mount subscription routes first
 app.use('/api/subscriptions', subscriptionRoutes);
+
+// Special handling for Stripe webhook endpoint (must be after regular routes)
+app.post('/api/subscriptions/webhook', express.raw({ type: 'application/json' }), (req, res, next) => {
+  if (req.originalUrl === '/api/subscriptions/webhook') {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
 
 // Test route (only in development)
 if (process.env.NODE_ENV !== 'production') {

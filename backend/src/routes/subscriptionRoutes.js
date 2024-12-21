@@ -9,6 +9,6 @@ router.post('/beta-subscription', auth, setupBetaSubscription);
 router.get('/status', auth, getSubscriptionStatus);
 
 // Webhook endpoint (no auth required, verified by Stripe signature)
-router.post('/webhook', express.raw({ type: 'application/json' }), handleStripeWebhook);
+router.post('/webhook', handleStripeWebhook);
 
 export default router;
