@@ -53,9 +53,11 @@ const Explore = () => {
   }, [fetchExplorePosts]);
 
   const getImageUrls = (post) => {
-    if (!post.media) return null;
+    if (!post?.media) return null;
     
-    const baseUrl = post.media.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`;
+    const baseUrl = typeof post.media === 'string' && post.media.startsWith('http') 
+      ? post.media 
+      : `${API_URL}/uploads/${post.media}`;
     const ext = supportsWebP ? 'webp' : 'jpg';
     
     // If the URL already includes size suffixes, use them
@@ -99,10 +101,10 @@ const Explore = () => {
   }
 
   return (
-    <div className={`min-h-screen ${theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={` mb-50 min-h-screen ${theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Two Column Links */}
-        <div className="grid grid-cols-2 gap-4 mb-50">
+        <div className="grid grid-cols-2 gap-4">
           <Link
             to="/explore/users"
             className={`p-6 rounded-lg text-center transition-colors backdrop-blur-md backdrop-filter bg-opacity-50 ${
@@ -148,9 +150,9 @@ const Explore = () => {
               {post.mediaType === 'video' ? (
                 <div className="w-full h-full bg-black rounded-lg overflow-hidden">
                   <video
-                    src={post.media.startsWith('http') 
+                    src={typeof post.media === 'string' && post.media.startsWith('http')
                       ? post.media 
-                      : API_URL + '/uploads/' + post.media}
+                      : `${API_URL}/uploads/${post.media}`}
                     className="w-full h-full object-cover"
                     loading="lazy"
                   />
