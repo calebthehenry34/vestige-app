@@ -18,6 +18,18 @@ const commentSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Define schema for image variants
+const imageVariantSchema = new mongoose.Schema({
+  dimensions: {
+    width: Number,
+    height: Number
+  },
+  urls: {
+    webp: String,
+    jpeg: String
+  }
+}, { _id: false });
+
 // Finally define postSchema using commentSchema
 const postSchema = new mongoose.Schema({
   user: {
@@ -32,12 +44,30 @@ const postSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
-  media: String, // Image URL
-  mediaKey: String, // S3 key for image
-  mediaType: {
-    type: String,
-    enum: ['image', 'video'],
-    default: 'image'
+  // New optimized media structure
+  media: {
+    type: {
+      type: String,
+      enum: ['image', 'video'],
+      default: 'image'
+    },
+    variants: {
+      thumbnail: imageVariantSchema,
+      small: imageVariantSchema,
+      medium: imageVariantSchema,
+      large: imageVariantSchema
+    },
+    metadata: {
+      originalWidth: Number,
+      originalHeight: Number,
+      format: String,
+      size: Number
+    },
+    placeholder: String, // Base64 blur placeholder
+    legacy: {
+      url: String, // Original media URL (for backward compatibility)
+      key: String  // Original S3 key (for backward compatibility)
+    }
   },
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -66,6 +96,36 @@ postSchema.virtual('commentCount').get(function() {
 postSchema.virtual('likeCount').get(function() {
   return this.likes ? this.likes.length : 0;
 });
+
+// Helper method to get the best image URL based on size and format
+postSchema.methods.getImageUrl = function(size = 'medium', preferWebP = true) {
+  if (!this.media || !this.media.variants) {
+    return this.media?.legacy?.url || null;
+  }
+
+  const variant = this.media.variants[size] || this.media.variants.medium;
+  if (!variant) {
+    return this.media.legacy?.url || null;
+  }
+
+  return preferWebP ? variant.urls.webp : variant.urls.jpeg;
+};
+
+// Helper method to get srcset for responsive images
+postSchema.methods.getImageSrcset = function(preferWebP = true) {
+  if (!this.media || !this.media.variants) {
+    return '';
+  }
+
+  const format = preferWebP ? 'webp' : 'jpeg';
+  return Object.entries(this.media.variants)
+    .map(([size, variant]) => {
+      if (!variant.urls[format]) return '';
+      return `${variant.urls[format]} ${variant.dimensions.width}w`;
+    })
+    .filter(Boolean)
+    .join(', ');
+};
 
 // Ensure virtuals are included in JSON output
 postSchema.set('toJSON', { virtuals: true });

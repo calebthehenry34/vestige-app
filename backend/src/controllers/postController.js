@@ -8,6 +8,8 @@ import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
 import mongoose from 'mongoose';
+import imageProcessingService from '../services/imageProcessingService.js';
+import s3UploadService from '../utils/s3Upload.js';
 
 // Helper function to store file locally when S3 is not available
 const storeFileLocally = async (buffer, filename) => {
@@ -26,7 +28,75 @@ const storeFileLocally = async (buffer, filename) => {
   }
 };
 
-// Helper function to generate pre-signed URL
+// Helper function to process posts with image variants
+const processPostsWithPresignedUrls = async (posts) => {
+  if (!Array.isArray(posts)) {
+    posts = [posts];
+  }
+
+  const processedPosts = await Promise.all(posts.map(async (post) => {
+    const postObj = post.toObject ? post.toObject() : post;
+    
+    // Handle legacy posts (old format)
+    if (postObj.mediaKey && !postObj.media?.variants) {
+      try {
+        const command = new GetObjectCommand({
+          Bucket: getS3BucketName(),
+          Key: postObj.mediaKey
+        });
+        
+        if (isS3Available()) {
+          postObj.media = {
+            type: 'image',
+            legacy: {
+              url: await getSignedUrl(s3, command, { expiresIn: 3600 }),
+              key: postObj.mediaKey
+            }
+          };
+        } else {
+          postObj.media = {
+            type: 'image',
+            legacy: {
+              url: postObj.media,
+              key: postObj.mediaKey
+            }
+          };
+        }
+      } catch (error) {
+        console.error('Error processing legacy post:', error);
+        // Keep the original media URL as fallback
+        postObj.media = {
+          type: 'image',
+          legacy: {
+            url: postObj.media,
+            key: postObj.mediaKey
+          }
+        };
+      }
+    }
+    // Handle new format posts (with variants)
+    else if (postObj.media?.variants && isS3Available()) {
+      try {
+        // No need to generate pre-signed URLs as they're now handled by the S3UploadService
+        // Just ensure the post object structure is correct
+        postObj.media = {
+          type: postObj.media.type || 'image',
+          variants: postObj.media.variants,
+          metadata: postObj.media.metadata,
+          placeholder: postObj.media.placeholder
+        };
+      } catch (error) {
+        console.error('Error processing post with variants:', error);
+      }
+    }
+    
+    return postObj;
+  }));
+
+  return Array.isArray(posts) ? processedPosts : processedPosts[0];
+};
+
+// Generate a pre-signed URL for an S3 object
 const generatePresignedUrl = async (key) => {
   const command = new GetObjectCommand({
     Bucket: getS3BucketName(),
@@ -35,29 +105,6 @@ const generatePresignedUrl = async (key) => {
   return await getSignedUrl(s3, command, { expiresIn: 3600 }); // URL expires in 1 hour
 };
 
-// Helper function to process posts with pre-signed URLs
-const processPostsWithPresignedUrls = async (posts) => {
-  if (!Array.isArray(posts)) {
-    posts = [posts];
-  }
-
-  const processedPosts = await Promise.all(posts.map(async (post) => {
-    const postObj = post.toObject ? post.toObject() : post;
-    if (postObj.mediaKey && isS3Available()) {
-      try {
-        postObj.media = await generatePresignedUrl(postObj.mediaKey);
-      } catch (error) {
-        console.error('Error generating pre-signed URL:', error);
-        // Keep the original media URL as fallback
-      }
-    }
-    return postObj;
-  }));
-
-  return Array.isArray(posts) ? processedPosts : processedPosts[0];
-};
-
-// Export all controller functions
 export const getPosts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -897,4 +944,3 @@ export const deleteComment = async (req, res) => {
     res.status(500).json({ error: 'Error deleting comment' });
   }
 };
-
