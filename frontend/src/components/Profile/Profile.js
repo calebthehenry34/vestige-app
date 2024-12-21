@@ -144,7 +144,7 @@ const Profile = () => {
       <div className="relative w-full aspect-[4/5] overflow-hidden mb-0">
         {/* Profile Photo Section */}
         <div 
-          className={`relative w-full h-4/5 ${isOwnProfile ? 'cursor-pointer' : ''}`}
+          className={`relative w-full h-full ${isOwnProfile ? 'cursor-pointer' : ''}`}
           onClick={handleProfilePhotoClick}
         >
           <img
@@ -311,12 +311,14 @@ const Profile = () => {
         onClose={() => setFollowersModalOpen(false)}
         userId={profileData._id}
         type="followers"
+        theme={theme}
       />
       <FollowersModal
         isOpen={followingModalOpen}
         onClose={() => setFollowingModalOpen(false)}
         userId={profileData._id}
         type="following"
+        theme={theme}
       />
     </div>
   );

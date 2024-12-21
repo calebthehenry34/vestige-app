@@ -37,7 +37,7 @@ const FollowButton = ({ userId, initialIsFollowing, onFollowChange }) => {
     <button
       onClick={handleFollowToggle}
       disabled={loading}
-      className={`px-4 py-2 rounded-lg flex items-center transition-all ${
+      className={`px-3 py-1 text-sm rounded-lg flex items-center transition-all ${
         isFollowing 
           ? 'bg-gray-100 hover:bg-gray-200 text-gray-800' 
           : 'bg-blue-500 hover:bg-blue-600 text-white'
@@ -45,12 +45,12 @@ const FollowButton = ({ userId, initialIsFollowing, onFollowChange }) => {
     >
       {isFollowing ? (
         <>
-          <HandshakeFilled className="w-5 h-5 mr-2" />
+          <HandshakeFilled className="w-4 h-4 mr-1" />
           Following
         </>
       ) : (
         <>
-          <PersonAddRegular className="w-5 h-5 mr-2" />
+          <PersonAddRegular className="w-4 h-4 mr-1" />
           Follow
         </>
       )}
