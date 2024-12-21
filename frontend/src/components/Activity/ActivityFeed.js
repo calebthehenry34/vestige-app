@@ -238,13 +238,13 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="font-headlines h-[70vh] fixed inset-0 bg-black/60 z-[200] flex items-center justify-center backdrop-blur-sm">
+    <div className="font-headlines fixed inset-0 bg-black/60 z-[200] flex items-center justify-center backdrop-blur-sm">
       <div 
         className={`${
           theme === 'dark-theme' 
             ? 'bg-black border-zinc-800 text-white' 
             : 'bg-white border-gray-200 text-black'
-        }  max-w-md rounded-2xl transform transition-transform duration-300 ease-out shadow-lg ${
+        } max-w-md h-[50vh] rounded-2xl transform transition-transform duration-300 ease-out shadow-lg ${
           isAnimating ? 'translate-y-0 scale-100' : 'translate-y-full scale-95'
         }`}
       >
