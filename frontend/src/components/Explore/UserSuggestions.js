@@ -196,8 +196,8 @@ const UserSuggestions = () => {
                   theme === 'dark-theme' ? 'bg-gray-800' : 'bg-gray-50'
                 }`}
               >
-                <Link to={`/profile/${user._id}`} className="block">
-                  <div className="aspect-square">
+                <Link to={`/profile/${user._id}`} className="block relative">
+                  <div className="aspect-square relative">
                     <img 
                       src={user.profilePicture ? `${API_URL}/uploads/${user.profilePicture}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}`}
                       alt={user.username}
@@ -206,23 +206,20 @@ const UserSuggestions = () => {
                         e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}`;
                       }}
                     />
-                  </div>
-                  <div className="p-3">
-                    <h3 className={`font-medium truncate ${
-                      theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
-                    }`}>
-                      {user.username}
-                    </h3>
-                    {user.bio && (
-                      <p className={`text-sm mt-1 line-clamp-2 ${
-                        theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
-                      }`}>
-                        {user.bio}
-                      </p>
-                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                      <h3 className="font-medium truncate">
+                        {user.username}
+                      </h3>
+                      {user.bio && (
+                        <p className="text-sm mt-1 line-clamp-2 text-gray-200">
+                          {user.bio}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </Link>
-                <div className="px-3 pb-3">
+                <div className="p-3">
                   <button
                     onClick={(e) => {
                       e.preventDefault();

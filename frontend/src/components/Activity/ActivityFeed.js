@@ -140,7 +140,7 @@ const ActivityFeed = () => {
 
     return (
       <div 
-        className={`mb-50 flex items-center justify-between py-4 cursor-pointer hover:${
+        className={`flex items-center justify-between py-4 cursor-pointer hover:${
           theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'
         }`}
         onClick={() => handleNotificationClick(notification)}
@@ -184,7 +184,7 @@ const ActivityFeed = () => {
   }
 
   return (
-    <div className={`max-w-2xl mx-auto px-4 mb-50 font-headlines ${
+    <div className={`max-w-2xl mx-auto px-4 mb-100 font-headlines ${
       theme === 'dark-theme' ? 'bg-black' : 'bg-white'
     }`}>
       {/* Tabs */}
@@ -192,7 +192,7 @@ const ActivityFeed = () => {
         theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
       }`}>
         <button
-          className={`px-8 py-4 font-semibold ${
+          className={`px-8 py-4 font-headlines ${
             activeTab === 'all' 
               ? theme === 'dark-theme'
                 ? 'border-b-2 border-white text-white'
