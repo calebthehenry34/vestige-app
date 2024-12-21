@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { ChatRegular, HeartRegular } from '@fluentui/react-icons';
+import { Box } from '@mui/material';
 import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
 import { createImageProps, checkWebPSupport } from '../../utils/imageUtils';
@@ -121,33 +122,75 @@ const Explore = () => {
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Two Column Links */}
         <div className="grid grid-cols-2 gap-4">
-          <Link
+          <Box
+            component={Link}
             to="/explore/users"
-            className={`p-6 rounded-lg text-center transition-colors backdrop-blur-md backdrop-filter bg-opacity-50 ${
-              theme === 'dark-theme'
-                ? 'bg-gray-800/50 hover:bg-gray-700/50 text-white shadow-lg'
-                : 'bg-white/50 hover:bg-gray-50/50 text-black shadow-lg'
-            }`}
+            sx={{
+              background: theme === 'dark-theme' 
+                ? 'rgba(31, 41, 55, 0.7)' 
+                : 'rgba(255, 255, 255, 0.7)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '10px',
+              padding: '24px',
+              textAlign: 'center',
+              transition: 'all 0.3s ease',
+              textDecoration: 'none',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              border: '1px solid',
+              borderColor: theme === 'dark-theme' 
+                ? 'rgba(255, 255, 255, 0.1)' 
+                : 'rgba(0, 0, 0, 0.1)',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 12px rgba(0, 0, 0, 0.15)',
+                background: theme === 'dark-theme' 
+                  ? 'rgba(31, 41, 55, 0.8)' 
+                  : 'rgba(255, 255, 255, 0.8)',
+              }
+            }}
           >
-            <h2 className="text-xl font-semibold mb-2">Find Users</h2>
+            <h2 className={`text-xl font-semibold mb-2 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
+              Find Users
+            </h2>
             <p className={`text-sm ${theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-600'}`}>
               Discover and connect with other users
             </p>
-          </Link>
+          </Box>
 
-          <Link
+          <Box
+            component={Link}
             to="/explore/hashtags"
-            className={`p-6 rounded-lg text-center transition-colors backdrop-blur-md backdrop-filter bg-opacity-50 ${
-              theme === 'dark-theme'
-                ? 'bg-gray-800/50 hover:bg-gray-700/50 text-white shadow-lg'
-                : 'bg-white/50 hover:bg-gray-50/50 text-black shadow-lg'
-            }`}
+            sx={{
+              background: theme === 'dark-theme' 
+                ? 'rgba(31, 41, 55, 0.7)' 
+                : 'rgba(255, 255, 255, 0.7)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '10px',
+              padding: '24px',
+              textAlign: 'center',
+              transition: 'all 0.3s ease',
+              textDecoration: 'none',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              border: '1px solid',
+              borderColor: theme === 'dark-theme' 
+                ? 'rgba(255, 255, 255, 0.1)' 
+                : 'rgba(0, 0, 0, 0.1)',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 12px rgba(0, 0, 0, 0.15)',
+                background: theme === 'dark-theme' 
+                  ? 'rgba(31, 41, 55, 0.8)' 
+                  : 'rgba(255, 255, 255, 0.8)',
+              }
+            }}
           >
-            <h2 className="text-xl font-semibold mb-2">Search Hashtags</h2>
+            <h2 className={`text-xl font-semibold mb-2 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
+              Search Hashtags
+            </h2>
             <p className={`text-sm ${theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-600'}`}>
               Find posts by hashtags
             </p>
-          </Link>
+          </Box>
         </div>
 
         {/* Explore Posts Grid */}

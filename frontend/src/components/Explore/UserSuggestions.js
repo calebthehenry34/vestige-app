@@ -1,10 +1,7 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight } from '@carbon/icons-react';
-import { ChevronDownRegular, ChevronUpRegular } from '@fluentui/react-icons';
 import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
-import { debounce } from 'lodash';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 
 const UserSuggestions = () => {
@@ -12,14 +9,23 @@ const UserSuggestions = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(true);
-  const containerRef = useRef(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const observer = useRef();
+  const lastUserElementRef = useCallback(node => {
+    if (loading) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prevPage => prevPage + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, hasMore]);
   
-  const fetchUsers = async () => {
+  const fetchUsers = async (pageNum = 1) => {
     try {
-      const response = await fetch(`${API_URL}/api/users/suggestions`, {
+      const response = await fetch(`${API_URL}/api/users/suggestions?page=${pageNum}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -28,8 +34,9 @@ const UserSuggestions = () => {
         throw new Error('Failed to fetch suggestions');
       }
       const data = await response.json();
-      const formattedUsers = Array.isArray(data) ? data : data.users || [];
-      setUsers(formattedUsers);
+      const newUsers = Array.isArray(data) ? data : data.users || [];
+      setUsers(prevUsers => pageNum === 1 ? newUsers : [...prevUsers, ...newUsers]);
+      setHasMore(newUsers.length > 0);
       setError(null);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -74,43 +81,9 @@ const UserSuggestions = () => {
     fetchUsers();
   }, []);
 
-  const checkScrollPosition = () => {
-    if (containerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = containerRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft + clientWidth < scrollWidth);
-    }
-  };
-
   useEffect(() => {
-    const container = containerRef.current;
-    if (container) {
-      const debouncedCheck = debounce(() => checkScrollPosition(), 100);
-      container.addEventListener('scroll', debouncedCheck);
-      checkScrollPosition();
-      return () => {
-        container.removeEventListener('scroll', debouncedCheck);
-        debouncedCheck.cancel();
-      };
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isExpanded && containerRef.current) {
-      containerRef.current.scrollLeft = 0;
-      checkScrollPosition();
-    }
-  }, [isExpanded]);
-
-  const handleScroll = (direction) => {
-    if (containerRef.current) {
-      const scrollAmount = 300;
-      containerRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
+    fetchUsers(page);
+  }, [page]);
 
   if (loading) {
     return (
@@ -121,13 +94,12 @@ const UserSuggestions = () => {
           <div className="h-6 bg-gray-300 rounded w-1/4 animate-pulse"></div>
         </div>
         <div className="p-4">
-          <div className="flex space-x-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse flex-none w-48">
+          <div className="grid grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="animate-pulse">
                 <div className={`aspect-square rounded-lg ${
                   theme === 'dark-theme' ? 'bg-gray-800' : 'bg-gray-300'
                 }`}></div>
-                <div className="mt-2 h-4 bg-gray-300 rounded w-3/4"></div>
               </div>
             ))}
           </div>
@@ -155,112 +127,62 @@ const UserSuggestions = () => {
   }
 
   return (
-    <div className={`rounded-lg shadow-lg mb-6 pt-10 ${
+    <div className={`rounded-lg shadow-lg mb-6 pt-10 overflow-hidden ${
       theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
     }`}>
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className={`w-full p-4 flex justify-between items-center border-b ${
-          theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
-        }`}
-      >
-        <h2 className={`text-lg font-semibold ${
-          theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
-        }`}>
-          Discover People
-        </h2>
-        {isExpanded ? (
-          <ChevronUpRegular className="w-5 h-5" />
-        ) : (
-          <ChevronDownRegular className="w-5 h-5" />
-        )}
-      </button>
+      <h2 className={`p-4 text-lg font-semibold border-b ${
+        theme === 'dark-theme' ? 'text-white border-gray-800' : 'text-gray-900 border-gray-200'
+      }`}>
+        Discover People
+      </h2>
       
-      {isExpanded && (
-        <div className="relative">
-          {canScrollLeft && (
-            <button
-              onClick={() => handleScroll('left')}
-              className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full shadow-lg ${
-                theme === 'dark-theme' 
-                  ? 'bg-gray-800 text-white hover:bg-gray-700' 
-                  : 'bg-white text-gray-800 hover:bg-gray-100'
-              }`}
-            >
-              <ArrowLeft size={20} />
-            </button>
-          )}
-
-          <div 
-            ref={containerRef}
-            className="flex overflow-x-auto scroll-smooth hide-scrollbar p-4 space-x-4"
-            style={{ scrollbarWidth: 'none' }}
-          >
-            {users.map(user => (
+      <div className="grid grid-cols-2 gap-4 p-4 max-h-[600px] overflow-y-auto">
+            {users.map((user, index) => (
               <div 
                 key={user._id}
-                className={`flex-none w-48 rounded-lg overflow-hidden ${
+                ref={index === users.length - 1 ? lastUserElementRef : null}
+                className={`relative rounded-lg overflow-hidden aspect-square ${
                   theme === 'dark-theme' ? 'bg-gray-800' : 'bg-gray-50'
                 }`}
               >
-                <Link to={`/profile/${user.username}`} className="block relative">
-                  <div className="aspect-square relative">
-                    <img 
-                      src={getProfileImageUrl(user.profilePicture, user.username)}
-                      alt={user.username}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}`;
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
-                      <h3 className="font-medium truncate">
-                        {user.username}
-                      </h3>
-                      {user.bio && (
-                        <p className="text-sm mt-1 line-clamp-2 text-gray-200">
-                          {user.bio}
-                        </p>
-                      )}
-                    </div>
+                <Link to={`/profile/${user.username}`} className="block w-full h-full">
+                  <img 
+                    src={getProfileImageUrl(user.profilePicture, user.username)}
+                    alt={user.username}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}`;
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                  <div className="absolute bottom-0 left-0 right-0 p-3 text-white z-10">
+                    <h3 className="font-medium truncate">
+                      {user.username}
+                    </h3>
+                    {user.bio && (
+                      <p className="text-sm mt-1 line-clamp-2 text-gray-200">
+                        {user.bio}
+                      </p>
+                    )}
                   </div>
                 </Link>
-                <div className="p-3">
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleFollow(user._id);
-                    }}
-                    className={`w-full py-2 rounded-lg font-medium ${
-                      user.isFollowing
-                        ? theme === 'dark-theme'
-                          ? 'bg-gray-700 text-white'
-                          : 'bg-gray-100 text-gray-800'
-                        : 'bg-blue-500 text-white'
-                    }`}
-                  >
-                    {user.isFollowing ? 'Following' : 'Follow'}
-                  </button>
-                </div>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleFollow(user._id);
+                  }}
+                  className={`absolute top-3 right-3 px-4 py-1.5 rounded-full text-sm font-medium z-20 ${
+                    user.isFollowing
+                      ? 'bg-white/20 text-white backdrop-blur-sm hover:bg-white/30'
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                >
+                  {user.isFollowing ? 'Following' : 'Follow'}
+                </button>
               </div>
             ))}
           </div>
 
-          {canScrollRight && (
-            <button
-              onClick={() => handleScroll('right')}
-              className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full shadow-lg ${
-                theme === 'dark-theme' 
-                  ? 'bg-gray-800 text-white hover:bg-gray-700' 
-                  : 'bg-white text-gray-800 hover:bg-gray-100'
-              }`}
-            >
-              <ArrowRight size={20} />
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 };

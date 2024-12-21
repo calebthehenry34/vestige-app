@@ -78,48 +78,6 @@ const Home = () => {
     return null;
   };
 
-  const renderText = (text) => {
-    if (!text || typeof text !== 'string') return '';
-    
-    return text.split(' ').map((word, index) => {
-      // Skip if word is undefined or not a string
-      if (!word || typeof word !== 'string') return ' ';
-      
-      if (word.startsWith('#')) {
-        return (
-          <React.Fragment key={index}>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                navigate(`/explore/hashtag/${word.slice(1)}`);
-              }}
-              className="text-blue-500 hover:underline"
-            >
-              {word}
-            </button>{' '}
-          </React.Fragment>
-        );
-      } else if (word.startsWith('@')) {
-        return (
-          <React.Fragment key={index}>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                navigate(`/profile/${word.slice(1)}`);
-              }}
-              className="text-blue-500 hover:underline"
-            >
-              {word}
-            </button>{' '}
-          </React.Fragment>
-        );
-      }
-      return word + ' ';
-    });
-  };
-
   const fetchPosts = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -513,7 +471,7 @@ const Home = () => {
                 </button>
 
                 {/* Bottom Action Bar */}
-                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 to-transparent">
+                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/90 to-transparent">
                   <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center text-white z-20">
                     <div className="flex space-x-4">
                       <button onClick={(e) => {
@@ -610,17 +568,6 @@ const Home = () => {
                 )}
               </div>
             )}
-
-            {/* Caption */}
-            <div className="p-4 text-white">
-              <span 
-                className="font-semibold mr-2 cursor-pointer"
-                onClick={() => navigate(`/profile/${post.user?.username}`)}
-              >
-                {post.user?.username}
-              </span>
-              {renderText(post.caption)}
-            </div>
 
             {/* Comments Section */}
             <div className="border-t border-[#262626] relative">
