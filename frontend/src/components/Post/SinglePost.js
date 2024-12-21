@@ -15,7 +15,7 @@ import {
   MoreHorizontalRegular,
   DeleteRegular,
   EditRegular,
-  ReportRegular
+  ErrorCircleRegular
 } from '@fluentui/react-icons';
 import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
@@ -443,7 +443,7 @@ const SinglePost = () => {
                       theme === 'dark-theme' ? 'hover:bg-gray-700' : ''
                     }`}
                   >
-                    <ReportRegular className="w-5 h-5" />
+                    <ErrorCircleRegular className="w-5 h-5" />
                     Report Post
                   </button>
                 )}
