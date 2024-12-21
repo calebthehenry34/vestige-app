@@ -118,6 +118,26 @@ const userSchema = new mongoose.Schema({
   },
 
   
+  // Subscription-related fields
+  stripeCustomerId: {
+    type: String,
+    select: false
+  },
+  subscriptionStatus: {
+    type: String,
+    enum: ['inactive', 'active', 'past_due', 'canceled'],
+    default: 'inactive'
+  },
+  subscriptionTier: {
+    type: String,
+    enum: ['beta_tier', 'pro_tier', null],
+    default: null
+  },
+  trialEndsAt: {
+    type: Date,
+    default: null
+  },
+
   // New video-related fields
   videoCount: {
     type: Number,

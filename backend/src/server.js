@@ -15,6 +15,7 @@ import chatRoutes from './routes/messageRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import videoRoutes from './routes/videoRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { startEmailQueue } from './services/emailService.js';
@@ -184,6 +185,10 @@ app.use('/api/messages', chatRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts/videos', videoRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+// Special handling for Stripe webhook endpoint
+app.use('/api/subscriptions/webhook', express.raw({ type: 'application/json' }));
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // Test route (only in development)
 if (process.env.NODE_ENV !== 'production') {

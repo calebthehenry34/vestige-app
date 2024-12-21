@@ -2,6 +2,7 @@ import React, { useState, useEffect, createContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { StripeProvider } from './context/StripeContext';
 import './global.scss';
 import './index.css';
 import Login from './components/Auth/Login';
@@ -148,7 +149,8 @@ function App() {
       <AuthProvider>
         <NotificationProvider>
           <ThemeContext.Provider value={{ theme, toggleTheme }}>
-            <ScrollProvider>
+            <StripeProvider>
+              <ScrollProvider>
               <ErrorBoundary theme={theme}>
                 <div className={`${
                   theme === 'dark-theme' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-black'
@@ -243,7 +245,8 @@ function App() {
                   </Routes>
                 </div>
               </ErrorBoundary>
-            </ScrollProvider>
+              </ScrollProvider>
+            </StripeProvider>
           </ThemeContext.Provider>
         </NotificationProvider>
       </AuthProvider>
