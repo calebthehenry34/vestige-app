@@ -11,16 +11,21 @@ export const NotificationProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
+      // Get the base URL without any path
+      const baseUrl = process.env.REACT_APP_API_URL.replace(/\/+$/, '');
+      
       // Connect to WebSocket server
-      const socket = io(process.env.REACT_APP_API_URL || 'http://localhost:3000', {
+      const socket = io(baseUrl, {
         withCredentials: true,
-        transports: ['websocket', 'polling'],
+        transports: ['websocket'], // Try websocket first
         autoConnect: true,
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
         timeout: 20000,
+        forceNew: true, // Force a new connection
+        path: '/socket.io', // Explicitly set Socket.IO path
         extraHeaders: {
           'Access-Control-Allow-Credentials': 'true'
         }
@@ -34,6 +39,11 @@ export const NotificationProvider = ({ children }) => {
 
       socket.on('connect_error', (error) => {
         console.error('Socket connection error:', error);
+        // Fallback to polling if websocket fails
+        if (socket.io.opts.transports[0] === 'websocket') {
+          console.log('Falling back to polling transport');
+          socket.io.opts.transports = ['polling', 'websocket'];
+        }
       });
 
       socket.on('error', (error) => {

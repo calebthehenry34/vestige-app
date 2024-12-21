@@ -10,10 +10,12 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   const [activeTab, setActiveTab] = useState('all');
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      setIsClosing(false);
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -21,6 +23,13 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
       document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 200); // Match the animation duration
+  };
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -114,7 +123,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
     } else if (notification.type === 'follow' && notification.sender) {
       navigate(`/profile/${notification.sender.username}`);
     }
-    onClose();
+    handleClose();
   };
 
   const renderActivity = (notification) => {
@@ -226,8 +235,8 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   }
 
   return (
-    <div className="activity-modal-overlay">
-      <div className={`activity-modal max-w-2xl mx-auto ${
+    <div className={`activity-modal-overlay ${isClosing ? 'closing' : ''}`}>
+      <div className={`activity-modal ${isClosing ? 'closing' : ''} ${
         theme === 'dark-theme' ? 'bg-black' : 'bg-white'
       }`}>
         <div className={`card-header flex justify-between items-center`}>
@@ -237,7 +246,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
             Notifications
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-500 hover:text-gray-700 focus:outline-none"
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
