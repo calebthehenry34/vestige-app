@@ -161,7 +161,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
               className="w-12 h-12 rounded-xl mr-4 object-cover opacity-50"
             />
             <div>
-              <span className="font-semibold">Deleted User</span>
+              <span className="font-headlines">Deleted User</span>
               <div className="text-sm">{getTimeAgo(createdAt)}</div>
             </div>
           </div>
@@ -183,7 +183,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
           }}
         />
         <div className="flex flex-col min-w-0">
-          <div className="font-semibold truncate">
+          <div className="font-headlines truncate">
             {sender.username}
           </div>
           <div className={`text-sm truncate ${
@@ -254,7 +254,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
         <div className={`flex items-center justify-between px-6 py-4 border-b ${
           theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
         }`}>
-          <h2 className="text-xl font-semibold">Activity</h2>
+          <h2 className="text-xl font-headlines">Activity</h2>
           <button
             onClick={handleClose}
             className={`p-2 rounded-full transition-colors duration-200 ${
@@ -267,7 +267,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
           </button>
         </div>
 
-        <div className="max-h-[50vh] overflow-y-auto">
+        <div className="max-h-[500px] overflow-y-auto">
           {loading ? (
             <div className="flex justify-center items-center p-6">
               <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
