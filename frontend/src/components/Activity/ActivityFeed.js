@@ -30,7 +30,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
     setIsAnimating(false);
     setTimeout(() => {
       onClose();
-    }, 300); // Match the animation duration
+    }, 300);
   };
 
   const fetchNotifications = useCallback(async () => {
@@ -152,14 +152,14 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
 
     if (!sender) {
       return (
-        <div className={`flex items-center justify-between p-4 ${
+        <div className={`flex items-center justify-between px-6 py-4 ${
           theme === 'dark-theme' ? 'text-gray-500' : 'text-gray-400'
         }`}>
           <div className="flex items-center">
             <img
               src="/default-avatar.png"
               alt="Deleted User"
-              className="w-10 h-10 rounded-full mr-3 object-cover opacity-50"
+              className="w-12 h-12 rounded-xl mr-4 object-cover opacity-50"
             />
             <div>
               <span className="font-semibold">Deleted User</span>
@@ -171,11 +171,11 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
     }
 
     const baseUserInfo = (
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-4">
         <img
           src={getProfileImageUrl(sender.profilePicture, sender.username)}
           alt={sender.username}
-          className={`w-10 h-10 rounded-md object-cover flex-shrink-0 ${
+          className={`w-12 h-12 rounded-xl object-cover flex-shrink-0 ${
             theme === 'dark-theme' ? 'bg-zinc-900' : 'bg-gray-100'
           }`}
           onClick={(e) => {
@@ -203,7 +203,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
 
     return (
       <div 
-        className={`flex items-center justify-between p-4 cursor-pointer transition-colors duration-200 ${
+        className={`flex items-center justify-between px-6 py-4 cursor-pointer transition-colors duration-200 ${
           theme === 'dark-theme' 
             ? 'hover:bg-zinc-900' 
             : 'hover:bg-gray-50'
@@ -215,7 +215,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
         onClick={() => handleNotificationClick(notification)}
       >
         {baseUserInfo}
-        <div className="flex items-center space-x-3 flex-shrink-0">
+        <div className="flex items-center space-x-4 flex-shrink-0">
           {type === 'follow' ? (
             <div onClick={e => e.stopPropagation()}>
               <FollowButton 
@@ -227,7 +227,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
             <img
               src={post.media}
               alt="Post"
-              className="w-12 h-12 object-cover rounded-md"
+              className="w-12 h-12 object-cover rounded-xl"
             />
           )}
         </div>
@@ -238,20 +238,27 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="font-headlines fixed inset-0 bg-black/60 z-[200] flex items-center justify-center backdrop-blur-sm">
+    <div className="fixed inset-0 z-[200] flex items-end justify-center">
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={handleClose}
+      />
       <div 
         className={`${
           theme === 'dark-theme' 
             ? 'bg-black border-zinc-800 text-white' 
             : 'bg-white border-gray-200 text-black'
-        } w-[95vw] max-w-md h-[70vh] rounded-2xl transform transition-transform duration-300 ease-out shadow-lg ${
-          isAnimating ? 'translate-y-0 scale-100' : 'translate-y-full scale-95'
+        } w-[95vw] max-w-md rounded-t-2xl transform transition-all duration-300 ease-out shadow-xl relative ${
+          isAnimating ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
-        <div className={`flex items-center justify-between p-4 border-b ${
+        {/* Handle bar for bottom sheet */}
+        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-12 h-1.5 bg-gray-300 rounded-full mx-auto" />
+
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${
           theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
         }`}>
-          <h2 className="text-xl font-headlines">Notifications</h2>
+          <h2 className="text-xl font-semibold">Activity</h2>
           <button
             onClick={handleClose}
             className={`p-2 rounded-full transition-colors duration-200 ${
@@ -268,7 +275,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
           theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
         }`}>
           <button
-            className={`flex-1 px-4 py-3 font-headlinesd ${
+            className={`flex-1 px-6 py-3 font-semibold ${
               activeTab === 'all' 
                 ? theme === 'dark-theme'
                   ? 'border-b-2 border-white text-white'
@@ -282,7 +289,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
             All
           </button>
           <button
-            className={`flex-1 px-4 py-3 font-headlines ${
+            className={`flex-1 px-6 py-3 font-semibold ${
               activeTab === 'follows'
                 ? theme === 'dark-theme'
                   ? 'border-b-2 border-white text-white'
@@ -297,15 +304,15 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
           </button>
         </div>
 
-        <div className="h-[calc(80vh-8rem)] overflow-y-auto">
+        <div className="max-h-[60vh] overflow-y-auto">
           {loading ? (
-            <div className="flex justify-center items-center p-4">
+            <div className="flex justify-center items-center p-6">
               <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
                 theme === 'dark-theme' ? 'border-blue-400' : 'border-blue-500'
               }`}></div>
             </div>
           ) : notifications.length === 0 ? (
-            <div className={`text-center p-4 ${
+            <div className={`text-center p-6 ${
               theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
             }`}>
               No notifications yet
@@ -313,15 +320,15 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
           ) : (
             <>
               {notifications.length > 0 && (
-                <div className={`flex justify-end p-2 border-b ${
+                <div className={`flex justify-end px-6 py-2 border-b ${
                   theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
                 }`}>
                   <button
                     onClick={markAllAsRead}
-                    className={`text-sm px-3 py-1 rounded ${
+                    className={`text-sm px-3 py-1 rounded-full transition-colors duration-200 ${
                       theme === 'dark-theme' 
-                        ? 'text-gray-400 hover:text-white' 
-                        : 'text-gray-600 hover:text-black'
+                        ? 'text-gray-400 hover:text-white hover:bg-zinc-900' 
+                        : 'text-gray-600 hover:text-black hover:bg-gray-100'
                     }`}
                   >
                     Mark all as read
