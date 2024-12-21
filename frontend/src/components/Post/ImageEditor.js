@@ -26,6 +26,11 @@ const ImageEditor = ({ image, onSave }) => {
   const [activeAdjustment, setActiveAdjustment] = useState(null);
   const filtersContainerRef = useRef(null);
 
+  if (!image || typeof image !== 'string') {
+    console.error('Invalid image format provided to ImageEditor');
+    return null;
+  }
+
   const handleFilterScroll = (direction) => {
     if (filtersContainerRef.current) {
       const scrollAmount = direction === 'left' ? -200 : 200;

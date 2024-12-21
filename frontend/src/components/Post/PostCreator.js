@@ -214,10 +214,20 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
   };
 
   const handleEditComplete = async ({ filter, adjustments }) => {
+    // Ensure croppedMedia is a valid string URL
+    if (!state.croppedMedia || typeof state.croppedMedia !== 'string') {
+      setState(prev => ({
+        ...prev,
+        error: 'Invalid media format. Please try again.',
+        step: 'upload'
+      }));
+      return;
+    }
+
     setState(prev => ({
       ...prev,
       editedMedia: {
-        url: prev.croppedMedia,
+        url: state.croppedMedia,
         filter: filter || '',
         adjustments: adjustments ? 
           `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%)` 
@@ -236,6 +246,16 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
   const handleShare = async () => {
     try {
+      // Validate editedMedia state
+      if (!state.editedMedia?.url || typeof state.editedMedia.url !== 'string') {
+        setState(prev => ({
+          ...prev,
+          error: 'Invalid media format. Please try uploading the image again.',
+          step: 'upload'
+        }));
+        return;
+      }
+
       setState(prev => ({ ...prev, loading: true, error: null }));
       
       // Apply filters and adjustments to get final image
@@ -532,7 +552,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
           {state.step === 'upload' && renderUpload()}
           {state.step === 'crop' && state.media && renderCrop()}
           {state.step === 'filters' && state.croppedMedia && renderFilters()}
-          {state.step === 'caption' && state.editedMedia && renderCaption()}
+          {state.step === 'caption' && state.editedMedia?.url && typeof state.editedMedia.url === 'string' && renderCaption()}
         </div>
 
         {/* Loading Overlay */}
