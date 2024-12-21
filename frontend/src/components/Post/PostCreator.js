@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import Cropper from 'react-easy-crop';
 import {
   ImageRegular,
   ArrowLeftFilled,
@@ -11,13 +12,61 @@ import {
   LocationRegular,
 } from '@fluentui/react-icons';
 import ImageEditor from './ImageEditor';
-import ProfileImageEditor from '../Onboarding/ProfileImageEditor';
 import axios from 'axios';
 import { API_URL } from '../../config';
 import styles from '../Onboarding/OnboardingFlow.module.css';
 import LocationAutocomplete from '../Common/LocationAutocomplete';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+const createImage = (url) =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener('load', () => resolve(image));
+    image.addEventListener('error', (error) => reject(error));
+    image.setAttribute('crossOrigin', 'anonymous');
+    image.src = url;
+  });
+
+const getCroppedImg = async (imageSrc, pixelCrop) => {
+  try {
+    const image = await createImage(imageSrc);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      throw new Error('No 2d context');
+    }
+
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
+    );
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Canvas is empty'));
+          return;
+        }
+        resolve(URL.createObjectURL(blob));
+      }, 'image/jpeg', 1);
+    });
+  } catch (error) {
+    console.error('Error in getCroppedImg:', error);
+    throw error;
+  }
+};
 
 const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
   const initialState = {
@@ -31,7 +80,10 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     uploadProgress: 0,
     error: null,
     loading: false,
-    success: false
+    success: false,
+    crop: { x: 0, y: 0 },
+    zoom: 1,
+    croppedAreaPixels: null
   };
 
   const [state, setState] = useState(initialState);
@@ -84,19 +136,38 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     multiple: false
   });
 
-  const handleCropComplete = async ({ croppedImage }) => {
-    setState(prev => ({
-      ...prev,
-      croppedMedia: croppedImage,
-      slideDirection: styles.slideLeft
-    }));
-    setTimeout(() => {
+  const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+    setState(prev => ({ ...prev, croppedAreaPixels }));
+  }, []);
+
+  const handleCropSave = async () => {
+    try {
+      if (!state.croppedAreaPixels || !state.media) {
+        throw new Error('Invalid crop area or image');
+      }
+
+      const croppedImage = await getCroppedImg(state.media, state.croppedAreaPixels);
+      
       setState(prev => ({
         ...prev,
-        step: 'filters',
-        slideDirection: styles.slideNext
+        croppedMedia: croppedImage,
+        slideDirection: styles.slideLeft
       }));
-    }, 300);
+
+      setTimeout(() => {
+        setState(prev => ({
+          ...prev,
+          step: 'filters',
+          slideDirection: styles.slideNext
+        }));
+      }, 300);
+    } catch (error) {
+      console.error('Error saving crop:', error);
+      setState(prev => ({
+        ...prev,
+        error: 'Failed to process image. Please try again.'
+      }));
+    }
   };
 
   const handleEditComplete = async ({ filter, adjustments }) => {
@@ -191,6 +262,8 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
   const handleNext = () => {
     if (state.step === 'filters') {
       handleEditComplete({ filter: '', adjustments: null });
+    } else if (state.step === 'crop') {
+      handleCropSave();
     }
   };
 
@@ -235,7 +308,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
   };
 
   const renderNavigation = () => (
-    <div className="p-6 border-b border-[#333333] grid grid-cols-3 items-center">
+    <div className="card-header p-6 border-b border-[#333333] grid grid-cols-3 items-center">
       <div className="flex items-center">
         {state.step !== 'upload' && (
           <button onClick={handleBack} className="text-white hover:text-gray-300 transition-colors">
@@ -247,7 +320,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
         {getStepLabel()}
       </div>
       <div className="flex justify-end">
-        {state.step === 'filters' && (
+        {(state.step === 'filters' || state.step === 'crop') && (
           <button onClick={handleNext} className="text-white hover:text-gray-300 transition-colors">
             <ArrowRightFilled className="w-6 h-6" />
           </button>
@@ -283,20 +356,31 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
   const renderCrop = () => (
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-hidden`}>
-        <ProfileImageEditor
-          image={state.media}
-          onSave={handleCropComplete}
-          aspectRatio={4/5}
-          circular={false}
-        />
+      <div className={`${styles.card} overflow-hidden`} style={{ height: 'calc(100vh - 200px)' }}>
+        <div className="relative h-full">
+          <Cropper
+            image={state.media}
+            crop={state.crop}
+            zoom={state.zoom}
+            aspect={4/5}
+            onCropChange={crop => setState(prev => ({ ...prev, crop }))}
+            onZoomChange={zoom => setState(prev => ({ ...prev, zoom }))}
+            onCropComplete={onCropComplete}
+            showGrid={true}
+            cropShape="rect"
+            objectFit="contain"
+            zoomWithScroll={true}
+            minZoom={1}
+            maxZoom={3}
+          />
+        </div>
       </div>
     </div>
   );
 
   const renderFilters = () => (
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-hidden`}>
+      <div className={`${styles.card} overflow-hidden`} style={{ height: 'calc(100vh - 200px)' }}>
         <ImageEditor 
           image={state.croppedMedia}
           onSave={handleEditComplete}
@@ -310,11 +394,11 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
       <div className={`${styles.card} overflow-auto`}>
         <div className="h-full flex flex-col">
           {/* Preview Image */}
-          <div className="relative w-full aspect-[4/5]">
+          <div className="relative w-full" style={{ maxHeight: 'calc(100vh - 400px)' }}>
             <img
               src={state.editedMedia.url}
               alt="Preview"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               style={{ 
                 filter: `${state.editedMedia.filter} ${state.editedMedia.adjustments}`
               }}
