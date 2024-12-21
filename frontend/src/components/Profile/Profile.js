@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext,useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -28,54 +28,53 @@ const Profile = () => {
   const [followingModalOpen, setFollowingModalOpen] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
 
-  // Fetch profile data and posts
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        
-        // Fetch profile data
-        const profileResponse = await fetch(API_URL + '/api/profile/' + username, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        const profileData = await profileResponse.json();
-        
-        if (!profileResponse.ok) {
-          throw new Error(profileData.error || 'Failed to fetch profile');
+  const fetchProfileData = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Fetch profile data
+      const profileResponse = await fetch(API_URL + '/api/profile/' + username, {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-
-        setProfileData(profileData);
-        setBioText(profileData.bio || '');
-        setIsFollowing(profileData.isFollowing || false);
-
-        // Fetch user's posts using their ID with the correct endpoint
-        const postsResponse = await fetch(`${API_URL}/api/posts/user/${profileData._id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        const postsData = await postsResponse.json();
-
-        if (!postsResponse.ok) {
-          throw new Error('Failed to fetch posts');
-        }
-
-        // Ensure posts is always an array
-        setPosts(Array.isArray(postsData.posts) ? postsData.posts : []);
-      } catch (error) {
-        console.error('Error fetching profile data:', error);
-        setPosts([]); // Set empty array on error
-      } finally {
-        setLoading(false);
+      });
+      const profileData = await profileResponse.json();
+      
+      if (!profileResponse.ok) {
+        throw new Error(profileData.error || 'Failed to fetch profile');
       }
-    };
+  
+      setProfileData(profileData);
+      setBioText(profileData.bio || '');
+      setIsFollowing(profileData.isFollowing || false);
+  
+      // Fetch user's posts using their ID with the correct endpoint
+      const postsResponse = await fetch(`${API_URL}/api/posts/user/${profileData._id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const postsData = await postsResponse.json();
+  
+      if (!postsResponse.ok) {
+        throw new Error('Failed to fetch posts');
+      }
+  
+      // Ensure posts is always an array
+      setPosts(Array.isArray(postsData.posts) ? postsData.posts : []);
+    } catch (error) {
+      console.error('Error fetching profile data:', error);
+      setPosts([]); // Set empty array on error
+    } finally {
+      setLoading(false);
+    }
+  }, [username]);
 
+  useEffect(() => {
     if (username) {
       fetchProfileData();
     }
-  }, [username]);
+  }, [username, fetchProfileData]);
 
   const handleProfilePhotoClick = () => {
     if (isOwnProfile) {
@@ -113,12 +112,10 @@ const Profile = () => {
     setIsEditingBio(false);
   };
 
-  const handleFollowChange = (newFollowState) => {
+  const handleFollowChange = async (newFollowState) => {
     setIsFollowing(newFollowState);
-    setProfileData(prev => ({
-      ...prev,
-      followersCount: prev.followersCount + (newFollowState ? 1 : -1)
-    }));
+    // Refetch profile data to get updated counts
+    await fetchProfileData();
   };
 
   if (loading) {

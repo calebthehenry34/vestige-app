@@ -33,7 +33,7 @@ import { getProfileImageUrl } from '../../utils/imageUtils';
 import PostCreator from '../Post/PostCreator';
 import { API_URL } from '../../config';
 import ActivityFeed from '../Activity/ActivityFeed';
-
+import Toast from '../Common/Toast';
 
 const Navbar = () => {
   const { theme, toggleTheme } = useContext(ThemeContext);
@@ -51,12 +51,26 @@ const Navbar = () => {
   const mobileNavRef = useRef(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-
   const isSettingsPage = location.pathname === '/settings';
+  const [activeToast, setActiveToast] = useState(null);
+
 
 
   useEffect(() => {
     fetchUnreadNotificationsCount();
+    
+    // Setup WebSocket connection
+    const ws = new WebSocket(API_URL.replace('http', 'ws') + '/ws');
+    
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'notification') {
+        setUnreadNotifications(prev => prev + 1);
+        setActiveToast(data);
+      }
+    };
+  
+    return () => ws.close();
   }, []);
 
   const fetchUnreadNotificationsCount = async () => {
@@ -162,7 +176,9 @@ const Navbar = () => {
         <div className="relative">
           <HeartRegular className="w-7 h-7" />
           {unreadNotifications > 0 && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full" />
+            <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center text-xs text-white px-1">
+              {unreadNotifications}
+            </div>
           )}
         </div>
       ),
@@ -377,6 +393,13 @@ const Navbar = () => {
 
   return (
     <>
+      {activeToast && (
+      <Toast 
+        notification={activeToast} 
+        onClose={() => setActiveToast(null)}
+      />
+    )}
+
       <div className={`fixed top-0 left-0 right-0 z-[100] transition-transform duration-300 ${
         visible ? 'translate-y-0' : '-translate-y-full'
       } ${
@@ -435,7 +458,7 @@ const Navbar = () => {
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="max-w- mx-auto relative">
+          <div className="max-w-sm mx-auto relative">
             <div className={`${
               theme === 'dark-theme'
                 ? 'bg-gray-900'
