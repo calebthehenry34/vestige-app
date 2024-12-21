@@ -21,12 +21,19 @@ import PostComments from './PostComments';
 // Function to generate different image sizes
 const getResponsiveImageUrl = (mediaPath, size) => {
   if (!mediaPath) return '';
+  if (typeof mediaPath !== 'string') return '';
   if (mediaPath.startsWith('http')) return mediaPath;
   
   // Extract base path and extension
   const lastDot = mediaPath.lastIndexOf('.');
+  if (lastDot === -1) return ''; // Invalid path without extension
+  
   const basePath = mediaPath.substring(0, lastDot);
   const ext = mediaPath.substring(lastDot);
+  
+  // Validate size parameter
+  const validSizes = ['thumbnail', 'small', 'medium', 'large'];
+  if (!validSizes.includes(size)) return '';
   
   return `${API_URL}/uploads/${basePath}-${size}${ext}`;
 };
@@ -64,22 +71,24 @@ const SinglePost = () => {
       }
     );
 
-    if (imageRef.current) {
-      observer.observe(imageRef.current);
+    const currentImageRef = imageRef.current;
+    if (currentImageRef) {
+      observer.observe(currentImageRef);
     }
 
     return () => {
-      if (imageRef.current) {
-        observer.unobserve(imageRef.current);
+      if (currentImageRef) {
+        observer.unobserve(currentImageRef);
       }
     };
   }, [post]);
 
   const getMediaUrl = (mediaPath) => {
     if (!mediaPath) return '';
-    return mediaPath.startsWith('http') 
-      ? mediaPath 
-      : `${API_URL}/uploads/${mediaPath}`;
+    if (typeof mediaPath !== 'string') return '';
+    if (mediaPath.startsWith('http')) return mediaPath;
+    if (!mediaPath.includes('.')) return ''; // Ensure path has an extension
+    return `${API_URL}/uploads/${mediaPath}`;
   };
   
   useEffect(() => {
@@ -183,9 +192,12 @@ const SinglePost = () => {
   };
 
   const renderText = (text) => {
-    if (!text) return ''; 
+    if (!text || typeof text !== 'string') return ''; 
     
     return text.split(' ').map((word, index) => {
+      // Skip if word is undefined or not a string
+      if (!word || typeof word !== 'string') return ' ';
+      
       if (word.startsWith('#')) {
         return (
           <React.Fragment key={index}>
@@ -283,8 +295,23 @@ const SinglePost = () => {
                 controls
                 className="w-full h-auto max-h-[calc(100vh-10rem)] object-contain"
                 onError={(e) => {
-                  console.error('Video load error:', post.media);
-                  e.target.style.display = 'none';
+                  console.error('Video load error:', {
+                    media: post.media,
+                    src: e.target.src,
+                    generatedSrc: getMediaUrl(post.media)
+                  });
+                  // Replace the video with a fallback UI that respects theme
+                  const fallback = document.createElement('div');
+                  fallback.className = `w-full h-full flex items-center justify-center ${
+                    theme === 'dark-theme' ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-500'
+                  }`;
+                  fallback.innerHTML = `
+                    <div class="text-center p-4">
+                      <div class="mb-2">⚠️</div>
+                      <div>Failed to load video</div>
+                    </div>
+                  `;
+                  e.target.parentNode.replaceChild(fallback, e.target);
                 }}
               />
             ) : (
@@ -324,11 +351,7 @@ const SinglePost = () => {
                 <img
                   ref={imageRef}
                   data-src={getMediaUrl(post.media)}
-                  data-srcset={`
-                    ${getResponsiveImageUrl(post.media, 'small')} 400w,
-                    ${getResponsiveImageUrl(post.media, 'medium')} 800w,
-                    ${getResponsiveImageUrl(post.media, 'large')} 1200w
-                  `}
+                  data-srcset={`${getResponsiveImageUrl(post.media, 'small')} 400w, ${getResponsiveImageUrl(post.media, 'medium')} 800w, ${getResponsiveImageUrl(post.media, 'large')} 1200w`}
                   sizes="(max-width: 768px) 100vw, 58.333vw"
                   alt="Post content"
                   className={`transition-transform duration-300 ${
@@ -339,10 +362,36 @@ const SinglePost = () => {
                   style={isZoomed ? {
                     transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(2)`,
                   } : {}}
-                  onLoad={() => setIsImageLoaded(true)}
+                  onLoad={(e) => {
+                    console.log('Image loaded successfully:', {
+                      media: post.media,
+                      src: e.target.src,
+                      srcset: e.target.srcset,
+                      naturalWidth: e.target.naturalWidth,
+                      naturalHeight: e.target.naturalHeight
+                    });
+                    setIsImageLoaded(true);
+                  }}
                   onError={(e) => {
-                    console.error('Image load error:', post.media);
-                    e.target.style.display = 'none';
+                    console.error('Image load error:', {
+                      media: post.media,
+                      src: e.target.src,
+                      srcset: e.target.srcset,
+                      generatedSrc: getMediaUrl(post.media),
+                      generatedSrcSet: `${getResponsiveImageUrl(post.media, 'small')} 400w, ${getResponsiveImageUrl(post.media, 'medium')} 800w, ${getResponsiveImageUrl(post.media, 'large')} 1200w`
+                    });
+                    // Replace the image with a fallback UI that respects theme
+                    const fallback = document.createElement('div');
+                    fallback.className = `w-full h-full flex items-center justify-center ${
+                      theme === 'dark-theme' ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-500'
+                    }`;
+                    fallback.innerHTML = `
+                      <div class="text-center p-4">
+                        <div class="mb-2">⚠️</div>
+                        <div>Failed to load image</div>
+                      </div>
+                    `;
+                    e.target.parentNode.replaceChild(fallback, e.target);
                   }}
                 />
               </div>
