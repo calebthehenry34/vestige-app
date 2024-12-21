@@ -11,6 +11,17 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   const fetchNotifications = useCallback(async () => {
     try {
       const response = await fetch(`${API_URL}/api/notifications`, {
@@ -77,7 +88,6 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   };
 
   const handleNotificationClick = async (notification) => {
-    // Mark notification as read
     try {
       const response = await fetch(`${API_URL}/api/notifications/${notification._id}/read`, {
         method: 'PATCH',
@@ -87,11 +97,9 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
       });
 
       if (response.ok) {
-        // Update local state
         setNotifications(notifications.map(n => 
           n._id === notification._id ? { ...n, read: true } : n
         ));
-        // Update unread count
         const unreadCount = notifications.filter(n => !n.read && n._id !== notification._id).length;
         if (onNotificationsUpdate) {
           onNotificationsUpdate(unreadCount);
@@ -101,7 +109,6 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
       console.error('Error marking notification as read:', error);
     }
 
-    // Navigate based on notification type
     if (notification.post) {
       navigate(`/post/${notification.post._id}`);
     } else if (notification.type === 'follow' && notification.sender) {
@@ -113,7 +120,6 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   const renderActivity = (notification) => {
     const { type, sender, post, commentData, createdAt } = notification;
 
-    // Handle case where sender data is missing
     if (!sender) {
       return (
         <div className={`mb-50 flex items-center justify-between py-4 ${
@@ -211,7 +217,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
 
   if (loading) {
     return (
-      <div className={`mb-50 max-w-2xl mx-auto px-4 py-8 text-center ${
+      <div className={`activity-modal mb-50 max-w-2xl mx-auto px-4 py-8 text-center ${
         theme === 'dark-theme' ? 'text-white' : 'text-black'
       }`}>
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
@@ -220,83 +226,98 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   }
 
   return (
-    <div className={`h-[50vh] max-w-2xl mx-auto p-10 font-headlines ${
-      theme === 'dark-theme' ? 'bg-black' : 'bg-white'
-    }`}>
-      {/* Header with Mark All as Read */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className={`text-lg  ${
-          theme === 'dark-theme' ? 'text-white' : 'text-black'
-        }`}>
-          Notifications
-        </h2>
-        {notifications.length > 0 && (
-          <button
-            onClick={markAllAsRead}
-            className={`text-sm px-3 py-1 rounded ${
-              theme === 'dark-theme' 
-                ? 'text-gray-300 hover:text-white' 
-                : 'text-gray-600 hover:text-black'
-            }`}
-          >
-            Mark all as read
-          </button>
-        )}
-      </div>
-
-      {/* Tabs */}
-      <div className={`m-50 flex border-b mb-4 ${
-        theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
+    <div className="activity-modal-overlay">
+      <div className={`activity-modal max-w-2xl mx-auto ${
+        theme === 'dark-theme' ? 'bg-black' : 'bg-white'
       }`}>
-        <button
-          className={`px-8 py-4 font-headlines ${
-            activeTab === 'all' 
-              ? theme === 'dark-theme'
-                ? 'border-b-2 border-white text-white'
-                : 'border-b-2 border-black text-black'
-              : theme === 'dark-theme'
-                ? 'text-gray-500'
-                : 'text-gray-500'
-          }`}
-          onClick={() => setActiveTab('all')}
-        >
-          All
-        </button>
-        <button
-          className={`px-8 py-4 font-semibold ${
-            activeTab === 'follows'
-              ? theme === 'dark-theme'
-                ? 'border-b-2 border-white text-white'
-                : 'border-b-2 border-black text-black'
-              : theme === 'dark-theme'
-                ? 'text-gray-500'
-                : 'text-gray-500'
-          }`}
-          onClick={() => setActiveTab('follows')}
-        >
-          Follows
-        </button>
-      </div>
-
-      {/* Activity List */}
-      <div className={`divide-y ${
-        theme === 'dark-theme' ? 'divide-gray-800' : 'divide-gray-200'
-      }`}>
-        {notifications.length === 0 ? (
-          <div className={`py-8 text-center ${
-            theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
+        <div className={`card-header flex justify-between items-center`}>
+          <h2 className={`text-lg font-headlines ${
+            theme === 'dark-theme' ? 'text-white' : 'text-black'
           }`}>
-            No notifications yet
+            Notifications
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 focus:outline-none"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="activity-modal-content p-6">
+          {/* Mark all as read button */}
+          {notifications.length > 0 && (
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={markAllAsRead}
+                className={`text-sm px-3 py-1 rounded ${
+                  theme === 'dark-theme' 
+                    ? 'text-gray-300 hover:text-white' 
+                    : 'text-gray-600 hover:text-black'
+                }`}
+              >
+                Mark all as read
+              </button>
+            </div>
+          )}
+
+          {/* Tabs */}
+          <div className={`flex border-b mb-4 ${
+            theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
+          }`}>
+            <button
+              className={`px-8 py-4 font-headlines ${
+                activeTab === 'all' 
+                  ? theme === 'dark-theme'
+                    ? 'border-b-2 border-white text-white'
+                    : 'border-b-2 border-black text-black'
+                  : theme === 'dark-theme'
+                    ? 'text-gray-500'
+                    : 'text-gray-500'
+              }`}
+              onClick={() => setActiveTab('all')}
+            >
+              All
+            </button>
+            <button
+              className={`px-8 py-4 font-semibold ${
+                activeTab === 'follows'
+                  ? theme === 'dark-theme'
+                    ? 'border-b-2 border-white text-white'
+                    : 'border-b-2 border-black text-black'
+                  : theme === 'dark-theme'
+                    ? 'text-gray-500'
+                    : 'text-gray-500'
+              }`}
+              onClick={() => setActiveTab('follows')}
+            >
+              Follows
+            </button>
           </div>
-        ) : (
-          notifications
-            .filter(notification => activeTab === 'all' || notification.type === 'follow')
-            .map(notification => (
-              <div key={notification._id}>
-                {renderActivity(notification)}
+
+          {/* Activity List */}
+          <div className={`notifications-list divide-y ${
+            theme === 'dark-theme' ? 'divide-gray-800' : 'divide-gray-200'
+          }`}>
+            {notifications.length === 0 ? (
+              <div className={`py-8 text-center ${
+                theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                No notifications yet
               </div>
-            ))
-        )}
+            ) : (
+              notifications
+                .filter(notification => activeTab === 'all' || notification.type === 'follow')
+                .map(notification => (
+                  <div key={notification._id}>
+                    {renderActivity(notification)}
+                  </div>
+                ))
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
