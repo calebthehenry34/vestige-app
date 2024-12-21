@@ -171,11 +171,11 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
     }
 
     const baseUserInfo = (
-      <div className="flex items-center flex-1">
+      <div className="flex items-center space-x-3">
         <img
           src={getProfileImageUrl(sender.profilePicture, sender.username)}
           alt={sender.username}
-          className={`w-10 h-10 rounded-full object-cover ${
+          className={`w-10 h-10 rounded-full object-cover flex-shrink-0 ${
             theme === 'dark-theme' ? 'bg-zinc-900' : 'bg-gray-100'
           }`}
           onClick={(e) => {
@@ -183,11 +183,11 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
             navigate(`/profile/${sender.username}`);
           }}
         />
-        <div className="ml-3">
-          <div className="font-semibold">
+        <div className="flex flex-col min-w-0">
+          <div className="font-semibold truncate">
             {sender.username}
           </div>
-          <div className={`text-sm ${
+          <div className={`text-sm truncate ${
             theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
           }`}>
             {getNotificationText(type, commentData)}
@@ -215,20 +215,22 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
         onClick={() => handleNotificationClick(notification)}
       >
         {baseUserInfo}
-        {type === 'follow' ? (
-          <div onClick={e => e.stopPropagation()}>
-            <FollowButton 
-              userId={sender._id} 
-              theme={theme}
+        <div className="flex items-center space-x-3 flex-shrink-0">
+          {type === 'follow' ? (
+            <div onClick={e => e.stopPropagation()}>
+              <FollowButton 
+                userId={sender._id} 
+                theme={theme}
+              />
+            </div>
+          ) : post?.media && (
+            <img
+              src={post.media}
+              alt="Post"
+              className="w-12 h-12 object-cover rounded-md"
             />
-          </div>
-        ) : post?.media && (
-          <img
-            src={post.media}
-            alt="Post"
-            className="w-12 h-12 object-cover rounded-md"
-          />
-        )}
+          )}
+        </div>
       </div>
     );
   };
@@ -236,20 +238,20 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[200] flex items-end justify-center backdrop-blur-sm">
+    <div className="font-headlines fixed inset-0 bg-black/60 z-[200] flex items-end justify-center backdrop-blur-sm">
       <div 
         className={`${
           theme === 'dark-theme' 
             ? 'bg-black border-zinc-800 text-white' 
             : 'bg-white border-gray-200 text-black'
-        } w-full max-w-md rounded-t-2xl transform transition-transform duration-300 ease-out shadow-lg ${
+        } min-h-screen w-[95vw] max-w-md rounded-t-2xl transform transition-transform duration-300 ease-out shadow-lg ${
           isAnimating ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
         <div className={`flex items-center justify-between p-4 border-b ${
           theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
         }`}>
-          <h2 className="text-xl font-semibold">Notifications</h2>
+          <h2 className="text-xl font-headlines">Notifications</h2>
           <button
             onClick={handleClose}
             className={`p-2 rounded-full transition-colors duration-200 ${
@@ -266,7 +268,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
           theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
         }`}>
           <button
-            className={`flex-1 px-4 py-3 font-semibold ${
+            className={`flex-1 px-4 py-3 font-headlinesd ${
               activeTab === 'all' 
                 ? theme === 'dark-theme'
                   ? 'border-b-2 border-white text-white'
@@ -280,7 +282,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
             All
           </button>
           <button
-            className={`flex-1 px-4 py-3 font-semibold ${
+            className={`flex-1 px-4 py-3 font-headlines ${
               activeTab === 'follows'
                 ? theme === 'dark-theme'
                   ? 'border-b-2 border-white text-white'
