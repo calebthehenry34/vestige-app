@@ -13,7 +13,7 @@ export const setupBetaSubscription = async (req, res) => {
     // Check if user already has a Stripe customer ID
     if (!user.stripeCustomerId) {
       // Create a new customer in Stripe
-      const customer = await createCustomer(user.email, user.username);
+      const customer = await createCustomer(user.email, user.username, user.firstName, user.lastName);
       user.stripeCustomerId = customer.id;
       await user.save();
     }

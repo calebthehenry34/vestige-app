@@ -13,11 +13,11 @@ export const SUBSCRIPTION_TIERS = {
   PRO: 'pro_tier'
 };
 
-export const createCustomer = async (email, name) => {
+export const createCustomer = async (email, username, firstName, lastName) => {
   try {
     return await stripe.customers.create({
       email,
-      name,
+      name: `${firstName || ''} ${lastName || ''}`.trim() || username,
       metadata: {
         tier: SUBSCRIPTION_TIERS.BETA
       }

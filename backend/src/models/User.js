@@ -5,6 +5,25 @@ import bcrypt from 'bcryptjs';
 import Follow from '../models/Follow.js';
 
 const userSchema = new mongoose.Schema({
+  firstName: {
+    type: String,
+    trim: true
+  },
+  lastName: {
+    type: String,
+    trim: true
+  },
+  dateOfBirth: {
+    type: Date
+  },
+  city: {
+    type: String,
+    trim: true
+  },
+  state: {
+    type: String,
+    trim: true
+  },
   username: {
     type: String,
     required: false,

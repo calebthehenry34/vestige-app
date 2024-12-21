@@ -37,10 +37,15 @@ router.post('/complete-onboarding',
       console.log('Body:', req.body);
 
       const userId = req.user.userId;
-      const { bio } = req.body;
+      const { bio, firstName, lastName, dateOfBirth, city, state } = req.body;
       
       let profilePictureKey;
       let profilePictureUrl;
+
+      // Validate required fields
+      if (!firstName || !lastName || !dateOfBirth || !city || !state) {
+        return res.status(400).json({ message: 'All user information fields are required' });
+      }
       
       if (req.file) {
         try {
@@ -106,6 +111,11 @@ router.post('/complete-onboarding',
         userId,
         {
           bio,
+          firstName,
+          lastName,
+          dateOfBirth: new Date(dateOfBirth),
+          city,
+          state,
           profilePicture: profilePictureKey, // Store the S3 key
           onboardingComplete: true
         },

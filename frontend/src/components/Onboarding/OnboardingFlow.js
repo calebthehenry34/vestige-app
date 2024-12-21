@@ -24,6 +24,11 @@ const OnboardingFlow = () => {
   const [slideDirection, setSlideDirection] = useState('');
   const [nextStep, setNextStep] = useState(null);
   const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    dateOfBirth: '',
+    city: '',
+    state: '',
     profilePicture: null,
     username: user?.username || '',
     bio: '',
@@ -94,13 +99,20 @@ const OnboardingFlow = () => {
 
   const handleNext = async () => {
     if (step === 1) {
+      if (!formData.firstName || !formData.lastName || !formData.dateOfBirth || !formData.city || !formData.state) {
+        setError('All fields are required');
+        return;
+      }
+    }
+
+    if (step === 2) {
       if (!formData.profilePicture || !formData.bio) {
         setError('Profile picture and bio are required');
         return;
       }
     }
 
-    if (step === 3) {
+    if (step === 4) {
       try {
         setLoading(true);
         await setupBetaSubscription();
@@ -113,7 +125,7 @@ const OnboardingFlow = () => {
     }
     
     setError('');
-    if (step < 4) {
+    if (step < 5) {
       setSlideDirection(styles.slideLeft);
       const nextStepValue = step + 1;
       setNextStep(nextStepValue);
@@ -146,6 +158,11 @@ const OnboardingFlow = () => {
       }
   
       const formDataToSend = new FormData();
+      formDataToSend.append('firstName', formData.firstName);
+      formDataToSend.append('lastName', formData.lastName);
+      formDataToSend.append('dateOfBirth', formData.dateOfBirth);
+      formDataToSend.append('city', formData.city);
+      formDataToSend.append('state', formData.state);
       formDataToSend.append('profilePicture', formData.profilePicture);
       formDataToSend.append('bio', formData.bio);
       formDataToSend.append('onboardingComplete', 'true');
@@ -189,18 +206,28 @@ const OnboardingFlow = () => {
         throw new Error('Invalid response from server');
       }
   
-      // Update user context
+      // Update user context with all the new information
       await updateUser({ 
         ...user,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        dateOfBirth: formData.dateOfBirth,
+        city: formData.city,
+        state: formData.state,
         bio: formData.bio,
         profilePicture: data.user.profilePicture,
         onboardingComplete: true
       });
   
-      // Update local storage
+      // Update local storage with all the new information
       const currentUserData = JSON.parse(localStorage.getItem('user') || '{}');
       localStorage.setItem('user', JSON.stringify({
         ...currentUserData,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        dateOfBirth: formData.dateOfBirth,
+        city: formData.city,
+        state: formData.state,
         bio: formData.bio,
         profilePicture: data.user.profilePicture,
         onboardingComplete: true
@@ -218,10 +245,11 @@ const OnboardingFlow = () => {
 
   const getStepLabel = () => {
     switch (step) {
-      case 1: return "Setup Profile";
-      case 2: return "Guidelines";
-      case 3: return "Choose Plan";
-      case 4: return "Complete Setup";
+      case 1: return "Basic Info";
+      case 2: return "Setup Profile";
+      case 3: return "Guidelines";
+      case 4: return "Choose Plan";
+      case 5: return "Complete Setup";
       default: return "";
     }
   };
@@ -236,8 +264,8 @@ const OnboardingFlow = () => {
       </div>
       <div className="flex justify-end">
         <button
-          onClick={step < 4 ? handleNext : handleComplete}
-          disabled={loading || (step === 2 && !formData.acceptedGuidelines)}
+          onClick={step < 5 ? handleNext : handleComplete}
+          disabled={loading || (step === 3 && !formData.acceptedGuidelines)}
           className="w-10 h-10 rounded-md border-2 border-[#262626] bg-transparent hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
         >
           {loading ? (
@@ -267,6 +295,77 @@ const OnboardingFlow = () => {
     const cardClass = `${styles.card} rounded-2xl`;
 
     if (currentStep === 1) {
+      return (
+        <div className={cardClass}>
+          <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
+            <div className="h-full flex flex-col">
+              <div className="w-full max-w-2xl mx-auto space-y-6">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-white mb-2">First Name</label>
+                      <input
+                        type="text"
+                        value={formData.firstName}
+                        onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                        className="w-full px-4 py-2 bg-black/30 text-white border border-white/30 focus:border-white rounded-lg focus:outline-none"
+                        placeholder="Enter first name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-white mb-2">Last Name</label>
+                      <input
+                        type="text"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                        className="w-full px-4 py-2 bg-black/30 text-white border border-white/30 focus:border-white rounded-lg focus:outline-none"
+                        placeholder="Enter last name"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-white mb-2">Date of Birth</label>
+                    <input
+                      type="date"
+                      value={formData.dateOfBirth}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                      className="w-full px-4 py-2 bg-black/30 text-white border border-white/30 focus:border-white rounded-lg focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-white mb-2">City</label>
+                      <input
+                        type="text"
+                        value={formData.city}
+                        onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                        className="w-full px-4 py-2 bg-black/30 text-white border border-white/30 focus:border-white rounded-lg focus:outline-none"
+                        placeholder="Enter city"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-white mb-2">State</label>
+                      <input
+                        type="text"
+                        value={formData.state}
+                        onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
+                        className="w-full px-4 py-2 bg-black/30 text-white border border-white/30 focus:border-white rounded-lg focus:outline-none"
+                        placeholder="Enter state"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {renderBackButton()}
+          </div>
+        </div>
+      );
+    }
+
+    if (currentStep === 2) {
       return (
         <div className={cardClass}>
           {showImageEditor && previewUrl ? (
@@ -345,7 +444,7 @@ const OnboardingFlow = () => {
       );
     }
 
-    if (currentStep === 2) {
+    if (currentStep === 3) {
       return (
         <div className={cardClass}>
           <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
@@ -381,7 +480,7 @@ const OnboardingFlow = () => {
       );
     }
 
-    if (currentStep === 3) {
+    if (currentStep === 4) {
       return (
         <div className={cardClass}>
           <div className="relative h-full bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] p-6 rounded-2xl">
