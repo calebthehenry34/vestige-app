@@ -16,6 +16,7 @@ import axios from 'axios';
 import { API_URL } from '../../config';
 import styles from '../Onboarding/OnboardingFlow.module.css';
 import LocationAutocomplete from '../Common/LocationAutocomplete';
+import { generateImageSizes, clearOldCache } from '../../utils/imageUtils';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
@@ -54,12 +55,14 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
     );
 
     return new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
+      canvas.toBlob(async (blob) => {
         if (!blob) {
           reject(new Error('Canvas is empty'));
           return;
         }
-        resolve(URL.createObjectURL(blob));
+        // Convert blob to File for compression
+        const file = new File([blob], 'cropped-image.jpg', { type: 'image/jpeg' });
+        resolve(file);
       }, 'image/jpeg', 1);
     });
   } catch (error) {
@@ -83,7 +86,8 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     success: false,
     crop: { x: 0, y: 0 },
     zoom: 1,
-    croppedAreaPixels: null
+    croppedAreaPixels: null,
+    originalFile: null
   };
 
   const [state, setState] = useState(initialState);
@@ -107,6 +111,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
     const file = acceptedFiles[0];
     if (file) {
+      setState(prev => ({ ...prev, originalFile: file }));
       const reader = new FileReader();
       reader.onloadend = () => {
         setState(prev => ({
@@ -146,11 +151,13 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
         throw new Error('Invalid crop area or image');
       }
 
-      const croppedImage = await getCroppedImg(state.media, state.croppedAreaPixels);
+      const croppedFile = await getCroppedImg(state.media, state.croppedAreaPixels);
+      const croppedUrl = URL.createObjectURL(croppedFile);
       
       setState(prev => ({
         ...prev,
-        croppedMedia: croppedImage,
+        croppedMedia: croppedUrl,
+        originalFile: croppedFile,
         slideDirection: styles.slideLeft
       }));
 
@@ -195,6 +202,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
       
+      // Apply filters and adjustments to get final image
       const img = new Image();
       img.crossOrigin = "Anonymous";
       
@@ -209,8 +217,16 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
           ctx.filter = `${state.editedMedia.filter} ${state.editedMedia.adjustments}`;
           ctx.drawImage(img, 0, 0);
           
-          canvas.toBlob((blob) => {
-            resolve(new File([blob], 'image.jpg', { type: 'image/jpeg' }));
+          canvas.toBlob(async (blob) => {
+            const finalFile = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+            
+            try {
+              // Generate and compress different sizes
+              const sizes = await generateImageSizes(finalFile);
+              resolve(sizes);
+            } catch (error) {
+              reject(error);
+            }
           }, 'image/jpeg', 0.85);
         };
         
@@ -218,8 +234,15 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
         img.src = state.editedMedia.url;
       });
 
+      // Clear old cached images
+      await clearOldCache();
+
+      // Create form data with all image sizes
       const formData = new FormData();
-      formData.append('media', processedImage);
+      formData.append('media', processedImage.large);
+      formData.append('media_small', processedImage.small);
+      formData.append('media_medium', processedImage.medium);
+      formData.append('media_thumbnail', processedImage.thumbnail);
       formData.append('caption', state.caption);
       if (state.location) {
         formData.append('location', state.location);

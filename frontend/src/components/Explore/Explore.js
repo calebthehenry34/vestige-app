@@ -63,16 +63,16 @@ const Explore = () => {
   }
 
   return (
-    <div className={`min-h-screen mb-50 ${theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen ${theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Two Column Links */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-4 mb-50">
           <Link
             to="/explore/users"
-            className={`p-6 rounded-lg text-center transition-colors ${
+            className={`p-6 rounded-lg text-center transition-colors backdrop-blur-md backdrop-filter bg-opacity-50 ${
               theme === 'dark-theme'
-                ? 'bg-gray-800 hover:bg-gray-700 text-white'
-                : 'bg-white hover:bg-gray-50 text-black'
+                ? 'bg-gray-800/50 hover:bg-gray-700/50 text-white shadow-lg'
+                : 'bg-white/50 hover:bg-gray-50/50 text-black shadow-lg'
             }`}
           >
             <h2 className="text-xl font-semibold mb-2">Find Users</h2>
@@ -83,10 +83,10 @@ const Explore = () => {
 
           <Link
             to="/explore/hashtags"
-            className={`p-6 rounded-lg text-center transition-colors ${
+            className={`p-6 rounded-lg text-center transition-colors backdrop-blur-md backdrop-filter bg-opacity-50 ${
               theme === 'dark-theme'
-                ? 'bg-gray-800 hover:bg-gray-700 text-white'
-                : 'bg-white hover:bg-gray-50 text-black'
+                ? 'bg-gray-800/50 hover:bg-gray-700/50 text-white shadow-lg'
+                : 'bg-white/50 hover:bg-gray-50/50 text-black shadow-lg'
             }`}
           >
             <h2 className="text-xl font-semibold mb-2">Search Hashtags</h2>

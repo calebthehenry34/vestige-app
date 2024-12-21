@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { ThemeContext } from '../../App';
@@ -18,6 +18,19 @@ import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 import PostComments from './PostComments';
 
+// Function to generate different image sizes
+const getResponsiveImageUrl = (mediaPath, size) => {
+  if (!mediaPath) return '';
+  if (mediaPath.startsWith('http')) return mediaPath;
+  
+  // Extract base path and extension
+  const lastDot = mediaPath.lastIndexOf('.');
+  const basePath = mediaPath.substring(0, lastDot);
+  const ext = mediaPath.substring(lastDot);
+  
+  return `${API_URL}/uploads/${basePath}-${size}${ext}`;
+};
+
 const SinglePost = () => {
   const { theme } = useContext(ThemeContext);
   const { id } = useParams();
@@ -29,6 +42,38 @@ const SinglePost = () => {
   const [isZoomed, setIsZoomed] = useState(false);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [dragStart, setDragStart] = useState(null);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const imageRef = useRef(null);
+
+  useEffect(() => {
+    // Set up intersection observer for lazy loading
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            img.src = img.dataset.src;
+            img.srcset = img.dataset.srcset;
+            observer.unobserve(img);
+          }
+        });
+      },
+      {
+        rootMargin: '50px 0px',
+        threshold: 0.1
+      }
+    );
+
+    if (imageRef.current) {
+      observer.observe(imageRef.current);
+    }
+
+    return () => {
+      if (imageRef.current) {
+        observer.unobserve(imageRef.current);
+      }
+    };
+  }, [post]);
 
   const getMediaUrl = (mediaPath) => {
     if (!mediaPath) return '';
@@ -263,17 +308,38 @@ const SinglePost = () => {
                 onMouseLeave={() => setDragStart(null)}
                 onDoubleClick={() => setIsZoomed(false)}
               >
+                {/* Blur placeholder */}
+                {!isImageLoaded && (
+                  <div 
+                    className="absolute inset-0 bg-gray-200 animate-pulse"
+                    style={{
+                      backgroundImage: `url(${getResponsiveImageUrl(post.media, 'thumbnail')})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      filter: 'blur(10px)',
+                    }}
+                  />
+                )}
+                
                 <img
-                  src={getMediaUrl(post.media)}
+                  ref={imageRef}
+                  data-src={getMediaUrl(post.media)}
+                  data-srcset={`
+                    ${getResponsiveImageUrl(post.media, 'small')} 400w,
+                    ${getResponsiveImageUrl(post.media, 'medium')} 800w,
+                    ${getResponsiveImageUrl(post.media, 'large')} 1200w
+                  `}
+                  sizes="(max-width: 768px) 100vw, 58.333vw"
                   alt="Post content"
                   className={`transition-transform duration-300 ${
                     isZoomed 
                       ? 'scale-200 cursor-move'
                       : 'scale-100 cursor-zoom-in'
-                  }`}
+                  } ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
                   style={isZoomed ? {
                     transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(2)`,
                   } : {}}
+                  onLoad={() => setIsImageLoaded(true)}
                   onError={(e) => {
                     console.error('Image load error:', post.media);
                     e.target.style.display = 'none';
