@@ -48,7 +48,7 @@ const Home = () => {
   }, []);
 
   const getImageUrls = (mediaUrl) => {
-    if (!mediaUrl) return null;
+    if (!mediaUrl || typeof mediaUrl !== 'string') return null;
     const baseUrl = mediaUrl.startsWith('http') ? mediaUrl : `${API_URL}/uploads/${mediaUrl}`;
     const ext = supportsWebP ? 'webp' : 'jpg';
     
@@ -445,7 +445,9 @@ const Home = () => {
                 {/* Media Content */}
                 {post.mediaType === 'video' ? (
                   <video
-                    src={post.media}
+                    src={typeof post.media === 'string' && post.media
+                      ? (post.media.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`)
+                      : ''}
                     controls
                     className="w-full h-auto"
                     loading="lazy"

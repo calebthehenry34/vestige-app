@@ -55,7 +55,7 @@ const Explore = () => {
   const getImageUrls = (post) => {
     if (!post?.media) return null;
     
-    const baseUrl = typeof post.media === 'string' 
+    const baseUrl = typeof post.media === 'string' && post.media
       ? (post.media.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`)
       : null;
     
@@ -152,7 +152,7 @@ const Explore = () => {
               {post.mediaType === 'video' ? (
                 <div className="w-full h-full bg-black rounded-lg overflow-hidden">
                   <video
-                    src={typeof post.media === 'string' 
+                    src={typeof post.media === 'string' && post.media
                       ? (post.media.startsWith('http') ? post.media : `${API_URL}/uploads/${post.media}`)
                       : ''}
                     className="w-full h-full object-cover"
