@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PostSkeleton } from '../Common/Skeleton';
 import {
@@ -17,6 +17,7 @@ import PostCreator from '../Post/PostCreator';
 import PostComments from '../Post/PostComments';
 import { useAuth } from '../../context/AuthContext';
 import { ThemeContext } from '../../App';
+import MobileNav from '../Navigation/MobileNav';
 
 const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   const { theme } = useContext(ThemeContext);
@@ -28,13 +29,25 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   const [showComments, setShowComments] = useState({});
   const [showPostCreator, setShowPostCreator] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [showMobileNav, setShowMobileNav] = useState(true);
+  const lastScrollY = useRef(0);
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrollY(window.scrollY);
+      const currentScrollY = window.scrollY;
+      setScrollY(currentScrollY);
+      
+      // Show nav when scrolling up, hide when scrolling down
+      if (currentScrollY < lastScrollY.current || currentScrollY < 10) {
+        setShowMobileNav(true);
+      } else {
+        setShowMobileNav(false);
+      }
+      
+      lastScrollY.current = currentScrollY;
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -202,12 +215,16 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   }
 
   return (
-    <div 
-      className={`max-w-xl mx-auto pt-[128px] pb-2 relative z-[95] ${theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'}`}
+    <>
+      <div 
+      className={`max-w-xl mx-auto pt-[180px] pb-2 relative z-[95]`}
       style={{
         transform: `translateY(${Math.min(Math.max(0, scrollY * -0.4), -80)}px)`,
         transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        willChange: 'transform'
+        willChange: 'transform',
+        backgroundColor: '#0d0d0d',
+        borderRadius: '24px 24px 0 0',
+        boxShadow: '0 -8px 20px rgba(0, 0, 0, 0.2)'
       }}
     >
       {/* Post Creator Modal */}
@@ -451,7 +468,12 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
           </div>
         ))}
       </div>
-    </div>
+      </div>
+      <MobileNav 
+        visible={showMobileNav} 
+        onPostCreatorClick={() => setShowPostCreator(true)}
+      />
+    </>
   );
 };
 
