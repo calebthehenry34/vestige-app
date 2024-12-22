@@ -359,7 +359,7 @@ const Home = () => {
 
   return (
     <div className="max-w-xl mx-auto p-4 m-50">
-      <div className="space-y-6">
+      <div className="space-y-6 feed-layout">
         {Array.isArray(posts) && posts.map((post) => (
           <div key={post._id} className="bg-[#1a1a1a] rounded-lg shadow-md overflow-hidden">
             <Link 

@@ -4,6 +4,14 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+
+.feed-layout {
+  background-color:#0d0d0d!important;
+  padding-top: calc(150px - min(150px, var(--scroll-y, 0) * 1px));
+  transition: padding-top 0.3s ease;
+}
+
+
 body {
     font-family: 'Roobert-Regular', Arial, sans-serif;
   }
