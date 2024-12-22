@@ -117,7 +117,7 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     min-height: calc(100vh - 140px); /* Account for header (64px) and navbar (76px) */
-  padding-bottom: 76px; /* Add padding for mobile nav */
+  padding-bottom: 96px; /* Increased padding to account for floating nav + margins */
     display: flex;
     flex-direction: column;
   }
@@ -128,12 +128,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
     z-index: 50;
-    box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.1);
   }
 
 .header {
