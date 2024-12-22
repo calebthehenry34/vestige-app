@@ -4,6 +4,8 @@ import { ChatRegular, HeartRegular } from '@fluentui/react-icons';
 import { Box } from '@mui/material';
 import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
+import usersBg from '../../assets/backgrounds/users-bg.svg';
+import hashtagsBg from '../../assets/backgrounds/hashtags-bg.svg';
 import { createImageProps, checkWebPSupport } from '../../utils/imageUtils';
 
 const Explore = () => {
@@ -126,14 +128,14 @@ const Explore = () => {
             component={Link}
             to="/explore/users"
             sx={{
-              background: theme === 'dark-theme' 
-                ?  'rgba(31, 41, 55, 0.7)'  
-                : 'rgba(255, 255, 255, 0.7)',
-              backdropFilter: 'blur(10px)',
+              background: `url(${usersBg})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              position: 'relative',
               borderRadius: '10px',
               padding: '24px',
               textAlign: 'left',
-              alignContent: ' bottom',
+              alignContent: 'bottom',
               transition: 'all 0.3s ease',
               textDecoration: 'none',
               boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
@@ -141,19 +143,34 @@ const Explore = () => {
               borderColor: theme === 'dark-theme' 
                 ? 'rgba(255, 255, 255, 0.1)' 
                 : 'rgba(0, 0, 0, 0.1)',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: theme === 'dark-theme' 
+                  ? 'rgba(0, 0, 0, 0.5)'
+                  : 'rgba(255, 255, 255, 0.5)',
+                backdropFilter: 'blur(2px)',
+                borderRadius: '10px',
+              },
               '&:hover': {
                 transform: 'translateY(-2px)',
                 boxShadow: '0 8px 12px rgba(0, 0, 0, 0.15)',
-                background: theme === 'dark-theme' 
-                  ? 'rgba(31, 41, 55, 0.8)' 
-                  : 'rgba(255, 255, 255, 0.8)',
+                '&::before': {
+                  background: theme === 'dark-theme' 
+                    ? 'rgba(0, 0, 0, 0.4)'
+                    : 'rgba(255, 255, 255, 0.4)',
+                }
               }
             }}
           >
-            <h2 className={`text-md font-headlines mb-2 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
+            <h2 className={`text-md font-headlines mb-2 relative z-10 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
               Find Users
             </h2>
-            <p className={`text-sm ${theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-600'}`}>
+            <p className={`text-sm relative z-10 ${theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-700'}`}>
               Build your community
             </p>
           </Box>
@@ -162,10 +179,10 @@ const Explore = () => {
             component={Link}
             to="/explore/hashtags"
             sx={{
-              background: theme === 'dark-theme' 
-                ? 'rgba(31, 41, 55, 0.7)' 
-                : 'rgba(255, 255, 255, 0.7)',
-              backdropFilter: 'blur(10px)',
+              background: `url(${hashtagsBg})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              position: 'relative',
               borderRadius: '10px',
               padding: '24px',
               textAlign: 'center',
@@ -176,19 +193,34 @@ const Explore = () => {
               borderColor: theme === 'dark-theme' 
                 ? 'rgba(255, 255, 255, 0.1)' 
                 : 'rgba(0, 0, 0, 0.1)',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: theme === 'dark-theme' 
+                  ? 'rgba(0, 0, 0, 0.5)'
+                  : 'rgba(255, 255, 255, 0.5)',
+                backdropFilter: 'blur(2px)',
+                borderRadius: '10px',
+              },
               '&:hover': {
                 transform: 'translateY(-2px)',
                 boxShadow: '0 8px 12px rgba(0, 0, 0, 0.15)',
-                background: theme === 'dark-theme' 
-                  ? 'rgba(31, 41, 55, 0.8)' 
-                  : 'rgba(255, 255, 255, 0.8)',
+                '&::before': {
+                  background: theme === 'dark-theme' 
+                    ? 'rgba(0, 0, 0, 0.4)'
+                    : 'rgba(255, 255, 255, 0.4)',
+                }
               }
             }}
           >
-            <h2 className={`text-md font-headlines mb-2 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
+            <h2 className={`text-md font-headlines mb-2 relative z-10 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
               Search Hashtags
             </h2>
-            <p className={`text-sm ${theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-600'}`}>
+            <p className={`text-sm relative z-10 ${theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-700'}`}>
               Explore trending topics
             </p>
           </Box>
