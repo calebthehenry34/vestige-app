@@ -29,11 +29,9 @@ import ActivityFeed from '../Activity/ActivityFeed';
 import Toast from '../Common/Toast';
 import { useNotifications } from '../../context/NotificationContext';
 import WelcomeMessage from '../Common/WelcomeMessage';
-import { EyeRegular, EyeOffRegular } from '@fluentui/react-icons';
 
 const Navbar = () => {
   const { theme, toggleTheme } = useContext(ThemeContext);
-  const [showWelcomeMessage, setShowWelcomeMessage] = useState(true);
   const { user, logout } = useAuth();
   const { currentNotification, clearCurrentNotification } = useNotifications();
   const navigate = useNavigate();
@@ -144,29 +142,6 @@ const Navbar = () => {
             </button>
 
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setShowWelcomeMessage(prev => !prev)}
-                className={`p-2 rounded-md transition-colors ${
-                  theme === 'dark-theme'
-                    ? 'hover:bg-gray-800 text-gray-400 hover:text-white'
-                    : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-                }`}
-                title={showWelcomeMessage ? "Hide welcome message" : "Show welcome message"}
-              >
-                {showWelcomeMessage ? (
-                  <EyeOffRegular className="w-5 h-5" />
-                ) : (
-                  <EyeRegular className="w-5 h-5" />
-                )}
-              </button>
-              <button
-                onClick={() => setShowDrawer(true)}
-                className={`p-2 rounded-md transition-colors ${
-                  theme === 'dark-theme'
-                    ? 'hover:bg-gray-800'
-                    : 'hover:bg-gray-100'
-                }`}
-              >
                 {user ? (
                   <img
                     src={getProfileImageUrl(user?.profilePicture, user?.username)}
@@ -182,12 +157,9 @@ const Navbar = () => {
                     <PersonRegular className="w-5 h-5 text-gray-400" />
                   </div>
                 )}
-              </button>
             </div>
           </div>
         </div>
-
-        <WelcomeMessage isVisible={showWelcomeMessage} />
       </div>
 
       {/* Settings Drawer */}

@@ -32,6 +32,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [localPost, setLocalPost] = useState(post);
+  const [showDetails, setShowDetails] = useState(false);
   const isOwner = localPost?.user?._id === user?.id;
   const isLiked = localPost?.likes?.some(like => like.user === user?.id);
 
@@ -106,26 +107,12 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow mb-6">
-      {/* Post Header */}
-      <div className="flex items-center justify-between p-4">
-        <Link to={`/profile/${localPost.user.username}`} className="flex items-center">
-          {localPost.user ? (
-            <img
-              src={getProfileImageUrl(localPost.user.profilePicture, localPost.user.username)}
-              alt={localPost.user.username}
-              className="h-10 w-10 rounded-full object-cover"
-            />
-          ) : (
-            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-              <PersonRegular className="w-6 h-6 text-gray-400" />
-            </div>
-          )}
-          <span className="ml-3 text-xs font-medium">{localPost.user?.username || 'Unknown User'}</span>
+    <div className="bg-white rounded-lg shadow mb-6 relative overflow-hidden">
+      {/* Username with gradient background */}
+      <div className="absolute top-0 right-0 z-10 p-2 bg-gradient-to-l from-black/50 to-transparent">
+        <Link to={`/profile/${localPost.user.username}`} className="text-white text-sm font-medium">
+          {localPost.user?.username || 'Unknown User'}
         </Link>
-        <button onClick={() => setShowMenu(!showMenu)} className="p-2">
-          <MoreHorizontalRegular />
-        </button>
       </div>
 
       {/* Menu Dropdown */}
@@ -152,97 +139,76 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
       )}
 
       {/* Post Content */}
-      <div className="relative">
+      <div className="aspect-square relative">
         {localPost.mediaType === 'video' ? (
           <video 
             src={getMediaUrl(localPost.media)} 
             controls 
-            className="w-full"
+            className="w-full h-full object-cover"
             onError={(e) => {
               console.error('Video load error:', localPost.media);
               setImageError(true);
             }}
           />
         ) : (
-          <Link to={`/post/${localPost._id}`}>
-            <img
-              src={getMediaUrl(localPost.media)}
-              alt="Post content"
-              className={`w-full ${imageError ? 'opacity-50' : ''}`}
-              onError={handleImageError}
-            />
-            {imageError && (
-              <div className="absolute inset-0 flex items-center justify-center text-red-500 bg-gray-100 bg-opacity-50">
-                Error loading image
-              </div>
-            )}
-          </Link>
+          <img
+            src={getMediaUrl(localPost.media)}
+            alt="Post content"
+            className={`w-full h-full object-cover ${imageError ? 'opacity-50' : ''}`}
+            onError={handleImageError}
+          />
+        )}
+        {imageError && (
+          <div className="absolute inset-0 flex items-center justify-center text-red-500 bg-gray-100 bg-opacity-50">
+            Error loading image
+          </div>
         )}
 
-        {/* Action Bar */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-black bg-opacity-50">
+        {/* Bottom gradient with actions */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
           <div className="flex justify-between items-center text-white">
-            <div className="flex space-x-4">
-              <button onClick={handleLike} className="transform hover:scale-110 transition-transform">
-                {isLiked ? (
-                  <HeartFilled className="w-6 h-6 text-red-500" />
-                ) : (
-                  <HeartRegular className="w-6 h-6" />
-                )}
-              </button>
-              <Link to={`/post/${localPost._id}`}>
-                <ArrowExpandAllFilled className="w-6 h-6" />
-              </Link>
-              <button>
-                <ShareRegular className="w-6 h-6" />
-              </button>
-            </div>
-            <button>
-              {localPost.saved ? (
-                <BookmarkFilled className="w-6 h-6" />
+            <button onClick={handleLike} className="transform hover:scale-110 transition-transform">
+              {isLiked ? (
+                <HeartFilled className="w-6 h-6 text-red-500" />
               ) : (
-                <BookmarkRegular className="w-6 h-6" />
+                <HeartRegular className="w-6 h-6" />
               )}
+            </button>
+            <button onClick={() => setShowDetails(!showDetails)} className="transform hover:scale-110 transition-transform">
+              <ArrowExpandAllFilled className="w-6 h-6" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Post Details */}
-      <div className="p-4">
-        <div className="flex justify-between items-center mb-2">
-          <div className="font-medium text-sm">
-            {localPost.likes?.length || 0} likes
+      {/* Collapsible Details Section */}
+      {showDetails && (
+        <div className="p-4 border-t border-gray-100">
+          <div className="flex justify-between items-center mb-2">
+            <div className="font-medium text-sm">
+              {localPost.likes?.length || 0} likes
+            </div>
+            <div className="text-xs text-gray-500">
+              {new Date(localPost.createdAt).toLocaleDateString()}
+            </div>
           </div>
-          <div className="text-xs text-gray-500">
-            {new Date(localPost.createdAt).toLocaleDateString()}
-          </div>
+
+          {/* Caption */}
+          {localPost.caption && (
+            <div className="mb-2">
+              <span className="text-sm font-medium mr-2">{localPost.user?.username}</span>
+              <span className="text-sm">{localPost.caption}</span>
+            </div>
+          )}
+
+          {/* Comments */}
+          {localPost.comments?.length > 0 && (
+            <div className="text-gray-500 text-sm">
+              {localPost.comments.length} comments
+            </div>
+          )}
         </div>
-
-        {/* Caption */}
-        {localPost.caption && (
-          <div className="mb-2">
-            <span className="text-sm font-medium mr-2">{localPost.user?.username}</span>
-            <span className="text-sm">
-              {localPost.caption.length > 100 ? (
-                <>
-                  {localPost.caption.slice(0, 100)}...{' '}
-                  <Link to={`/post/${localPost._id}`} className="text-blue-500 hover:underline">
-                    more
-                  </Link>
-                </>
-              ) : localPost.caption}
-            </span>
-          </div>
-        )}
-
-        {/* Comments */}
-        {localPost.comments?.length > 0 && (
-          <Link to={`/post/${localPost._id}`} className="block text-gray-500 text-sm">
-            View all {localPost.comments.length} comments
-          </Link>
-        )}
-      </div>
+      )}
     </div>
   );
 };

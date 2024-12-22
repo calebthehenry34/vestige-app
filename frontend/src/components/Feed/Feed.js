@@ -26,7 +26,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   const [error, setError] = useState(null);
   const [showComments, setShowComments] = useState({});
   const [showPostCreator, setShowPostCreator] = useState(false);
-  const [scrollY, setScrollY] = useState(0);
+  const [ setScrollY ] = useState(0);
   const [showMobileNav, setShowMobileNav] = useState(true);
   const lastScrollY = useRef(0);
 
