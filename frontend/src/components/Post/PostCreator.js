@@ -1,158 +1,37 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Cropper from 'react-easy-crop';
 import {
   ImageRegular,
   ArrowLeftFilled,
-  ArrowRightFilled,
   ErrorCircleRegular,
-  CheckmarkCircleFilled,
-  NumberSymbolFilled,
-  PersonTagRegular,
   LocationRegular,
   DismissRegular
 } from '@fluentui/react-icons';
-import ImageEditor from './ImageEditor';
 import axios from 'axios';
 import { API_URL } from '../../config';
-import styles from '../Onboarding/OnboardingFlow.module.css';
 import LocationAutocomplete from '../Common/LocationAutocomplete';
-import { 
-  generateImageSizes, 
-  clearOldCache, 
-  checkWebPSupport,
-  generateBlurPlaceholder,
-  createImageProps 
-} from '../../utils/imageUtils';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-const MAX_IMAGE_DIMENSION = 2048; // Maximum dimension for width or height
-
-const createImage = (url) =>
-  new Promise((resolve, reject) => {
-    const image = new Image();
-    image.addEventListener('load', () => resolve(image));
-    image.addEventListener('error', (error) => reject(error));
-    image.setAttribute('crossOrigin', 'anonymous');
-    image.src = url;
-  });
-
-const getCroppedImg = async (imageSrc, pixelCrop) => {
-  try {
-    const image = await createImage(imageSrc);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) {
-      throw new Error('No 2d context');
-    }
-
-    // Scale down large images
-    let width = pixelCrop.width;
-    let height = pixelCrop.height;
-    
-    if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
-      const aspectRatio = width / height;
-      if (width > height) {
-        width = MAX_IMAGE_DIMENSION;
-        height = width / aspectRatio;
-      } else {
-        height = MAX_IMAGE_DIMENSION;
-        width = height * aspectRatio;
-      }
-    }
-
-    canvas.width = width;
-    canvas.height = height;
-
-    ctx.drawImage(
-      image,
-      pixelCrop.x,
-      pixelCrop.y,
-      pixelCrop.width,
-      pixelCrop.height,
-      0,
-      0,
-      width,
-      height
-    );
-
-    return new Promise((resolve, reject) => {
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          reject(new Error('Canvas is empty'));
-          return;
-        }
-        // Convert blob to File for compression
-        const file = new File([blob], 'cropped-image.jpg', { type: 'image/jpeg' });
-        resolve(file);
-      }, 'image/jpeg', 0.85);
-    });
-  } catch (error) {
-    console.error('Error in getCroppedImg:', error);
-    throw error;
-  }
-};
 
 const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
-  const initialState = {
-    step: 'upload',
-    slideDirection: '',
-    media: null,
-    croppedMedia: null,
-    editedMedia: null,
-    caption: '',
-    location: '',
-    uploadProgress: 0,
-    error: null,
-    loading: false,
-    success: false,
-    crop: { x: 0, y: 0 },
-    zoom: 1,
-    croppedAreaPixels: null,
-    originalFile: null,
-    blurPlaceholder: null,
-    supportsWebP: false,
-    processedImages: null,
-    showExitModal: false
-  };
-
-  const [state, setState] = useState(initialState);
-
-  useEffect(() => {
-    const checkWebP = async () => {
-      const webpSupported = await checkWebPSupport();
-      setState(prev => ({ ...prev, supportsWebP: webpSupported }));
-    };
-    checkWebP();
-  }, []);
-
-  const resetState = () => {
-    setState(initialState);
-  };
-
-  const handleExit = () => {
-    if (state.step !== 'upload') {
-      setState(prev => ({ ...prev, showExitModal: true }));
-    } else {
-      onClose();
-    }
-  };
-
-  const confirmExit = () => {
-    resetState();
-    onClose();
-  };
+  const [step, setStep] = useState('upload');
+  const [media, setMedia] = useState(null);
+  const [caption, setCaption] = useState('');
+  const [location, setLocation] = useState('');
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   const onDrop = useCallback(async (acceptedFiles, rejectedFiles) => {
-    setState(prev => ({ ...prev, error: null }));
-    
     if (rejectedFiles.length > 0) {
       const { errors } = rejectedFiles[0];
       if (errors[0]?.code === 'file-too-large') {
-        setState(prev => ({ ...prev, error: 'File is too large. Maximum size is 50MB.' }));
+        setError('File is too large. Maximum size is 50MB.');
       } else if (errors[0]?.code === 'file-invalid-type') {
-        setState(prev => ({ ...prev, error: 'Invalid file type. Please upload a JPEG or PNG image.' }));
+        setError('Invalid file type. Please upload a JPEG or PNG image.');
       }
       return;
     }
@@ -160,36 +39,14 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     const file = acceptedFiles[0];
     if (file) {
       try {
-        // Generate blur placeholder immediately
-        const blurPlaceholder = await generateBlurPlaceholder(file);
-        setState(prev => ({ 
-          ...prev, 
-          originalFile: file,
-          blurPlaceholder
-        }));
-
         const reader = new FileReader();
         reader.onloadend = () => {
-          setState(prev => ({
-            ...prev,
-            media: reader.result,
-            slideDirection: styles.slideLeft
-          }));
-          setTimeout(() => {
-            setState(prev => ({
-              ...prev,
-              step: 'crop',
-              slideDirection: styles.slideNext
-            }));
-          }, 300);
+          setMedia(reader.result);
+          setStep('crop');
         };
         reader.readAsDataURL(file);
       } catch (error) {
-        console.error('Error processing image:', error);
-        setState(prev => ({
-          ...prev,
-          error: 'Failed to process image. Please try again.'
-        }));
+        setError('Failed to process image. Please try again.');
       }
     }
   }, []);
@@ -205,150 +62,61 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
   });
 
   const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
-    setState(prev => ({ ...prev, croppedAreaPixels }));
+    setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  const handleCropSave = async () => {
+  const getCroppedImage = async () => {
     try {
-      if (!state.croppedAreaPixels || !state.media) {
-        throw new Error('Invalid crop area or image');
-      }
+      const canvas = document.createElement('canvas');
+      const image = await createImage(media);
+      const ctx = canvas.getContext('2d');
 
-      const croppedFile = await getCroppedImg(state.media, state.croppedAreaPixels);
-      const croppedUrl = URL.createObjectURL(croppedFile);
+      const maxSize = Math.max(croppedAreaPixels.width, croppedAreaPixels.height);
+      const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2));
       
-      // Generate new blur placeholder for cropped image
-      const blurPlaceholder = await generateBlurPlaceholder(croppedFile);
-      
-      setState(prev => ({
-        ...prev,
-        croppedMedia: croppedUrl,
-        originalFile: croppedFile,
-        blurPlaceholder,
-        slideDirection: styles.slideLeft
-      }));
+      canvas.width = safeArea;
+      canvas.height = safeArea;
 
-      setTimeout(() => {
-        setState(prev => ({
-          ...prev,
-          step: 'filters',
-          slideDirection: styles.slideNext
-        }));
-      }, 300);
-    } catch (error) {
-      console.error('Error saving crop:', error);
-      setState(prev => ({
-        ...prev,
-        error: 'Failed to process image. Please try again.'
-      }));
+      ctx.translate(safeArea / 2, safeArea / 2);
+      ctx.translate(-safeArea / 2, -safeArea / 2);
+      ctx.drawImage(
+        image,
+        croppedAreaPixels.x,
+        croppedAreaPixels.y,
+        croppedAreaPixels.width,
+        croppedAreaPixels.height,
+        0,
+        0,
+        safeArea,
+        safeArea
+      );
+
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(URL.createObjectURL(blob));
+        }, 'image/jpeg');
+      });
+    } catch (e) {
+      console.error(e);
+      setError('Failed to process image');
     }
-  };
-
-  const handleEditComplete = async ({ filter, adjustments }) => {
-    // Ensure croppedMedia is a valid string URL
-    if (!state.croppedMedia || typeof state.croppedMedia !== 'string') {
-      setState(prev => ({
-        ...prev,
-        error: 'Invalid media format. Please try again.',
-        step: 'upload'
-      }));
-      return;
-    }
-
-    setState(prev => ({
-      ...prev,
-      editedMedia: {
-        url: state.croppedMedia,
-        filter: filter || '',
-        adjustments: adjustments ? 
-          `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%)` 
-          : ''
-      },
-      slideDirection: styles.slideLeft
-    }));
-    setTimeout(() => {
-      setState(prev => ({
-        ...prev,
-        step: 'caption',
-        slideDirection: styles.slideNext
-      }));
-    }, 300);
   };
 
   const handleShare = async () => {
     try {
-      // Validate editedMedia state
-      if (!state.editedMedia?.url || typeof state.editedMedia.url !== 'string') {
-        setState(prev => ({
-          ...prev,
-          error: 'Invalid media format. Please try uploading the image again.',
-          step: 'upload'
-        }));
-        return;
-      }
+      setLoading(true);
+      setError(null);
 
-      setState(prev => ({ ...prev, loading: true, error: null }));
-      
-      // Apply filters and adjustments to get final image
-      const img = new Image();
-      img.crossOrigin = "Anonymous";
-      
-      const processedImage = await new Promise((resolve, reject) => {
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          // Scale down large images
-          let width = img.width;
-          let height = img.height;
-          
-          if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
-            const aspectRatio = width / height;
-            if (width > height) {
-              width = MAX_IMAGE_DIMENSION;
-              height = width / aspectRatio;
-            } else {
-              height = MAX_IMAGE_DIMENSION;
-              width = height * aspectRatio;
-            }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          
-          ctx.filter = `${state.editedMedia.filter} ${state.editedMedia.adjustments}`;
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          canvas.toBlob(async (blob) => {
-            const finalFile = new File([blob], 'image.jpg', { type: state.supportsWebP ? 'image/webp' : 'image/jpeg' });
-            
-            try {
-              // Generate and compress different sizes
-              const sizes = await generateImageSizes(finalFile);
-              resolve(sizes);
-            } catch (error) {
-              reject(error);
-            }
-          }, state.supportsWebP ? 'image/webp' : 'image/jpeg', 0.85);
-        };
-        
-        img.onerror = reject;
-        img.src = state.editedMedia.url;
-      });
+      const croppedImage = await getCroppedImage();
+      const response = await fetch(croppedImage);
+      const blob = await response.blob();
+      const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
 
-      // Clear old cached images
-      await clearOldCache();
-
-      // Create form data with all image sizes
       const formData = new FormData();
-      formData.append('media', processedImage.large);
-      formData.append('media_small', processedImage.small);
-      formData.append('media_medium', processedImage.medium);
-      formData.append('media_thumbnail', processedImage.thumbnail);
-      formData.append('blur_placeholder', processedImage.blurPlaceholder);
-      formData.append('caption', state.caption);
-      if (state.location) {
-        formData.append('location', state.location);
+      formData.append('media', file);
+      formData.append('caption', caption);
+      if (location) {
+        formData.append('location', location);
       }
 
       const token = localStorage.getItem('token');
@@ -357,311 +125,140 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`
         },
-        withCredentials: true,
-        onUploadProgress: (progressEvent) => {
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setState(prev => ({ ...prev, uploadProgress: progress }));
-        }
+        withCredentials: true
       });
 
-      setState(prev => ({ ...prev, success: true, loading: false }));
-      
-      setTimeout(() => {
-        resetState();
-        onClose();
-        if (onPostCreated) {
-          onPostCreated(result.data);
-        }
-      }, 2000);
+      onPostCreated?.(result.data);
+      onClose();
     } catch (error) {
-      console.error('Error creating post:', error);
-      const errorMessage = error.response?.data?.error || error.message || 'Error creating post';
-      setState(prev => ({
-        ...prev,
-        error: errorMessage,
-        uploadProgress: 0,
-        loading: false
-      }));
+      setError(error.response?.data?.error || 'Error creating post');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleNext = () => {
-    if (state.step === 'filters') {
-      handleEditComplete({ filter: '', adjustments: null });
-    } else if (state.step === 'crop') {
-      handleCropSave();
-    }
-  };
-
-  const handleBack = () => {
-    setState(prev => ({
-      ...prev,
-      slideDirection: styles.slideRight
-    }));
-    setTimeout(() => {
-      setState(prev => {
-        let newStep;
-        switch (prev.step) {
-          case 'crop':
-            newStep = 'upload';
-            break;
-          case 'filters':
-            newStep = 'crop';
-            break;
-          case 'caption':
-            newStep = 'filters';
-            break;
-          default:
-            return prev;
-        }
-        return {
-          ...prev,
-          step: newStep,
-          slideDirection: styles.slideNext
-        };
-      });
-    }, 300);
-  };
-
-  const getStepLabel = () => {
-    switch (state.step) {
-      case 'upload': return 'New Post';
-      case 'crop': return 'Crop Photo';
-      case 'filters': return 'Edit Photo';
-      case 'caption': return 'Share Post';
-      default: return '';
-    }
-  };
-
-  const renderNavigation = () => (
-    <div className="p-4 border-b border-[#333333] grid grid-cols-3 items-center relative">
-      <div className="flex items-center">
-        {state.step !== 'upload' && (
-          <button onClick={handleBack} className="text-white hover:text-gray-300 transition-colors">
-            <ArrowLeftFilled className="w-6 h-6" />
-          </button>
-        )}
-      </div>
-      <div className="flex text-xs justify-center text-gray-200">
-        {getStepLabel()}
-      </div>
-      <div className="flex justify-end">
-        {(state.step === 'filters' || state.step === 'crop') && (
-          <button onClick={handleNext} className="text-white hover:text-gray-300 transition-colors">
-            <ArrowRightFilled className="w-6 h-6" />
-          </button>
-        )}
-        {state.step === 'caption' && (
-          <button
-            onClick={handleShare}
-            disabled={state.loading || state.uploadProgress > 0}
-            className="px-4 py-2 bg-[#ae52e3] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#9a3dd0]"
-          >
-            {state.loading ? 'Sharing...' : 'Share'}
-          </button>
-        )}
-      </div>
-      <button
-        onClick={handleExit}
-        className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors"
-      >
-        <DismissRegular className="w-6 h-6" />
-      </button>
-    </div>
-  );
-
-  const renderUpload = () => (
-    <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-auto p-4 flex flex-col h-[600px]`}>
-        <div {...getRootProps()} className="flex-1 p-8 mb-4 rounded-lg border-2 border-dashed cursor-pointer transition-all hover:border-[#ae52e3] border-gray-800 bg-[#1a1a1a] flex items-center justify-center">
-          <input {...getInputProps()} />
-          <div className="text-center">
-            <ImageRegular className="w-12 h-12 mx-auto mb-4 text-[#ae52e3]" />
-            <p className="font-medium text-white">
-              {isDragActive ? 'Drop photo here' : 'Add a photo'}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderCrop = () => (
-    <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-hidden h-[600px]`}>
-        <div className="relative h-full">
-          <Cropper
-            image={state.media}
-            crop={state.crop}
-            zoom={state.zoom}
-            aspect={4/5}
-            onCropChange={crop => setState(prev => ({ ...prev, crop }))}
-            onZoomChange={zoom => setState(prev => ({ ...prev, zoom }))}
-            onCropComplete={onCropComplete}
-            showGrid={true}
-            cropShape="rect"
-            objectFit="contain"
-            zoomWithScroll={true}
-            minZoom={1}
-            maxZoom={3}
-          />
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderFilters = () => (
-    <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-hidden h-[600px]`}>
-        <ImageEditor 
-          image={state.croppedMedia}
-          onSave={handleEditComplete}
-        />
-      </div>
-    </div>
-  );
-
-  const renderCaption = () => (
-    <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-auto h-[600px]`}>
-        <div className="h-full flex flex-col">
-          {/* Preview Image with Blur Placeholder */}
-          <div className="relative w-full h-[400px]">
-            {state.blurPlaceholder && (
-              <div
-                className="absolute inset-0 bg-cover bg-center blur-lg"
-                style={{
-                  backgroundImage: `url(${state.blurPlaceholder})`,
-                  opacity: state.editedMedia ? 0 : 1,
-                  transition: 'opacity 0.3s ease-in-out'
-                }}
-              />
-            )}
-            <img
-              alt="Post preview"
-              className="w-full h-full object-contain relative z-10"
-              style={{ 
-                filter: `${state.editedMedia.filter} ${state.editedMedia.adjustments}`,
-                opacity: state.editedMedia ? 1 : 0,
-                transition: 'opacity 0.3s ease-in-out'
-              }}
-              onLoad={(e) => {
-                e.target.style.opacity = '1';
-              }}
-              {...createImageProps(
-                { medium: state.editedMedia.url },
-                'Post preview',
-                'medium'
-              )}
-            />
-          </div>
-          
-          {/* Caption Section */}
-          <div className="p-4 flex-shrink-0 space-y-4">
-            <textarea
-              placeholder="Write a caption..."
-              value={state.caption}
-              onChange={(e) => setState(prev => ({ ...prev, caption: e.target.value }))}
-              className="w-full p-3 rounded-lg resize-none border bg-[#1a1a1a] border-gray-800 text-white placeholder-gray-500"
-              rows={3}
-            />
-
-            {/* Location */}
-            <div className="relative">
-              <LocationAutocomplete
-                onSelect={(location) => setState(prev => ({ ...prev, location }))}
-                value={state.location}
-                placeholder="Add location"
-                className="w-full p-3 rounded-lg border bg-[#1a1a1a] border-gray-800 text-white placeholder-gray-500"
-              />
-              <LocationRegular className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            </div>
-            
-            {/* Tag Helpers */}
-            <div className="space-y-2 text-gray-400">
-              <div className="flex items-center">
-                <NumberSymbolFilled className="w-5 h-5 mr-2" />
-                <span>Use # to add hashtags</span>
-              </div>
-              <div className="flex items-center">
-                <PersonTagRegular className="w-5 h-5 mr-2" />
-                <span>Use @ to tag people</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  const createImage = (url) =>
+    new Promise((resolve, reject) => {
+      const image = new Image();
+      image.addEventListener('load', () => resolve(image));
+      image.addEventListener('error', reject);
+      image.src = url;
+    });
 
   if (!isOpen) return null;
-  
+
   return (
-    <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center">
-      <div className="bg-black w-full max-w-3xl mx-4 rounded-lg overflow-hidden">
-        {renderNavigation()}
-        <div className="relative overflow-hidden">
-          {state.step === 'upload' && renderUpload()}
-          {state.step === 'crop' && state.media && renderCrop()}
-          {state.step === 'filters' && state.croppedMedia && renderFilters()}
-          {state.step === 'caption' && state.editedMedia?.url && typeof state.editedMedia.url === 'string' && renderCaption()}
+    <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
+      <div className="bg-black w-full max-w-md rounded-lg overflow-hidden">
+        {/* Header */}
+        <div className="p-4 border-b border-[#333333] flex items-center justify-between">
+          <button 
+            onClick={() => step !== 'upload' ? setStep('upload') : onClose()}
+            className="text-white hover:text-gray-300 transition-colors"
+          >
+            {step !== 'upload' ? <ArrowLeftFilled className="w-6 h-6" /> : null}
+          </button>
+          <div className="text-sm text-gray-200">
+            {step === 'upload' ? 'New Post' : step === 'crop' ? 'Crop Photo' : 'Share Post'}
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white hover:text-gray-300 transition-colors"
+          >
+            <DismissRegular className="w-6 h-6" />
+          </button>
         </div>
 
-        {/* Loading Overlay */}
-        {state.loading && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="bg-[#1a1a1a] rounded-lg p-6 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-[#ae52e3] mx-auto mb-4"></div>
-              <p className="text-white">Processing your post...</p>
-              {state.uploadProgress > 0 && (
-                <p className="text-gray-400 mt-2">{state.uploadProgress}%</p>
-              )}
+        {/* Content */}
+        <div className="h-[450px]">
+          {step === 'upload' && (
+            <div className="h-full p-4">
+              <div 
+                {...getRootProps()} 
+                className="h-full rounded-lg border-2 border-dashed cursor-pointer transition-all hover:border-[#ae52e3] border-gray-800 bg-[#1a1a1a] flex items-center justify-center"
+              >
+                <input {...getInputProps()} />
+                <div className="text-center">
+                  <ImageRegular className="w-12 h-12 mx-auto mb-4 text-[#ae52e3]" />
+                  <p className="font-medium text-white">
+                    {isDragActive ? 'Drop photo here' : 'Add a photo'}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Success Message */}
-        {state.success && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="bg-[#1a1a1a] rounded-lg p-6 text-center">
-              <CheckmarkCircleFilled className="w-12 h-12 text-green-500 mx-auto mb-4" />
-              <p className="text-white">Post created successfully!</p>
+          {step === 'crop' && media && (
+            <div className="relative h-full">
+              <Cropper
+                image={media}
+                crop={crop}
+                zoom={zoom}
+                aspect={4/5}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                showGrid={true}
+                cropShape="rect"
+                objectFit="contain"
+              />
+              <button
+                onClick={async () => {
+                  const croppedImage = await getCroppedImage();
+                  setMedia(croppedImage);
+                  setStep('caption');
+                }}
+                className="absolute bottom-4 right-4 px-4 py-2 bg-[#ae52e3] text-white rounded-lg hover:bg-[#9a3dd0] transition-colors"
+              >
+                Next
+              </button>
             </div>
-          </div>
-        )}
+          )}
+
+          {step === 'caption' && media && (
+            <div className="h-full overflow-auto">
+              <div className="p-4 space-y-4">
+                <img
+                  src={media}
+                  alt="Preview"
+                  className="w-full aspect-[4/5] object-cover rounded-lg"
+                />
+                <textarea
+                  placeholder="Write a caption..."
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  className="w-full p-3 rounded-lg resize-none border bg-[#1a1a1a] border-gray-800 text-white placeholder-gray-500"
+                  rows={3}
+                />
+                <div className="relative">
+                  <LocationAutocomplete
+                    onSelect={setLocation}
+                    value={location}
+                    placeholder="Add location"
+                    className="w-full p-3 rounded-lg border bg-[#1a1a1a] border-gray-800 text-white placeholder-gray-500"
+                  />
+                  <LocationRegular className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                </div>
+                <button
+                  onClick={handleShare}
+                  disabled={loading}
+                  className="w-full px-4 py-2 bg-[#ae52e3] text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#9a3dd0]"
+                >
+                  {loading ? 'Sharing...' : 'Share'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Error Message */}
-        {state.error && (
+        {error && (
           <div className="fixed bottom-4 left-4 right-4 bg-red-500/90 text-white p-4 rounded-lg backdrop-blur-sm">
             <div className="flex items-start gap-3">
               <ErrorCircleRegular className="flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium">Error</p>
-                <p>{state.error}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Exit Confirmation Modal */}
-        {state.showExitModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200]">
-            <div className="bg-[#1a1a1a] rounded-lg p-6 max-w-sm w-full mx-4">
-              <h3 className="text-xl font-semibold text-white mb-4">Discard post?</h3>
-              <p className="text-gray-300 mb-6">If you leave, your edits won't be saved.</p>
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={() => setState(prev => ({ ...prev, showExitModal: false }))}
-                  className="px-4 py-2 text-white hover:text-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmExit}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                >
-                  Discard
-                </button>
+                <p>{error}</p>
               </div>
             </div>
           </div>

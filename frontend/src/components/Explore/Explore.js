@@ -227,7 +227,7 @@ const Explore = () => {
         </div>
 
         {/* Explore Posts Grid */}
-        <h2 className={`text-lg font-headlines mb-6 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
+        <h2 className={`text-lg font-headlines mb-25 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
           Explore Posts
         </h2>
         <div className="grid grid-cols-3 gap-1 md:grid-cols-2 lg:grid-cols-3 md:gap-4">
