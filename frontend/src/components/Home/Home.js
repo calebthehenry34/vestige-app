@@ -377,7 +377,7 @@ const Home = () => {
 
       {/* Welcome Message */}
       <div 
-        className={`fixed top-[120px] left-0 right-0 z-30 transition-opacity duration-300 ${
+        className={`fixed top-[120px] left-0 right-0 z-30 transition-opacity ${
           showWelcome ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         style={{

@@ -138,13 +138,7 @@ const Navbar = () => {
     }
   ];
 
-  // Get time of day for greeting
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  };
+  
 
   return (
     <>
@@ -193,14 +187,7 @@ const Navbar = () => {
         </div>
 
         {/* Bottom Row - Can be covered by feed */}
-        <div className="px-4 py-4 max-w-6xl mx-auto space-y-1 relative z-[90] bg-inherit">
-          <div className={`text-lg font-medium ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
-            {`${getGreeting()}, ${user?.username || 'Guest'}`}
-          </div>
-          <div className={`text-sm ${theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-600'}`}>
-            {`You have ${unreadNotifications} unread notifications`}
-          </div>
-        </div>
+    
       </div>
 
       {/* Settings Drawer */}
