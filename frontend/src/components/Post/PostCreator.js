@@ -10,6 +10,7 @@ import {
   NumberSymbolFilled,
   PersonTagRegular,
   LocationRegular,
+  DismissRegular
 } from '@fluentui/react-icons';
 import ImageEditor from './ImageEditor';
 import axios from 'axios';
@@ -25,6 +26,7 @@ import {
 } from '../../utils/imageUtils';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_IMAGE_DIMENSION = 2048; // Maximum dimension for width or height
 
 const createImage = (url) =>
   new Promise((resolve, reject) => {
@@ -45,8 +47,23 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
       throw new Error('No 2d context');
     }
 
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
+    // Scale down large images
+    let width = pixelCrop.width;
+    let height = pixelCrop.height;
+    
+    if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
+      const aspectRatio = width / height;
+      if (width > height) {
+        width = MAX_IMAGE_DIMENSION;
+        height = width / aspectRatio;
+      } else {
+        height = MAX_IMAGE_DIMENSION;
+        width = height * aspectRatio;
+      }
+    }
+
+    canvas.width = width;
+    canvas.height = height;
 
     ctx.drawImage(
       image,
@@ -56,8 +73,8 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
       pixelCrop.height,
       0,
       0,
-      pixelCrop.width,
-      pixelCrop.height
+      width,
+      height
     );
 
     return new Promise((resolve, reject) => {
@@ -69,7 +86,7 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
         // Convert blob to File for compression
         const file = new File([blob], 'cropped-image.jpg', { type: 'image/jpeg' });
         resolve(file);
-      }, 'image/jpeg', 1);
+      }, 'image/jpeg', 0.85);
     });
   } catch (error) {
     console.error('Error in getCroppedImg:', error);
@@ -96,7 +113,8 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
     originalFile: null,
     blurPlaceholder: null,
     supportsWebP: false,
-    processedImages: null
+    processedImages: null,
+    showExitModal: false
   };
 
   const [state, setState] = useState(initialState);
@@ -111,6 +129,19 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
   const resetState = () => {
     setState(initialState);
+  };
+
+  const handleExit = () => {
+    if (state.step !== 'upload') {
+      setState(prev => ({ ...prev, showExitModal: true }));
+    } else {
+      onClose();
+    }
+  };
+
+  const confirmExit = () => {
+    resetState();
+    onClose();
   };
 
   const onDrop = useCallback(async (acceptedFiles, rejectedFiles) => {
@@ -267,11 +298,26 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
           
-          canvas.width = img.width;
-          canvas.height = img.height;
+          // Scale down large images
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
+            const aspectRatio = width / height;
+            if (width > height) {
+              width = MAX_IMAGE_DIMENSION;
+              height = width / aspectRatio;
+            } else {
+              height = MAX_IMAGE_DIMENSION;
+              width = height * aspectRatio;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
           
           ctx.filter = `${state.editedMedia.filter} ${state.editedMedia.adjustments}`;
-          ctx.drawImage(img, 0, 0);
+          ctx.drawImage(img, 0, 0, width, height);
           
           canvas.toBlob(async (blob) => {
             const finalFile = new File([blob], 'image.jpg', { type: state.supportsWebP ? 'image/webp' : 'image/jpeg' });
@@ -388,7 +434,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
   };
 
   const renderNavigation = () => (
-    <div className="card-header p-6 border-b border-[#333333] grid grid-cols-3 items-center">
+    <div className="card-header p-6 border-b border-[#333333] grid grid-cols-3 items-center relative">
       <div className="flex items-center">
         {state.step !== 'upload' && (
           <button onClick={handleBack} className="text-white hover:text-gray-300 transition-colors">
@@ -415,6 +461,12 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
           </button>
         )}
       </div>
+      <button
+        onClick={handleExit}
+        className="absolute right-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors"
+      >
+        <DismissRegular className="w-6 h-6" />
+      </button>
     </div>
   );
 
@@ -545,7 +597,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 z-[100] bg-black">
+    <div className="fixed inset-0 z-[100] bg-black/90">
       <div className="h-screen flex flex-col">
         {renderNavigation()}
         <div className="flex-1 relative overflow-hidden">
@@ -586,6 +638,30 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
               <div>
                 <p className="font-medium">Error</p>
                 <p>{state.error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Exit Confirmation Modal */}
+        {state.showExitModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200]">
+            <div className="bg-[#1a1a1a] rounded-lg p-6 max-w-sm w-full mx-4">
+              <h3 className="text-xl font-semibold text-white mb-4">Discard post?</h3>
+              <p className="text-gray-300 mb-6">If you leave, your edits won't be saved.</p>
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={() => setState(prev => ({ ...prev, showExitModal: false }))}
+                  className="px-4 py-2 text-white hover:text-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmExit}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Discard
+                </button>
               </div>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { WeatherSunnyRegular, CircleRegular, ColorFillRegular } from '@fluentui/react-icons';
+import { WeatherSunnyRegular, CircleRegular, ColorFillRegular, WeatherMoonRegular } from '@fluentui/react-icons';
 
 const filters = [
   { name: 'Normal', filter: '' },
@@ -21,7 +21,8 @@ const ImageEditor = ({ image, onSave }) => {
   const [adjustments, setAdjustments] = useState({
     brightness: 100,
     contrast: 100,
-    saturation: 100
+    saturation: 100,
+    temperature: 100
   });
   const [activeAdjustment, setActiveAdjustment] = useState(null);
   const filtersContainerRef = useRef(null);
@@ -78,6 +79,8 @@ const ImageEditor = ({ image, onSave }) => {
               brightness(${adjustments.brightness}%)
               contrast(${adjustments.contrast}%)
               saturate(${adjustments.saturation}%)
+              sepia(${adjustments.temperature > 100 ? (adjustments.temperature - 100) / 100 : 0})
+              hue-rotate(${adjustments.temperature < 100 ? (100 - adjustments.temperature) * 0.5 : 0}deg)
             `
           }}
         />
@@ -154,6 +157,14 @@ const ImageEditor = ({ image, onSave }) => {
                 }`}
               >
                 <ColorFillRegular className="w-5 h-5 text-white" />
+              </button>
+              <button
+                onClick={() => setActiveAdjustment(activeAdjustment === 'temperature' ? null : 'temperature')}
+                className={`p-2 rounded-full ${
+                  activeAdjustment === 'temperature' ? 'bg-[#ae52e3]' : 'bg-[#262626]'
+                }`}
+              >
+                <WeatherMoonRegular className="w-5 h-5 text-white" />
               </button>
             </div>
 
