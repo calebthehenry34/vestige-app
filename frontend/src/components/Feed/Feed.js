@@ -37,8 +37,8 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
       const currentScrollY = window.scrollY;
       setScrollY(currentScrollY);
       
-      // Show nav when scrolling up, hide when scrolling down
-      if (currentScrollY < lastScrollY.current || currentScrollY < 10) {
+      // Hide nav when scrolling up, show when scrolling down
+      if (currentScrollY > lastScrollY.current && currentScrollY > 10) {
         setShowMobileNav(true);
       } else {
         setShowMobileNav(false);
@@ -217,7 +217,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   return (
     <>
       <div 
-      className={`max-w-xl mx-auto pt-[180px] pb-2 relative z-[95] ${theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`}
+      className={`max-w-xl mx-auto max-h[90vh] pb-2 relative z-[95] ${theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`}
       style={{
         transform: `translateY(${Math.min(Math.max(0, scrollY * -0.4), -80)}px)`,
         transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
