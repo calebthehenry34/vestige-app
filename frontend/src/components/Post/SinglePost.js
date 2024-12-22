@@ -619,12 +619,13 @@ const SinglePost = () => {
                 {/* Blur placeholder */}
                 {!isImageLoaded && post?.media && (
                   <div 
-                    className="absolute inset-0 bg-gray-200 animate-pulse"
+                    className="absolute inset-0 bg-gray-200"
                     style={{
-                      backgroundImage: `url(${getResponsiveImageUrl(post.media, 'thumbnail')})`,
+                      backgroundImage: `url(${post.media.placeholder || getResponsiveImageUrl(post.media, 'thumbnail')})`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       filter: 'blur(10px)',
+                      transform: 'scale(1.1)', // Prevent blur edges
                     }}
                   />
                 )}

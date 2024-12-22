@@ -331,27 +331,34 @@ export const createPost = async (req, res) => {
       }
     }
 
-    const filename = `${crypto.randomUUID()}.jpg`;
+    // Process image into multiple sizes and formats
+    const processedImages = await imageProcessingService.processImage(req.file.buffer);
+    const blurPlaceholder = await imageProcessingService.generateBlurPlaceholder(req.file.buffer);
 
+    let mediaData;
     if (isS3Available()) {
       try {
-        key = `posts/${filename}`;
-        const command = new PutObjectCommand({
-          Bucket: getS3BucketName(),
-          Key: key,
-          Body: req.file.buffer,
-          ContentType: 'image/jpeg',
-          CacheControl: 'max-age=31536000'
-        });
-
-        await s3.send(command);
-        mediaUrl = await generatePresignedUrl(key);
+        // Upload all image variants to S3
+        mediaData = await s3UploadService.uploadAllVariants(
+          processedImages,
+          req.file.originalname,
+          req.file.buffer,
+          req.file.mimetype
+        );
       } catch (s3Error) {
         throw new Error(`Failed to upload to S3: ${s3Error.message}`);
       }
     } else {
+      // Fallback to local storage
+      const filename = `${crypto.randomUUID()}.jpg`;
       mediaUrl = await storeFileLocally(req.file.buffer, filename);
-      key = filename;
+      mediaData = {
+        type: 'image',
+        variants: {
+          original: { url: mediaUrl },
+          large: { url: mediaUrl }
+        }
+      };
     }
 
     const post = new Post({
@@ -360,8 +367,12 @@ export const createPost = async (req, res) => {
       location,
       hashtags,
       taggedUsers,
-      media: mediaUrl,
-      mediaKey: key
+      media: {
+        type: 'image',
+        variants: mediaData.variants,
+        metadata: processedImages.metadata,
+        placeholder: blurPlaceholder
+      }
     });
 
     await post.save();

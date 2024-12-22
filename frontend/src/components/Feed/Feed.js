@@ -212,11 +212,48 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
             </div>
 
             {/* Post Image */}
-            <div className="relative">
+            <div className="relative aspect-[4/5] bg-black">
+              {/* Blur placeholder */}
+              {post?.media?.placeholder && (
+                <div 
+                  className="absolute inset-0 bg-gray-200"
+                  style={{
+                    backgroundImage: `url(${post.media.placeholder})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    filter: 'blur(10px)',
+                    transform: 'scale(1.1)', // Prevent blur edges
+                  }}
+                />
+              )}
               <img 
-                src={post.media}
-                alt={post.caption}
-                className="w-full object-cover"
+                src={post.media?.variants?.large?.urls?.webp || 
+                     post.media?.variants?.large?.urls?.jpeg || 
+                     post.media}
+                srcSet={(() => {
+                  if (!post?.media?.variants) return '';
+                  const urls = {};
+                  ['small', 'medium', 'large'].forEach(size => {
+                    if (post.media.variants[size]?.urls) {
+                      urls[size] = post.media.variants[size].urls.webp || 
+                                 post.media.variants[size].urls.jpeg;
+                    }
+                  });
+                  return Object.entries(urls)
+                    .map(([size, url]) => `${url} ${size === 'small' ? '400w' : size === 'medium' ? '800w' : '1200w'}`)
+                    .join(', ');
+                })()}
+                sizes="(max-width: 400px) 100vw, 600px"
+                alt={post.caption || "Post image"}
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  console.error('Image load error:', {
+                    media: post.media,
+                    variants: post.media?.variants
+                  });
+                  e.target.src = 'https://via.placeholder.com/400';
+                }}
               />
             </div>
 
