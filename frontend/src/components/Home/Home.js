@@ -23,10 +23,12 @@ import {
   checkWebPSupport 
 } from '../../utils/imageUtils';
 import ShareModal from '../Post/ShareModal';
+import Navbar from '../Navigation/Navbar';
 
 const Home = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [showWelcome, setShowWelcome] = useState(true);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,6 +38,14 @@ const Home = () => {
   const [sharePostId, setSharePostId] = useState(null);
   const [supportsWebP, setSupportsWebP] = useState(false);
   const scrollRestoredRef = useRef(false);
+
+  // Hide welcome message after initial load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowWelcome(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const checkWebP = async () => {
@@ -358,8 +368,49 @@ const Home = () => {
   }
 
   return (
-    <div className="max-w-xl mx-auto p-4 m-50">
-      <div className="space-y-6 feed-layout">
+    <div className="relative min-h-screen" style={{ backgroundColor: user?.theme === 'dark-theme' ? '#000' : '#fff' }}>
+      {/* Fixed Header */}
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <Navbar />
+      </div>
+
+      {/* Welcome Message */}
+      <div 
+        className={`fixed top-[120px] left-0 right-0 z-30 transition-opacity duration-300 ${
+          showWelcome ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="max-w-xl mx-auto px-4">
+          <div className="bg-[#1a1a1a] rounded-lg p-4 shadow-lg">
+            <div className="text-lg font-medium text-white mb-2">
+              Welcome back, {user?.username}!
+            </div>
+            <div className="text-gray-400">
+              You have {user?.notifications?.unread || 0} unread notifications
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Feed */}
+      <div 
+        className="relative z-40 min-h-screen"
+        style={{
+          marginTop: '150px',
+          backgroundColor: '#0d0d0d',
+          borderRadius: '24px 24px 0 0',
+          boxShadow: '0 -8px 20px rgba(0, 0, 0, 0.2)',
+        }}
+      >
+        {/* Welcome Toggle Button */}
+        <button
+          onClick={() => setShowWelcome(prev => !prev)}
+          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+        >
+          {showWelcome ? 'Hide Welcome' : 'Show Welcome'}
+        </button>
+
+        <div className="max-w-xl mx-auto p-4 space-y-6">
         {Array.isArray(posts) && posts.map((post) => (
           <div key={post._id} className="bg-[#1a1a1a] rounded-lg shadow-md overflow-hidden">
             <Link 
@@ -666,6 +717,7 @@ const Home = () => {
             </div>
           </div>
         ))}
+        </div>
       </div>
 
       {/* Share Modal */}
