@@ -28,7 +28,7 @@ import Navbar from '../Navigation/Navbar';
 const Home = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,8 +39,9 @@ const Home = () => {
   const [supportsWebP, setSupportsWebP] = useState(false);
   const scrollRestoredRef = useRef(false);
 
-  // Hide welcome message after initial load
+  // Show welcome message once on initial load
   useEffect(() => {
+    setShowWelcome(true);
     const timer = setTimeout(() => {
       setShowWelcome(false);
     }, 2000);
