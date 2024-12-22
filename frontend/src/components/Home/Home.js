@@ -359,7 +359,7 @@ const Home = () => {
   }
 
   return (
-    <div className="relative min-h-screen" style={{ backgroundColor: user?.theme === 'dark-theme' ? '#000' : '#fff' }}>
+    <div className="relative min-h-screen" style={{ backgroundColor: '#000' }}>
       {/* Fixed Header */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <Navbar />
@@ -370,7 +370,7 @@ const Home = () => {
         className="relative z-30 min-h-screen"
         style={{
           marginTop: '120px',
-          backgroundColor: '#0d0d0d',
+          backgroundColor: '#1a1a1a',
           borderRadius: '24px 24px 0 0',
           boxShadow: '0 -8px 20px rgba(0, 0, 0, 0.2)',
           transform: 'translateZ(0)',

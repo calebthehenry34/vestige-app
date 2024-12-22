@@ -36,7 +36,7 @@ const WelcomeMessage = ({ isVisible }) => {
       }}
     >
       <div className="max-w-xl mx-auto px-4 py-2">
-        <div className="bg-[#1a1a1a] rounded-lg p-4 shadow-lg">
+        <div className="bg-[#000] rounded-lg p-4 shadow-lg">
           <div className="text-lg font-headlines text-white mb-2">
             {greeting}, {user?.username}!
           </div>

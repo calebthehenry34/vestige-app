@@ -217,7 +217,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
           transform: `translateY(${Math.min(Math.max(0, scrollY * -0.5), -200)}px)`,
           transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           willChange: 'transform',
-          backgroundColor: '#0d0d0d',
+          backgroundColor: '#1a1a1a',
           maxHeight: `calc(100vh - ${Math.max(50, Math.min(100 - (scrollY / 10), 100))}vh)`,
           borderRadius: '24px 24px 0 0',
           boxShadow: '0 -8px 20px rgba(0, 0, 0, 0.2)',
