@@ -25,6 +25,16 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   const [error, setError] = useState(null);
   const [showComments, setShowComments] = useState({});
   const [showPostCreator, setShowPostCreator] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -190,7 +200,13 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   }
 
   return (
-    <div className="max-w-xl mx-auto py-2">
+    <div 
+      className="max-w-xl mx-auto pt-20 pb-2" 
+      style={{
+        transform: `translateY(${Math.min(scrollY * 0.3, 60)}px)`,
+        transition: 'transform 0.1s ease-out'
+      }}
+    >
       {/* Post Creator Modal */}
       <PostCreator
         isOpen={showPostCreator}
@@ -289,12 +305,12 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                   className: "absolute inset-0 w-full h-full object-cover",
                   loading: "lazy",
                   onError: handleImageError,
-                  alt: post.caption || `${post.user.username}'s post`
+                  alt: post.caption || `Post by ${post.user.username}`
                 };
 
                 // Handle legacy format where post.media is a direct URL string
                 if (typeof post.media === 'string') {
-                  return <img {...imageProps} src={post.media}></img>;
+                  return <img {...imageProps} src={post.media} alt={post.caption || `Post by ${post.user.username}`} />;
                 }
 
                 // Handle new format with variants
@@ -310,25 +326,26 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
 
                   // If we have no valid URLs, try to get a fresh URL
                   if (Object.keys(imageUrls).length === 0) {
-                    return <img {...imageProps} src={post.media.fallback || post.media}></img>;
+                    return <img {...imageProps} src={post.media.fallback || post.media} alt={post.caption || `Post by ${post.user.username}`} />;
                   }
 
                   // Use the largest available variant as default
                   const defaultSize = imageUrls.large ? 'large' : imageUrls.medium ? 'medium' : 'small';
                   return (
                     <img
+                    alt={post.caption}
                       {...imageProps}
                       src={imageUrls[defaultSize]}
                       srcSet={Object.entries(imageUrls)
                         .map(([size, url]) => `${url} ${size === 'small' ? '400w' : size === 'medium' ? '800w' : '1200w'}`)
                         .join(', ')}
                       sizes="(max-width: 400px) 100vw, 600px"
-                    ></img>
+                    />
                   );
                 }
 
                 // Fallback for any other case
-                return <img {...imageProps} src={post.media?.url || post.media}></img>;
+                return <img {...imageProps} src={post.media?.url || post.media} alt={post.caption || `Post by ${post.user.username}`} />;
               })()}
             </div>
 

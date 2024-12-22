@@ -45,8 +45,6 @@ const Navbar = () => {
   const [showDrawer, setShowDrawer] = useState(false);
   const [showFeedMenu, setShowFeedMenu] = useState(false);
   const [showPostCreator, setShowPostCreator] = useState(false);
-  const [prevScrollPos, setPrevScrollPos] = useState(0);
-  const [visible, setVisible] = useState(true);
   const [expandedSection, setExpandedSection] = useState(null);
   const mobileNavRef = useRef(null);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -94,19 +92,6 @@ const Navbar = () => {
       document.body.style.overflow = '';
     };
   }, [showDrawer, showFeedMenu]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollPos = window.scrollY;
-      const isScrolledUp = prevScrollPos > currentScrollPos;
-
-      setVisible(isScrolledUp || currentScrollPos < 10);
-      setPrevScrollPos(currentScrollPos);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [prevScrollPos]);
 
   
 
@@ -372,9 +357,7 @@ const Navbar = () => {
       />
     )}
 
-      <div className={`fixed top-0 left-0 right-0 z-[100] transition-transform duration-300 ${
-        visible ? 'translate-y-0' : '-translate-y-full'
-      } ${
+      <div className={`fixed top-0 left-0 right-0 z-[100] ${
         theme === 'dark-theme'
           ? 'bg-gray-900 border-gray-800'
           : 'bg-white border-gray-200'
@@ -430,9 +413,7 @@ const Navbar = () => {
 {!isSettingsPage && (
   <div 
     ref={mobileNavRef}
-    className={`md:hidden fixed bottom-0 left-0 right-0 z-[90] transition-transform duration-300 ease-in-out ${
-      visible ? 'translate-y-0' : 'translate-y-full'
-    } ${
+    className={`md:hidden fixed bottom-0 left-0 right-0 z-[90] ${
       theme === 'dark-theme'
         ? 'bg-gray-900 border-t border-gray-800'
         : 'bg-white border-t border-gray-200'
