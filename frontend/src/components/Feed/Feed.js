@@ -42,6 +42,9 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
         setShowMobileNav(true);
       }
       
+      // Update CSS variable for scroll position
+      document.documentElement.style.setProperty('--scroll-y', currentScrollY);
+      
       lastScrollY.current = currentScrollY;
     };
 
