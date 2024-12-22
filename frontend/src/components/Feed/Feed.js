@@ -217,14 +217,16 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   return (
     <>
       <div 
-      className={`max-w-xl mx-auto pt-[180px] pb-2 relative z-[95]`}
+      className={`max-w-xl mx-auto pt-[180px] pb-2 relative z-[95] ${theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`}
       style={{
         transform: `translateY(${Math.min(Math.max(0, scrollY * -0.4), -80)}px)`,
         transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         willChange: 'transform',
-        backgroundColor: '#0d0d0d',
+        backgroundColor: theme === 'dark-theme' ? '#0d0d0d' : '#ffffff',
         borderRadius: '24px 24px 0 0',
-        boxShadow: '0 -8px 20px rgba(0, 0, 0, 0.2)'
+        boxShadow: theme === 'dark-theme' 
+          ? '0 -8px 20px rgba(0, 0, 0, 0.2)' 
+          : '0 -8px 20px rgba(0, 0, 0, 0.1)'
       }}
     >
       {/* Post Creator Modal */}
@@ -237,7 +239,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
       {/* Posts */}
       <div className="space-y-6">
         {posts.map((post) => (
-          <div key={post._id} className="bg-[#1a1a1a] rounded-lg shadow relative">
+          <div key={post._id} className={`${theme === 'dark-theme' ? 'bg-[#1a1a1a]' : 'bg-white'} rounded-lg shadow relative`}>
             {/* Clickable overlay for entire post */}
             <div 
               onClick={() => navigate(`/post/${post._id}`)}
@@ -255,7 +257,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                 }}
               />
               <span 
-                className="ml-3 font-medium text-white cursor-pointer relative z-10"
+                className={`ml-3 font-medium cursor-pointer relative z-10 ${theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`}
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/profile/${post.user.username}`);
@@ -378,7 +380,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                       e.stopPropagation();
                       handleLike(post._id);
                     }}
-                    className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
+                    className={`${theme === 'dark-theme' ? 'text-white' : 'text-gray-700'} hover:text-[#ae52e3] transition-colors relative z-10`}
                   >
                     {post.likes?.includes(user?.id) ? (
                       <HeartFilled className="w-6 h-6 text-red-500" />
@@ -391,7 +393,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                       e.stopPropagation();
                       setShowComments(prev => ({ ...prev, [post._id]: !prev[post._id] }));
                     }}
-                    className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
+                    className={`${theme === 'dark-theme' ? 'text-white' : 'text-gray-700'} hover:text-[#ae52e3] transition-colors relative z-10`}
                   >
                     <CommentRegular className="w-6 h-6" />
                   </button>
@@ -400,7 +402,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                       e.stopPropagation();
                       handleShare(post);
                     }}
-                    className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
+                    className={`${theme === 'dark-theme' ? 'text-white' : 'text-gray-700'} hover:text-[#ae52e3] transition-colors relative z-10`}
                   >
                     <ShareRegular className="w-6 h-6" />
                   </button>
@@ -411,7 +413,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                       e.stopPropagation();
                       handleSave(post._id);
                     }}
-                    className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
+                    className={`${theme === 'dark-theme' ? 'text-white' : 'text-gray-700'} hover:text-[#ae52e3] transition-colors relative z-10`}
                   >
                     {post.saved ? (
                       <BookmarkFilled className="w-6 h-6" />
@@ -433,10 +435,10 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                 </div>
               </div>
 
-              <div className="font-semibold text-white mb-2">{post.likes?.length || 0} likes</div>
+              <div className={`font-semibold mb-2 ${theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`}>{post.likes?.length || 0} likes</div>
 
               {/* Caption */}
-              <div className="text-white">
+              <div className={theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}>
                 <span 
                   className="font-semibold mr-2 cursor-pointer relative z-10"
                   onClick={(e) => {
