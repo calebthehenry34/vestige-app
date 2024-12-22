@@ -167,7 +167,7 @@ const Navbar = () => {
                 <img
                   src={getProfileImageUrl(user)}
                   alt={user?.username || 'User'}
-                  className="w-6 h-6 rounded-md object-cover"
+                  className="w-8 h-8 rounded-md object-cover"
                   onError={(e) => {
                     e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
                   }}

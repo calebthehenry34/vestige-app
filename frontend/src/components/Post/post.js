@@ -62,7 +62,7 @@ const getMediaUrl = (media) => {
   return '';
 };
 
-const Post = ({ post, onDelete, onReport, onEdit }) => {
+const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
   const { user } = useAuth();
   const { theme } = useContext(ThemeContext);
   const [showMenu, setShowMenu] = useState(false);
@@ -86,8 +86,11 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
       }
 
       const updatedPost = await response.json();
-      // Update the entire localPost state with the server response
+      // Update both local state and parent feed
       setLocalPost(updatedPost);
+      if (onRefresh) {
+        onRefresh();
+      }
     } catch (error) {
       console.error('Error liking post:', error);
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { PostSkeleton } from '../Common/Skeleton';
 import Post from '../Post/post';
 import axios from 'axios';
@@ -11,27 +11,6 @@ const Feed = ({ onRefreshNeeded }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showPostCreator, setShowPostCreator] = useState(false);
-  const [showMobileNav, setShowMobileNav] = useState(true);
-  const lastScrollY = useRef(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      // Show nav when scrolling up, hide when scrolling down
-      if (currentScrollY > lastScrollY.current && currentScrollY > 10) {
-        setShowMobileNav(false);
-      } else {
-        setShowMobileNav(true);
-      }
-      
-      lastScrollY.current = currentScrollY;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
@@ -114,12 +93,12 @@ const Feed = ({ onRefreshNeeded }) => {
               key={post._id}
               post={post}
               onDelete={handleDelete}
+              onRefresh={fetchPosts}
             />
           ))}
         </div>
       </div>
       <MobileNav 
-        visible={showMobileNav} 
         onPostCreatorClick={() => setShowPostCreator(true)}
       />
     </>
