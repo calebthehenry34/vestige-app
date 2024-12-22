@@ -5,7 +5,9 @@ import { useAuth } from '../../context/AuthContext';
 import {
   HeartRegular,
   HeartFilled,
-  ArrowExpandAllFilled,
+  CommentRegular,
+  ShareRegular,
+  BookmarkRegular,
   MoreHorizontalRegular,
   DeleteRegular,
   EditRegular,
@@ -138,35 +140,32 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
   }
 
   return (
-    <div className="relative overflow-hidden dark:bg-gray-900 bg-gray-50">
-      {/* User Info Overlay */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-3 bg-gradient-to-b from-black/50 to-transparent">
-        <Link 
-          to={`/profile/${localPost.user.username}`} 
-          className="flex items-center gap-2"
-        >
-          <img 
-            src={getProfileImageUrl(localPost.user.profileImage)} 
-            alt={localPost.user.username}
-            className="w-8 h-8 rounded-full object-cover"
-          />
-          <span className="text-white text-sm font-medium">
+    <div className="bg-white rounded-2xl shadow-lg mb-6 relative overflow-hidden">
+      {/* User Profile and Menu */}
+      <div className="absolute top-0 left-0 right-0 z-10 p-3 flex items-center justify-between bg-gradient-to-b from-black/50 via-black/25 to-transparent">
+        <div className="flex items-center gap-2">
+          <Link to={`/profile/${localPost.user.username}`}>
+            <img
+              src={getProfileImageUrl(localPost.user)}
+              alt={localPost.user?.username || 'User'}
+              className="w-8 h-8 rounded-full object-cover border border-white/20"
+            />
+          </Link>
+          <Link to={`/profile/${localPost.user.username}`} className="text-white text-sm font-medium">
             {localPost.user?.username || 'Unknown User'}
-          </span>
-        </Link>
+          </Link>
+        </div>
+        <button 
+          onClick={() => setShowMenu(!showMenu)} 
+          className="text-white hover:opacity-80"
+        >
+          <MoreHorizontalRegular />
+        </button>
       </div>
-
-      {/* Menu Button */}
-      <button 
-        onClick={() => setShowMenu(!showMenu)} 
-        className="absolute top-3 right-3 z-10 text-white hover:opacity-80"
-      >
-        <MoreHorizontalRegular />
-      </button>
 
       {/* Menu Dropdown */}
       {showMenu && (
-        <div className="absolute right-4 mt-1 bg-white rounded-lg shadow-lg py-2 z-10 ">
+        <div className="absolute right-3 mt-1 bg-white rounded-lg shadow-lg py-2 z-20">
           {isOwner ? (
             <>
               <button onClick={handleDelete} className="flex items-center w-full px-4 py-2 text-red-600 hover:bg-gray-100">
@@ -188,7 +187,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
       )}
 
       {/* Post Content */}
-      <div className="aspect-square relative">
+      <div className="relative overflow-hidden">
         {localPost.mediaType === 'video' ? (
           <video 
             src={getMediaUrl(localPost.media)} 
@@ -203,18 +202,18 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
           <img
             src={getMediaUrl(localPost.media)}
             alt="Post content"
-            className={`w-full h-full object-cover ${imageError ? 'opacity-50' : ''}`}
+            className={`w-full object-cover ${imageError ? 'opacity-50' : ''}`}
             onError={handleImageError}
           />
         )}
         {imageError && (
-          <div className="absolute inset-0 flex items-center justify-center text-red-500 bg-gray-100 dark:bg-gray-800 bg-opacity-50">
+          <div className="absolute inset-0 flex items-center justify-center text-red-500 bg-gray-100 bg-opacity-50">
             Error loading image
           </div>
         )}
 
-        {/* Action buttons overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4">
+        {/* Bottom gradient overlay with actions */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 via-black/25 to-transparent p-4">
           <div className="flex items-center gap-4 text-white">
             <button onClick={handleLike} className="transform hover:scale-110 transition-transform">
               {isLiked ? (
@@ -223,53 +222,43 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
                 <HeartRegular className="w-6 h-6" />
               )}
             </button>
-            <button onClick={() => setShowDetails(!showDetails)} className="transform hover:scale-110 transition-transform">
-              <ArrowExpandAllFilled className="w-6 h-6" />
+            <button className="transform hover:scale-110 transition-transform">
+              <CommentRegular className="w-6 h-6" />
+            </button>
+            <button className="transform hover:scale-110 transition-transform">
+              <ShareRegular className="w-6 h-6" />
+            </button>
+            <div className="flex-grow"></div>
+            <button className="transform hover:scale-110 transition-transform">
+              <BookmarkRegular className="w-6 h-6" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Details Drawer */}
+      {/* Collapsible Details Section */}
       {showDetails && (
-        <div className="p-4 dark:bg-gray-900 bg-gray-50">
-          {/* Actions Row */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-4">
-              <div className="font-medium text-sm dark:text-white">
-                {localPost.likes?.length || 0} likes
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                {new Date(localPost.createdAt).toLocaleDateString()}
-              </div>
+        <div className="p-4 border-t border-gray-100">
+          <div className="flex justify-between items-center mb-2">
+            <div className="font-medium text-sm">
+              {localPost.likes?.length || 0} likes
             </div>
-            {isOwner ? (
-              <div className="flex items-center gap-2">
-                <button onClick={handleDelete} className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
-                  <DeleteRegular />
-                </button>
-                <button onClick={() => { onEdit?.(localPost); setShowMenu(false); }} className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
-                  <EditRegular />
-                </button>
-              </div>
-            ) : (
-              <button onClick={handleReport} className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
-                <FlagRegular />
-              </button>
-            )}
+            <div className="text-xs text-gray-500">
+              {new Date(localPost.createdAt).toLocaleDateString()}
+            </div>
           </div>
 
           {/* Caption */}
           {localPost.caption && (
-            <div className="mb-4">
-              <span className="text-sm font-medium mr-2 dark:text-white">{localPost.user?.username}</span>
-              <span className="text-sm dark:text-gray-300">{localPost.caption}</span>
+            <div className="mb-2">
+              <span className="text-sm font-medium mr-2">{localPost.user?.username}</span>
+              <span className="text-sm">{localPost.caption}</span>
             </div>
           )}
 
           {/* Comments */}
           {localPost.comments?.length > 0 && (
-            <div className="text-gray-500 dark:text-gray-400 text-sm">
+            <div className="text-gray-500 text-sm">
               {localPost.comments.length} comments
             </div>
           )}

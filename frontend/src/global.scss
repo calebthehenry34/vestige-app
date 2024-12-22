@@ -106,7 +106,8 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 1000;
+    z-index: 50;
+    box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.1);
   }
 
 .header {
@@ -117,9 +118,18 @@ body {
     left: 0;
     right: 0;
     height: 64px;
-    z-index: 1000;
+    z-index: 40;
     display: flex;
     align-items: center;
+    transform: translateY(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    &.header-hidden {
+      transform: translateY(-100%);
+    }
   }
   
   .body {

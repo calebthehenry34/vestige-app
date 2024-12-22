@@ -1,5 +1,6 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useScroll } from '../../context/ScrollContext';
 import { 
   HeartRegular, 
   PersonRegular, 
@@ -34,7 +35,24 @@ const Navbar = () => {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const { user, logout } = useAuth();
   const { currentNotification, clearCurrentNotification } = useNotifications();
+  const { scrollY } = useScroll();
   const navigate = useNavigate();
+  const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = scrollY;
+      if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+        setIsHeaderHidden(true);
+      } else {
+        setIsHeaderHidden(false);
+      }
+      lastScrollY.current = currentScrollY;
+    };
+
+    handleScroll();
+  }, [scrollY]);
   const [showDrawer, setShowDrawer] = useState(false);
   const [showPostCreator, setShowPostCreator] = useState(false);
   const [expandedSection, setExpandedSection] = useState(null);
@@ -131,9 +149,9 @@ const Navbar = () => {
         />
       )}
 
-      <div className={`fixed top-0 left-0 right-0 ${
+      <div className={`fixed top-0 left-0 right-0 header ${
         theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
-      }`}>
+      } ${isHeaderHidden ? 'header-hidden' : ''}`}>
         {/* Top Row - Always visible */}
         <div className="border-b border-gray-800 relative z-[100] bg-inherit">
           <div className="flex items-center h-16 px-4 max-w-6xl mx-auto justify-between">
