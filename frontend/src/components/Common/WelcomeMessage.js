@@ -25,18 +25,18 @@ const WelcomeMessage = ({ isVisible }) => {
     return () => clearInterval(interval);
   }, []);
 
-  if (!isVisible) return null;
-
   return (
     <div 
-      className="fixed top-[64px] left-0 right-0 z-20"
+      className={`fixed top-[64px] left-0 right-0 z-20 transition-all duration-300 ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[-10px] pointer-events-none'
+      }`}
       style={{
         transform: 'translateZ(0)',
         willChange: 'transform'
       }}
     >
-      <div className="w-full mx-auto px-4">
-        <div className="bg-[#000000]">
+      <div className="max-w-xl mx-auto px-4 py-2">
+        <div className="bg-[#1a1a1a] rounded-lg p-4 shadow-lg">
           <div className="text-lg font-headlines text-white mb-2">
             {greeting}, {user?.username}!
           </div>
