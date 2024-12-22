@@ -14,9 +14,8 @@ const MobileNav = ({ onPostCreatorClick }) => {
   const { theme } = useContext(ThemeContext);
 
   return (
-    <div className="fixed inset-x-0 bottom-0 w-full">
-      <div className={`mx-4 mb-4 z-[99999] backdrop-blur-xl shadow-lg rounded-2xl ${
-        theme === 'dark-theme' ? 'bg-[#0d0d0d]/95 border-gray-800' : 'bg-white/95 border-gray-200'} border w-auto pb-[env(safe-area-inset-bottom)]`}>
+    <div className={`fixed inset-x-0 bottom-0 mx-4 mb-4 z-[999999] backdrop-blur-xl shadow-lg rounded-2xl ${
+      theme === 'dark-theme' ? 'bg-[#0d0d0d]/95 border-gray-800' : 'bg-white/95 border-gray-200'} border w-auto pb-[env(safe-area-inset-bottom)]`}>
         <div className="flex justify-around items-center h-16 max-w-xl mx-auto px-4">
           <button 
             onClick={() => navigate('/')}
@@ -49,7 +48,6 @@ const MobileNav = ({ onPostCreatorClick }) => {
             <PersonRegular className="w-6 h-6" />
           </button>
         </div>
-      </div>
     </div>
   );
 };

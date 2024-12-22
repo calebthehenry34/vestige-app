@@ -14,6 +14,7 @@ import HashtagSearch from './components/Explore/HashtagSearch';
 import UsersPage from './components/Explore/UsersPage';
 import ActivityFeed from './components/Activity/ActivityFeed';
 import Navbar from './components/Navigation/Navbar';
+import MobileNav from './components/Navigation/MobileNav';
 import OnboardingFlow from './components/Onboarding/OnboardingFlow';
 import AdminDashboard from './components/Admin/Dashboard';
 import ProfileSettings from './components/Profile/ProfileSettings';
@@ -24,6 +25,7 @@ import Roadmap from './components/Roadmap';
 import Toast from './components/Common/Toast';
 import { ScrollProvider } from './context/ScrollContext';
 import { ErrorCircleRegular } from '@fluentui/react-icons';
+import PostCreator from './components/Post/PostCreator';
 
 export const ThemeContext = createContext();
 
@@ -105,6 +107,7 @@ function App() {
   const ProtectedRouteWrapper = ({ children, requiresNav = true, requiresAdmin = false }) => {
     const location = useLocation();
     const { user, loading } = useAuth();
+    const [showPostCreator, setShowPostCreator] = useState(false);
     
     if (loading || !isThemeLoaded) {
       return <LoadingSpinner theme={theme} />;
@@ -132,6 +135,12 @@ function App() {
         <ErrorBoundary theme={theme}>
           {children}
         </ErrorBoundary>
+        <PostCreator
+          isOpen={showPostCreator}
+          onClose={() => setShowPostCreator(false)}
+          onPostCreated={() => setShowPostCreator(false)}
+        />
+        <MobileNav onPostCreatorClick={() => setShowPostCreator(true)} />
       </>
     ) : (
       <ErrorBoundary theme={theme}>

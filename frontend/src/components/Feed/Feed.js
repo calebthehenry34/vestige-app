@@ -3,8 +3,6 @@ import { PostSkeleton } from '../Common/Skeleton';
 import Post from '../Post/post';
 import { API_URL } from '../../config';
 import PostCreator from '../Post/PostCreator';
-import MobileNav from '../Navigation/MobileNav';
-
 const Feed = ({ onRefreshNeeded }) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +81,7 @@ const Feed = ({ onRefreshNeeded }) => {
 
   return (
     <>
-      <div className="max-w-xl mx-auto relative mb-24">
+      <div className="max-w-xl mx-auto relative mb-28">
         {/* Post Creator Modal */}
         <PostCreator
           isOpen={showPostCreator}
@@ -103,9 +101,6 @@ const Feed = ({ onRefreshNeeded }) => {
           ))}
         </div>
       </div>
-      <MobileNav 
-        onPostCreatorClick={() => setShowPostCreator(true)}
-      />
     </>
   );
 };
