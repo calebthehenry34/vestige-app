@@ -162,7 +162,7 @@ const Navbar = () => {
         <div className="border-b border-gray-800 relative z-[100] bg-inherit">
           <div className="flex items-center h-16 px-4 max-w-6xl mx-auto justify-between">
             <button onClick={() => handleNavigation('/')} className="flex items-center">
-              <img src="/logos/logo.png" alt="Logo" className="h-7 w-auto"/>
+              <img src="/logos/logov.png" alt="Logo" className="h-7 w-auto"/>
             </button>
 
             <button

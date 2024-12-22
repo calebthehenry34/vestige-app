@@ -379,6 +379,10 @@ const Home = () => {
         className={`fixed top-[120px] left-0 right-0 z-30 transition-opacity duration-300 ${
           showWelcome ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
+        style={{
+          transform: 'translateZ(0)',
+          willChange: 'transform'
+        }}
       >
         <div className="max-w-xl mx-auto px-4">
           <div className="bg-[#1a1a1a] rounded-lg p-4 shadow-lg">
@@ -392,7 +396,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Feed */}
+      {/* Feed Container */}
       <div 
         className="relative z-40 min-h-screen"
         style={{
@@ -400,6 +404,8 @@ const Home = () => {
           backgroundColor: '#0d0d0d',
           borderRadius: '24px 24px 0 0',
           boxShadow: '0 -8px 20px rgba(0, 0, 0, 0.2)',
+          transform: 'translateZ(0)',
+          willChange: 'transform'
         }}
       >
         {/* Welcome Toggle Button */}
