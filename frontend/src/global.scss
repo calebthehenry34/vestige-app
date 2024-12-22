@@ -64,8 +64,8 @@ body {
   transform: translateY(150px);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
-  padding:10px;
-  padding-top: 30px!important;
+  padding:15px;
+  padding-top: 45px!important;
 
   &.scrolled {
     transform: translateY(0);

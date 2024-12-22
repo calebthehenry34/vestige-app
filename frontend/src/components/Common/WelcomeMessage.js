@@ -58,7 +58,8 @@ const WelcomeMessage = () => {
       style={{ 
         opacity,
         transform: `translateY(${-scrollY * 0.3}px)`,
-        pointerEvents: opacity === 0 ? 'none' : 'auto'
+        pointerEvents: opacity === 0 ? 'none' : 'auto',
+        transition: 'opacity 0.3s ease-out'
       }}
     >
       <div className="text-xl font-headlines text-white mb-2">

@@ -1,5 +1,5 @@
 // frontend/src/components/Post/Post.js
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -15,6 +15,8 @@ import {
 } from '@fluentui/react-icons';
 import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
+import PostComments from './PostComments';
+import { ThemeContext } from '../../App';
 
 // Helper function to handle media URLs
 const getMediaUrl = (media) => {
@@ -62,6 +64,7 @@ const getMediaUrl = (media) => {
 
 const Post = ({ post, onDelete, onReport, onEdit }) => {
   const { user } = useAuth();
+  const { theme } = useContext(ThemeContext);
   const [showMenu, setShowMenu] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [localPost, setLocalPost] = useState(post);
@@ -140,7 +143,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg mb-6 relative overflow-hidden">
+    <div className={`${theme === 'dark-theme' ? 'bg-black' : 'bg-white'} rounded-2xl shadow-lg mb-6 relative overflow-hidden`}>
       {/* User Profile and Menu */}
       <div className="absolute top-0 left-0 right-0 z-10 p-3 flex items-center justify-between bg-gradient-to-b from-black/50 via-black/25 to-transparent">
         <div className="flex items-center gap-2">
@@ -168,20 +171,20 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
 
       {/* Menu Dropdown */}
       {showMenu && (
-        <div className="absolute right-3 mt-1 bg-white rounded-lg shadow-lg py-2 z-20">
+        <div className={`absolute right-3 mt-1 ${theme === 'dark-theme' ? 'bg-zinc-800' : 'bg-white'} rounded-lg shadow-lg py-2 z-20`}>
           {isOwner ? (
             <>
-              <button onClick={handleDelete} className="flex items-center w-full px-4 py-2 text-red-600 hover:bg-gray-100">
+              <button onClick={handleDelete} className={`flex items-center w-full px-4 py-2 text-red-600 hover:${theme === 'dark-theme' ? 'bg-zinc-700' : 'bg-gray-100'}`}>
                 <DeleteRegular className="mr-2" />
                 Delete Post
               </button>
-              <button onClick={() => { onEdit?.(localPost); setShowMenu(false); }} className="flex items-center w-full px-4 py-2 hover:bg-gray-100">
+              <button onClick={() => { onEdit?.(localPost); setShowMenu(false); }} className={`flex items-center w-full px-4 py-2 ${theme === 'dark-theme' ? 'text-white hover:bg-zinc-700' : 'text-black hover:bg-gray-100'}`}>
                 <EditRegular className="mr-2" />
                 Edit Caption
               </button>
             </>
           ) : (
-            <button onClick={handleReport} className="flex items-center w-full px-4 py-2 text-red-600 hover:bg-gray-100">
+            <button onClick={handleReport} className={`flex items-center w-full px-4 py-2 text-red-600 hover:${theme === 'dark-theme' ? 'bg-zinc-700' : 'bg-gray-100'}`}>
               <FlagRegular className="mr-2" />
               Report Post
             </button>
@@ -210,7 +213,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
           />
         )}
         {imageError && (
-          <div className="absolute inset-0 flex items-center justify-center text-red-500 bg-gray-100 bg-opacity-50">
+          <div className={`absolute inset-0 flex items-center justify-center text-red-500 ${theme === 'dark-theme' ? 'bg-zinc-800' : 'bg-gray-100'} bg-opacity-50`}>
             Error loading image
           </div>
         )}
@@ -242,34 +245,13 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
         </div>
       </div>
 
-      {/* Collapsible Details Section */}
-      {showDetails && (
-        <div className="p-4 border-t border-gray-100">
-          <div className="flex justify-between items-center mb-2">
-            <div className="font-medium text-sm">
-              {localPost.likes?.length || 0} likes
-            </div>
-            <div className="text-xs text-gray-500">
-              {new Date(localPost.createdAt).toLocaleDateString()}
-            </div>
-          </div>
-
-          {/* Caption */}
-          {localPost.caption && (
-            <div className="mb-2">
-              <span className="text-sm font-medium mr-2">{localPost.user?.username}</span>
-              <span className="text-sm">{localPost.caption}</span>
-            </div>
-          )}
-
-          {/* Comments */}
-          {localPost.comments?.length > 0 && (
-            <div className="text-gray-500 text-sm">
-              {localPost.comments.length} comments
-            </div>
-          )}
-        </div>
-      )}
+      {/* Comments Section */}
+      <PostComments 
+        post={localPost} 
+        isOpen={showDetails}
+        onComment={(updatedPost) => setLocalPost(updatedPost)}
+        onReply={(updatedPost) => setLocalPost(updatedPost)}
+      />
     </div>
   );
 };
