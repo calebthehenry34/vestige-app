@@ -5,7 +5,7 @@ import {
   DismissRegular,
   TextBulletListRegular,
   StarRegular,
-  BrightnessRegular,
+  BrightnessHighRegular,
   ContrastRegular,
   ColorRegular,
   FilterRegular
@@ -246,7 +246,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
                 
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <BrightnessRegular className="w-5 h-5" />
+                    <BrightnessHighRegular className="w-5 h-5" />
                     <input
                       type="range"
                       min="0"
