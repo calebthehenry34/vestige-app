@@ -83,7 +83,7 @@ const Feed = ({ onRefreshNeeded }) => {
 
   return (
     <>
-      <div className="max-w-xl mx-auto relative z-[5]">
+      <div className="max-w-xl mx-auto relative mb-24">
         {/* Post Creator Modal */}
         <PostCreator
           isOpen={showPostCreator}
