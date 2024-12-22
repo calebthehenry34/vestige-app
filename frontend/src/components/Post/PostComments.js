@@ -236,6 +236,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
   return (
     <div 
       ref={commentsListRef}
+      data-theme={theme}
       className={`${styles.commentsContainer} ${!isOpen ? styles.closed : ''} overflow-hidden transition-all duration-300 ease-in-out ${
         isOpen ? 'max-h-[800px]' : 'max-h-0'
       }`}>
@@ -243,7 +244,8 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
         theme === 'dark-theme' 
           ? 'bg-black border-zinc-800 text-white' 
           : 'bg-white border-gray-200 text-black'
-      }`}>
+      }`}
+      data-theme={theme}>
         {/* Likes count and share date */}
         <div className="flex justify-between items-center mb-4">
           <div className={`font-medium text-sm ${
@@ -287,11 +289,11 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
         )}
 
         {/* Comments list with replies */}
-        <div className={`${styles.commentsList} space-y-3 mb-4 max-h-[300px]`}>
+        <div className={`${styles.commentsList} space-y-3 mb-4 max-h-[300px]`} data-theme={theme}>
           {displayComments?.map((comment) => (
             <div key={comment._id} className="space-y-2">
               {/* Main comment */}
-              <div className="flex items-start space-x-2">
+              <div className={`flex items-start space-x-2 ${styles.comment}`} data-theme={theme}>
                 <img
                   src={getProfileImageUrl(comment.user)}
                   alt={comment.user?.username || 'User'}
@@ -346,7 +348,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
 
               {/* Replies */}
               {comment.replies?.map((reply) => (
-                <div key={reply._id} className="text-xs ml-8 flex items-start space-x-2">
+                <div key={reply._id} className={`text-xs ml-8 flex items-start space-x-2 ${styles.comment}`} data-theme={theme}>
                   <img
                     src={getProfileImageUrl(reply.user)}
                     alt={reply.user?.username || 'User'}
@@ -407,11 +409,13 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
         </div>
 
         {/* Comment input */}
-        <form onSubmit={handleSubmit} className={`flex items-center relative ${styles.commentForm} ${
-          theme === 'dark-theme' 
-            ? 'border-t border-zinc-800' 
-            : 'border-t border-gray-200'
-        }`}>
+        <form onSubmit={handleSubmit} 
+          className={`flex items-center relative ${styles.commentForm} ${
+            theme === 'dark-theme' 
+              ? 'border-t border-zinc-800' 
+              : 'border-t border-gray-200'
+          }`}
+          data-theme={theme}>
           {replyTo && (
             <div 
               className={`absolute -top-6 text-sm ${styles.replyBox}`}
@@ -442,12 +446,10 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
               ? `Reply to ${replyTo.user?.username || 'Unknown User'}...` 
               : "Add a comment... (Use @ to mention users, # for hashtags)"
             }
-            className={`text-sm flex-1 border-0 focus:ring-0 outline-none ${styles.commentInput} ${
-              theme === 'dark-theme' 
-                ? 'text-white placeholder-gray-500 bg-black' 
-                : 'text-black placeholder-gray-500 bg-white'
-            }`}
+            className={`text-sm flex-1 border-0 focus:ring-0 outline-none ${styles.commentInput}`}
+            data-theme={theme}
             readOnly={!isOpen}
+            autoComplete="off"
           />
           <button
             type="submit"

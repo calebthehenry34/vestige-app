@@ -1,6 +1,7 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../../App';
+import { useScroll } from '../../context/ScrollContext';
 import { 
   HomeFilled,
   SearchRegular,
@@ -12,11 +13,24 @@ import {
 const MobileNav = ({ visible, onPostCreatorClick }) => {
   const navigate = useNavigate();
   const { theme } = useContext(ThemeContext);
+  const { scrollY } = useScroll();
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [shouldShow, setShouldShow] = useState(true);
+
+  useEffect(() => {
+    const currentScrollY = scrollY;
+    if (currentScrollY < lastScrollY) {
+      setShouldShow(true); // Show when scrolling up
+    } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+      setShouldShow(false); // Hide when scrolling down (after 100px)
+    }
+    setLastScrollY(currentScrollY);
+  }, [scrollY, lastScrollY]);
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 transform transition-transform duration-300 z-50 backdrop-blur-md ${
+    <div className={`fixed left-0 right-0 transform transition-all duration-300 z-50 backdrop-blur-md ${
       theme === 'dark-theme' ? 'bg-[#0d0d0d]/95 border-gray-800' : 'bg-white/95 border-gray-200'} border-t ${
-      visible ? 'translate-y-0' : 'translate-y-full'
+      shouldShow ? 'bottom-0' : '-bottom-20'
     }`}>
       <div className="flex justify-around items-center h-16 max-w-xl mx-auto px-4">
         <button 
