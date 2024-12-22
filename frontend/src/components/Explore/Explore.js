@@ -167,7 +167,7 @@ const Explore = () => {
               }
             }}
           >
-            <h2 className={`text-md font-headlines mb-2 relative z-10 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
+            <h2 className={`text-md font-headlines relative z-10 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
               Find Users
             </h2>
           </Box>
@@ -214,7 +214,7 @@ const Explore = () => {
               }
             }}
           >
-            <h2 className={`text-md font-headlines mb-2 relative z-10 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
+            <h2 className={`text-md font-headlines relative z-10 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
               Search Hashtags
             </h2>
           </Box>
