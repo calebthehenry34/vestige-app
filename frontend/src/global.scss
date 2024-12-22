@@ -49,24 +49,22 @@ body {
 
   // Container for posts
   .max-w-xl {
-    padding: 0 1rem;
+    padding: 0;
   }
 
-  // Ensure post content stays above container
-  .bg-white {
-    position: relative;
-    z-index: 3;
-  }
-
-  // Preserve clickable overlays
-  .absolute {
-    z-index: 4;
-  }
-
-  // Keep action buttons above overlays
-  button {
-    position: relative;
-    z-index: 5;
+  // Post overlay z-index hierarchy
+  .post-overlay {
+    &__user {
+      z-index: 20;
+    }
+    
+    &__menu {
+      z-index: 30;
+    }
+    
+    &__actions {
+      z-index: 20;
+    }
   }
 }
 

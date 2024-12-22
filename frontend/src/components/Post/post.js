@@ -138,19 +138,31 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow mb-6 relative overflow-hidden">
-      {/* Username and Menu */}
-      <div className="absolute top-0 right-0 z-10 p-2 flex items-center gap-2">
-        <Link to={`/profile/${localPost.user.username}`} className="text-white text-sm font-medium">
-          {localPost.user?.username || 'Unknown User'}
-        </Link>
-        <button 
-          onClick={() => setShowMenu(!showMenu)} 
-          className="text-white hover:opacity-80"
+    <div className="relative overflow-hidden dark:bg-gray-900 bg-gray-50">
+      {/* User Info Overlay */}
+      <div className="absolute top-0 left-0 right-0 z-10 p-3 bg-gradient-to-b from-black/50 to-transparent">
+        <Link 
+          to={`/profile/${localPost.user.username}`} 
+          className="flex items-center gap-2"
         >
-          <MoreHorizontalRegular />
-        </button>
+          <img 
+            src={getProfileImageUrl(localPost.user.profileImage)} 
+            alt={localPost.user.username}
+            className="w-8 h-8 rounded-full object-cover"
+          />
+          <span className="text-white text-sm font-medium">
+            {localPost.user?.username || 'Unknown User'}
+          </span>
+        </Link>
       </div>
+
+      {/* Menu Button */}
+      <button 
+        onClick={() => setShowMenu(!showMenu)} 
+        className="absolute top-3 right-3 z-10 text-white hover:opacity-80"
+      >
+        <MoreHorizontalRegular />
+      </button>
 
       {/* Menu Dropdown */}
       {showMenu && (
@@ -196,14 +208,14 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
           />
         )}
         {imageError && (
-          <div className="absolute inset-0 flex items-center justify-center text-red-500 bg-gray-100 bg-opacity-50">
+          <div className="absolute inset-0 flex items-center justify-center text-red-500 bg-gray-100 dark:bg-gray-800 bg-opacity-50">
             Error loading image
           </div>
         )}
 
-        {/* Bottom actions with transparent background */}
-        <div className="absolute bottom-0 left-0 right-0 bg-black/30 p-4">
-          <div className="flex justify-between items-center text-white">
+        {/* Action buttons overlay */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4">
+          <div className="flex items-center gap-4 text-white">
             <button onClick={handleLike} className="transform hover:scale-110 transition-transform">
               {isLiked ? (
                 <HeartFilled className="w-6 h-6 text-red-500" />
@@ -218,29 +230,46 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
         </div>
       </div>
 
-      {/* Collapsible Details Section */}
+      {/* Details Drawer */}
       {showDetails && (
-        <div className="p-4 border-t border-gray-100">
-          <div className="flex justify-between items-center mb-2">
-            <div className="font-medium text-sm">
-              {localPost.likes?.length || 0} likes
+        <div className="p-4 dark:bg-gray-900 bg-gray-50">
+          {/* Actions Row */}
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-4">
+              <div className="font-medium text-sm dark:text-white">
+                {localPost.likes?.length || 0} likes
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {new Date(localPost.createdAt).toLocaleDateString()}
+              </div>
             </div>
-            <div className="text-xs text-gray-500">
-              {new Date(localPost.createdAt).toLocaleDateString()}
-            </div>
+            {isOwner ? (
+              <div className="flex items-center gap-2">
+                <button onClick={handleDelete} className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
+                  <DeleteRegular />
+                </button>
+                <button onClick={() => { onEdit?.(localPost); setShowMenu(false); }} className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                  <EditRegular />
+                </button>
+              </div>
+            ) : (
+              <button onClick={handleReport} className="text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                <FlagRegular />
+              </button>
+            )}
           </div>
 
           {/* Caption */}
           {localPost.caption && (
-            <div className="mb-2">
-              <span className="text-sm font-medium mr-2">{localPost.user?.username}</span>
-              <span className="text-sm">{localPost.caption}</span>
+            <div className="mb-4">
+              <span className="text-sm font-medium mr-2 dark:text-white">{localPost.user?.username}</span>
+              <span className="text-sm dark:text-gray-300">{localPost.caption}</span>
             </div>
           )}
 
           {/* Comments */}
           {localPost.comments?.length > 0 && (
-            <div className="text-gray-500 text-sm">
+            <div className="text-gray-500 dark:text-gray-400 text-sm">
               {localPost.comments.length} comments
             </div>
           )}
