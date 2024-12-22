@@ -1,15 +1,11 @@
-import React, { useState, useContext, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
-  CompassNorthwestRegular, 
   HeartRegular, 
   PersonRegular, 
-  ImageMultipleRegular,
-  VideoPersonPulseRegular, 
   SettingsRegular,
   ShieldRegular,
   SignOutRegular,
-  SparkleRegular,
   ChevronRightRegular,
   DismissRegular,
   LockClosedRegular,
@@ -23,9 +19,6 @@ import {
   WeatherMoonRegular,
   WeatherSunnyRegular,
   DocumentRegular,
-  AddRegular,
-  HomeRegular,
-  ChatRegular,
 } from '@fluentui/react-icons';
 import { useAuth } from '../../context/AuthContext';
 import { ThemeContext } from '../../App';
@@ -41,22 +34,17 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const { currentNotification, clearCurrentNotification } = useNotifications();
   const navigate = useNavigate();
-  const location = useLocation();
   const [showDrawer, setShowDrawer] = useState(false);
-  const [showFeedMenu, setShowFeedMenu] = useState(false);
   const [showPostCreator, setShowPostCreator] = useState(false);
   const [expandedSection, setExpandedSection] = useState(null);
-  const mobileNavRef = useRef(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const isSettingsPage = location.pathname === '/settings';
   const [activeToast, setActiveToast] = useState(null);
 
   useEffect(() => {
     fetchUnreadNotificationsCount();
   }, []);
 
-  // Handle notifications from NotificationContext
   useEffect(() => {
     if (currentNotification) {
       setUnreadNotifications(prev => prev + 1);
@@ -82,7 +70,7 @@ const Navbar = () => {
   };
 
   useEffect(() => {
-    if (showDrawer || showFeedMenu) {
+    if (showDrawer) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -91,16 +79,10 @@ const Navbar = () => {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [showDrawer, showFeedMenu]);
-
-  
-
-
-
+  }, [showDrawer]);
 
   const handleNavigation = (path) => {
     setShowDrawer(false);
-    setShowFeedMenu(false);
     navigate(path);
   };
 
@@ -109,45 +91,6 @@ const Navbar = () => {
     logout();
     navigate('/login');
   };
-
-  const navigationItems = [
-    { 
-      action: () => setShowFeedMenu(true),
-      icon: <HomeRegular className="w-7 h-7" />, 
-      label: 'Home' 
-    },
-    { 
-      action: () => handleNavigation('/explore'),
-      icon: <CompassNorthwestRegular className="w-7 h-7" />,
-      label: 'Explore' 
-    },
-    {
-      action: () => setShowPostCreator(true),
-      icon: <AddRegular className="w-6 h-6" />,
-      label: 'Create',
-      className: `${theme === 'dark-theme' ? 'bg-gray-800' : 'bg-gray-100'} border-2 border-purple-500 p-4 flex items-center justify-center`
-    },
-    { 
-      action: () => setShowNotifications(!showNotifications),
-      icon: (
-        <div className="relative">
-          <HeartRegular className="w-7 h-7" />
-          {unreadNotifications > 0 && (
-            <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center text-xs text-white px-1">
-              {unreadNotifications}
-            </div>
-          )}
-        </div>
-      ),
-      label: 'Notifications' 
-    },
-    {
-      action: () => {},
-      icon: <ChatRegular className="w-7 h-7" />,
-      label: 'Chat',
-      className: 'opacity-50 cursor-not-allowed'
-    }
-  ];
 
   const settingsSections = [
     {
@@ -195,8 +138,72 @@ const Navbar = () => {
     }
   ];
 
-  const renderDrawer = () => (
+  // Get time of day for greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  return (
     <>
+      {activeToast && (
+        <Toast 
+          notification={activeToast} 
+          onClose={() => setActiveToast(null)}
+        />
+      )}
+
+      <div className={`fixed top-0 left-0 right-0 ${
+        theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
+      }`}>
+        {/* Top Row - Always visible */}
+        <div className="border-b border-gray-800 relative z-[100] bg-inherit">
+          <div className="flex items-center h-16 px-4 max-w-6xl mx-auto justify-between">
+            <button onClick={() => handleNavigation('/')} className="flex items-center">
+              <img src="/logos/logo.png" alt="Logo" className="h-7 w-auto"/>
+            </button>
+
+            <button
+              onClick={() => setShowDrawer(true)}
+              className={`p-2 rounded-md transition-colors ${
+                theme === 'dark-theme'
+                  ? 'hover:bg-gray-800'
+                  : 'hover:bg-gray-100'
+              }`}
+            >
+              {user ? (
+                <img
+                  src={getProfileImageUrl(user?.profilePicture, user?.username)}
+                  alt={user?.username}
+                  className="w-6 h-6 rounded-md object-cover"
+                  onError={(e) => {
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
+                    e.target.onError = null;
+                  }}
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-md bg-gray-200 flex items-center justify-center">
+                  <PersonRegular className="w-5 h-5 text-gray-400" />
+                </div>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Row - Can be covered by feed */}
+        <div className="px-4 py-4 max-w-6xl mx-auto space-y-1 relative z-[90] bg-inherit">
+          <div className={`text-lg font-medium ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
+            {`${getGreeting()}, ${user?.username || 'Guest'}`}
+          </div>
+          <div className={`text-sm ${theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-600'}`}>
+            {`You have ${unreadNotifications} unread notifications`}
+          </div>
+        </div>
+      </div>
+
+      {/* Settings Drawer */}
       {showDrawer && (
         <div 
           className="fixed inset-0 bg-black/50 z-[150] transition-opacity duration-300"
@@ -345,195 +352,34 @@ const Navbar = () => {
           <span>Log Out</span>
         </button>
       </div>
-    </>
-  );
 
-  return (
-    <>
-      {activeToast && (
-      <Toast 
-        notification={activeToast} 
-        onClose={() => setActiveToast(null)}
-      />
-    )}
-
-      <div className={`fixed top-0 left-0 right-0 z-[100] ${
-        theme === 'dark-theme'
-          ? 'bg-gray-900 border-gray-800'
-          : 'bg-white border-gray-200'
-      } border-b`}>
-        <div className={`flex items-center ${location.pathname === '/' ? 'h-16' : 'h-14'} px-4 max-w-6xl mx-auto justify-between`}>
-          {/* Left - Logo */}
-          {location.pathname === '/' ? (
-            <button onClick={() => handleNavigation('/')} className="flex items-center">
-              <img src="/logos/logo.png" alt="Logo" className="h-7 w-auto"/>
-            </button>
-          ) : (
-            <div className="flex items-center">
-              <div className={`text-lg font-medium ${
-                theme === 'dark-theme' ? 'text-white' : 'text-black'
-              }`}>
-                {location.pathname.split('/')[1].charAt(0).toUpperCase() + location.pathname.split('/')[1].slice(1)}
-              </div>
-            </div>
-          )}
-
-          {/* Center - Empty space for balance */}
-          <div></div>
-
-          {/* Right - Profile photo and menu */}
-          <button
-            onClick={() => setShowDrawer(true)}
-            className={`p-2 rounded-md transition-colors ${
-              theme === 'dark-theme'
-                ? 'hover:bg-gray-800'
-                : 'hover:bg-gray-100'
-            }`}
-          >
-            {user ? (
-              <img
-                src={getProfileImageUrl(user?.profilePicture, user?.username)}
-                alt={user?.username}
-                className="w-6 h-6 rounded-md object-cover"
-                onError={(e) => {
-                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
-                  e.target.onError = null;
-                }}
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-md bg-gray-200 flex items-center justify-center">
-                <PersonRegular className="w-5 h-5 text-gray-400" />
-              </div>
-            )}
-          </button>
-        </div>
-      </div>
-
-    {/* Bottom Fixed Mobile Navigation */}
-{!isSettingsPage && (
-  <div 
-    ref={mobileNavRef}
-    className={`md:hidden fixed bottom-0 left-0 right-0 z-[90] ${
-      theme === 'dark-theme'
-        ? 'bg-gray-900 border-t border-gray-800'
-        : 'bg-white border-t border-gray-200'
-    }`}
-  >
-    <div className="max-w-lg mx-auto px-4 py-3">
-      <div className="grid grid-cols-5 items-center">
-        {navigationItems.map((item, index) => (
-          <div key={index} className="col-span-1 flex justify-center items-center">
-            <button
-              onClick={item.action}
-              className={`p-2 transition-colors ${
-                index === 2 
-                  ? `absolute left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex items-center justify-center ${
-                    theme === 'dark-theme'
-                      ? 'bg-gray-900 text-white hover:bg-gray-800'
-                      : 'bg-white text-gray-700 hover:bg-gray-100'
-                    } shadow-lg border-4 ${
-                      theme === 'dark-theme' ? 'border-gray-800' : 'border-white'
-                    }`
-                  : 'rounded-lg'
-              } ${
-                theme === 'dark-theme'
-                  ? 'text-white hover:bg-gray-800'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-              disabled={item.className?.includes('cursor-not-allowed')}
-            >
-              {item.icon}
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-)}
-          
-      {/* Feed Selection Menu */}
-      {showFeedMenu && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-[91] md:hidden flex items-end justify-center"
-          onClick={() => setShowFeedMenu(false)}
-        >
-          <div 
-            className={`w-full rounded-t-xl overflow-hidden transform transition-all duration-500 ease-in-out ${
-              theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
-            }`}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className={`p-4 border-b ${
-              theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
-            }`}>
-              <h3 className={`text-sm font-semibold ${
-                theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
-              }`}>Select Feed</h3>
-            </div>
-            <div className="p-2">
-              <button 
-                onClick={() => handleNavigation('/')}
-                className={`flex items-center w-full p-4 rounded-lg ${
-                  theme === 'dark-theme'
-                    ? 'hover:bg-gray-800 text-white'
-                    : 'hover:bg-gray-100 text-gray-900'
-                }`}
-              >
-                <ImageMultipleRegular className="w-6 h-6 mr-3" />
-                <span>Photos</span>
-              </button>
-              <button 
-                onClick={() => handleNavigation('/videos')}
-                className={`flex items-center w-full p-4 rounded-lg ${
-                  theme === 'dark-theme'
-                    ? 'hover:bg-gray-800 text-white'
-                    : 'hover:bg-gray-100 text-gray-900'
-                }`}
-              >
-                <VideoPersonPulseRegular className="w-6 h-6 mr-3" />
-                <span>Moments</span>
-              </button>
-              <div 
-                className={`flex items-center p-4 rounded-lg opacity-50 cursor-not-allowed ${
-                  theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
-                }`}
-              >
-                <SparkleRegular className="w-6 h-6 mr-3" />
-                <span>Videos (Soon)</span>
-              </div>
-            </div>
-          </div>
-        </div>
-  
-    
-      )}
-            {showNotifications && (
-              <div 
-                className="fixed inset-0 bg-black/50 z-[91] md:hidden flex items-end justify-center"
-                onClick={() => setShowNotifications(false)}
-              >
-                <div 
-                  className={`w-full h-[60vh] rounded-t-xl overflow-hidden transform transition-all duration-500 ease-in-out ${
-                    theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
-                  }`}
-                  onClick={e => e.stopPropagation()}
-                >
-                  <ActivityFeed 
-                    isOpen={showNotifications} 
-                    onClose={() => setShowNotifications(false)}
-                    onNotificationsUpdate={(count) => setUnreadNotifications(count)}
-                  />
-                </div>
-              </div>
-            )}
-
+      {/* Post Creator Modal */}
       <PostCreator
         isOpen={showPostCreator}
         onClose={() => setShowPostCreator(false)}
         onPostCreated={() => setShowPostCreator(false)}
       />
 
-      {renderDrawer()}
+      {/* Notifications Panel */}
+      {showNotifications && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-[91] md:hidden flex items-end justify-center"
+          onClick={() => setShowNotifications(false)}
+        >
+          <div 
+            className={`w-full h-[60vh] rounded-t-xl overflow-hidden transform transition-all duration-500 ease-in-out ${
+              theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
+            }`}
+            onClick={e => e.stopPropagation()}
+          >
+            <ActivityFeed 
+              isOpen={showNotifications} 
+              onClose={() => setShowNotifications(false)}
+              onNotificationsUpdate={(count) => setUnreadNotifications(count)}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 };

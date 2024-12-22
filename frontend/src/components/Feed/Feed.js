@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PostSkeleton } from '../Common/Skeleton';
 import {
@@ -16,8 +16,10 @@ import { getProfileImageUrl } from '../../utils/imageUtils';
 import PostCreator from '../Post/PostCreator';
 import PostComments from '../Post/PostComments';
 import { useAuth } from '../../context/AuthContext';
+import { ThemeContext } from '../../App';
 
 const Feed = ({ onStoryClick, onRefreshNeeded }) => {
+  const { theme } = useContext(ThemeContext);
   const navigate = useNavigate();
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
@@ -201,10 +203,11 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
 
   return (
     <div 
-      className="max-w-xl mx-auto pt-20 pb-2" 
+      className={`max-w-xl mx-auto pt-[128px] pb-2 relative z-[95] ${theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'}`}
       style={{
-        transform: `translateY(${Math.min(scrollY * 0.3, 60)}px)`,
-        transition: 'transform 0.1s ease-out'
+        transform: `translateY(${Math.min(Math.max(0, scrollY * -0.4), -80)}px)`,
+        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        willChange: 'transform'
       }}
     >
       {/* Post Creator Modal */}
