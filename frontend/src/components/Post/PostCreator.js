@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Cropper from 'react-easy-crop';
+import ImageEditor from './ImageEditor';
 import {
   ImageRegular,
   ArrowLeftFilled,
@@ -24,6 +25,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [imageFilter, setImageFilter] = useState({ filter: '', adjustments: null });
 
   const onDrop = useCallback(async (acceptedFiles, rejectedFiles) => {
     if (rejectedFiles.length > 0) {
@@ -118,6 +120,10 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
       if (location) {
         formData.append('location', location);
       }
+      // Add filter and adjustments data
+      if (imageFilter.filter || imageFilter.adjustments) {
+        formData.append('imageFilter', JSON.stringify(imageFilter));
+      }
 
       const token = localStorage.getItem('token');
       const result = await axios.post(`${API_URL}/api/posts`, formData, {
@@ -149,7 +155,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4">
-      <div className="bg-black w-full max-w-md rounded-lg overflow-hidden">
+      <div className="bg-black w-full max-w-xl h-[95vh] rounded-lg overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-[#333333] flex items-center justify-between">
           <button 
@@ -159,7 +165,14 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
             {step !== 'upload' ? <ArrowLeftFilled className="w-6 h-6" /> : null}
           </button>
           <div className="text-sm text-gray-200">
-            {step === 'upload' ? 'New Post' : step === 'crop' ? 'Crop Photo' : 'Share Post'}
+            {step === 'upload' 
+              ? 'New Post' 
+              : step === 'crop' 
+              ? 'Crop Photo'
+              : step === 'edit'
+              ? 'Edit Photo'
+              : 'Share Post'
+            }
           </div>
           <button
             onClick={onClose}
@@ -170,12 +183,12 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
         </div>
 
         {/* Content */}
-        <div className="h-[450px]">
+        <div className="flex-1 overflow-hidden">
           {step === 'upload' && (
-            <div className="h-full p-4">
+            <div className="h-full p-6">
               <div 
                 {...getRootProps()} 
-                className="h-full rounded-lg border-2 border-dashed cursor-pointer transition-all hover:border-[#ae52e3] border-gray-800 bg-[#1a1a1a] flex items-center justify-center"
+                className="h-full rounded-lg border-2 border-dashed cursor-pointer transition-all hover:border-[#ae52e3] border-gray-800 bg-[#1a1a1a] flex items-center justify-center p-8"
               >
                 <input {...getInputProps()} />
                 <div className="text-center">
@@ -206,8 +219,25 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
                 onClick={async () => {
                   const croppedImage = await getCroppedImage();
                   setMedia(croppedImage);
-                  setStep('caption');
+                  setStep('edit');
                 }}
+                className="absolute bottom-4 right-4 px-4 py-2 bg-[#ae52e3] text-white rounded-lg hover:bg-[#9a3dd0] transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          )}
+
+          {step === 'edit' && media && (
+            <div className="h-full">
+              <ImageEditor
+                image={media}
+                onSave={(edits) => {
+                  setImageFilter(edits);
+                }}
+              />
+              <button
+                onClick={() => setStep('caption')}
                 className="absolute bottom-4 right-4 px-4 py-2 bg-[#ae52e3] text-white rounded-lg hover:bg-[#9a3dd0] transition-colors"
               >
                 Next
@@ -217,11 +247,23 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
           {step === 'caption' && media && (
             <div className="h-full overflow-auto">
-              <div className="p-4 space-y-4">
+              <div className="p-6 space-y-6">
                 <img
                   src={media}
                   alt="Preview"
                   className="w-full aspect-[4/5] object-cover rounded-lg"
+                  style={{
+                    filter: `
+                      ${imageFilter.filter}
+                      ${imageFilter.adjustments ? `
+                        brightness(${imageFilter.adjustments.brightness}%)
+                        contrast(${imageFilter.adjustments.contrast}%)
+                        saturate(${imageFilter.adjustments.saturation}%)
+                        sepia(${imageFilter.adjustments.temperature > 100 ? (imageFilter.adjustments.temperature - 100) / 100 : 0})
+                        hue-rotate(${imageFilter.adjustments.temperature < 100 ? (100 - imageFilter.adjustments.temperature) * 0.5 : 0}deg)
+                      ` : ''}
+                    `
+                  }}
                 />
                 <textarea
                   placeholder="Write a caption..."

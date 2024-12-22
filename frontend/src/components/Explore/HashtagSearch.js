@@ -85,7 +85,7 @@ const HashtagSearch = () => {
           >
             <ArrowLeftRegular className="w-6 h-6" />
           </button>
-          <h1 className={`text-2xl font-bold ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
+          <h1 className={`text-lg font-headlines ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
             {hashtag ? `#${hashtag}` : 'Search Hashtags'}
           </h1>
         </div>
@@ -118,7 +118,7 @@ const HashtagSearch = () => {
           <div className={`max-w-2xl mx-auto p-6 rounded-lg ${
             theme === 'dark-theme' ? 'bg-gray-800' : 'bg-white'
           }`}>
-            <h3 className={`text-xl font-semibold mb-4 ${
+            <h3 className={`text-md font-headlines mb-4 ${
               theme === 'dark-theme' ? 'text-white' : 'text-black'
             }`}>
               Popular Hashtags

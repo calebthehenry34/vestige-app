@@ -1,11 +1,9 @@
-import { S3Client, HeadBucketCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, HeadBucketCommand, DeleteObjectCommand, PutBucketCorsCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,6 +62,38 @@ const validateBucket = async (client, bucketName) => {
   }
 };
 
+// Update CORS configuration for the bucket
+const updateCorsConfiguration = async (client, bucketName) => {
+  try {
+    const corsConfig = {
+      CORSRules: [
+        {
+          AllowedHeaders: ['*'],
+          AllowedMethods: ['GET', 'HEAD'],
+          AllowedOrigins: [
+            process.env.CLOUDFRONT_DOMAIN ? `https://${process.env.CLOUDFRONT_DOMAIN}` : '*',
+            'http://localhost:3000',
+            'http://localhost:5000'
+          ],
+          ExposeHeaders: ['ETag'],
+          MaxAgeSeconds: 86400
+        }
+      ]
+    };
+
+    const command = new PutBucketCorsCommand({
+      Bucket: bucketName,
+      CORSConfiguration: corsConfig
+    });
+
+    await client.send(command);
+    console.log('S3 bucket CORS configuration updated successfully');
+    console.log('Allowed origins:', corsConfig.CORSRules[0].AllowedOrigins);
+  } catch (error) {
+    console.error('Error updating S3 bucket CORS configuration:', error);
+  }
+};
+
 if (validateS3Credentials()) {
   try {
     // Create explicit credentials object
@@ -100,10 +130,14 @@ if (validateS3Credentials()) {
 
     console.log('S3 Client initialized with explicit credentials');
 
-    // Validate bucket immediately
+    // Validate bucket and update CORS configuration
     validateBucket(s3, process.env.AWS_BUCKET_NAME)
       .then(isValid => {
-        if (!isValid) {
+        if (isValid) {
+          if (process.env.IS_PRODUCTION) {
+            updateCorsConfiguration(s3, process.env.AWS_BUCKET_NAME);
+          }
+        } else {
           console.error('Bucket validation failed - S3 functionality may be impaired');
         }
       })

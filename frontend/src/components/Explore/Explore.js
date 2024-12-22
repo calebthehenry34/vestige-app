@@ -121,7 +121,7 @@ const Explore = () => {
 
   return (
     <div className={` mt-50 min-h-screen ${theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <div className="max-w-4xl mx-auto px-4 py-6 mb-5">
+      <div className="max-w-4xl mx-auto px-4 py-6 m-25">
         {/* Two Column Links */}
         <div className="grid grid-cols-2 gap-4">
           <Box
@@ -185,7 +185,7 @@ const Explore = () => {
               position: 'relative',
               borderRadius: '10px',
               padding: '24px',
-              textAlign: 'center',
+              textAlign: 'left',
               transition: 'all 0.3s ease',
               textDecoration: 'none',
               boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
