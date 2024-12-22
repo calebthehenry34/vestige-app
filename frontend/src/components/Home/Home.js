@@ -367,9 +367,9 @@ const Home = () => {
 
       {/* Feed Container */}
       <div 
-        className="relative z-40 min-h-screen"
+        className="relative z-30 min-h-screen"
         style={{
-          marginTop: '150px',
+          marginTop: '120px',
           backgroundColor: '#0d0d0d',
           borderRadius: '24px 24px 0 0',
           boxShadow: '0 -8px 20px rgba(0, 0, 0, 0.2)',

@@ -29,15 +29,15 @@ const WelcomeMessage = ({ isVisible }) => {
 
   return (
     <div 
-      className="fixed top-[64px] left-0 right-0 z-30"
+      className="fixed top-[64px] left-0 right-0 z-20"
       style={{
         transform: 'translateZ(0)',
         willChange: 'transform'
       }}
     >
-      <div className="max-w-xl mx-auto px-4">
-        <div className="bg-[#1a1a1a] rounded-lg p-4 shadow-lg">
-          <div className="text-lg font-medium text-white mb-2">
+      <div className="w-full mx-auto px-4">
+        <div className="bg-[#000000]">
+          <div className="text-lg font-headlines text-white mb-2">
             {greeting}, {user?.username}!
           </div>
           <div className="text-gray-400">

@@ -33,6 +33,11 @@ import { EyeRegular, EyeOffRegular } from '@fluentui/react-icons';
 
 const Navbar = () => {
   const [showWelcomeMessage, setShowWelcomeMessage] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const { theme, toggleTheme } = useContext(ThemeContext);
   const { user, logout } = useAuth();
   const { currentNotification, clearCurrentNotification } = useNotifications();
@@ -187,7 +192,7 @@ const Navbar = () => {
           </div>
         </div>
 
-        <WelcomeMessage isVisible={showWelcomeMessage} />
+        {mounted && <WelcomeMessage isVisible={showWelcomeMessage} />}
       </div>
 
       {/* Settings Drawer */}
