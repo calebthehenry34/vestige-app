@@ -8,6 +8,7 @@ import {
   ShareRegular,
   BookmarkRegular,
   BookmarkFilled,
+  DeleteRegular,
 } from '@fluentui/react-icons';
 import axios from 'axios';
 import { API_URL } from '../../config';
@@ -102,6 +103,25 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
       }
     } catch (error) {
       console.error('Error saving post:', error);
+    }
+  };
+
+  const handleDelete = async (postId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/admin/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setPosts(posts.filter(post => post._id !== postId));
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error);
     }
   };
 
@@ -222,54 +242,94 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                     filter: 'blur(10px)',
                     transform: 'scale(1.1)', // Prevent blur edges
                   }}
+                  role="presentation" // Changed to presentation since it's decorative
                 />
               )}
-              <img 
-                src={post.media?.variants?.large?.urls?.webp || 
-                     post.media?.variants?.large?.urls?.jpeg || 
-                     post.media}
-                srcSet={(() => {
-                  if (!post?.media?.variants) return '';
-                  const urls = {};
+              {(() => {
+                // Helper function to get direct media URL
+                const getMediaUrl = async (postId) => {
+                  try {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`${API_URL}/api/posts/${postId}/media`, {
+                      headers: {
+                        'Authorization': `Bearer ${token}`
+                      }
+                    });
+                    if (!response.ok) throw new Error('Failed to fetch media URL');
+                    const data = await response.json();
+                    return data.url;
+                  } catch (error) {
+                    console.error('Error fetching media URL:', error);
+                    return null;
+                  }
+                };
+
+                const handleImageError = async (e) => {
+                  const freshUrl = await getMediaUrl(post._id);
+                  if (freshUrl) {
+                    e.target.src = freshUrl;
+                    if (e.target.srcSet) {
+                      e.target.srcSet = ''; // Clear srcSet to use only the fresh URL
+                    }
+                  } else {
+                    const fallback = document.createElement('div');
+                    fallback.className = 'absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-300';
+                    fallback.innerHTML = `
+                      <div class="text-center p-4">
+                        <div class="mb-2">⚠️</div>
+                        <div>Image not available</div>
+                        <div class="text-sm text-gray-500 mt-1">Please try refreshing</div>
+                      </div>
+                    `;
+                    e.target.parentNode.replaceChild(fallback, e.target);
+                  }
+                };
+
+                const imageProps = {
+                  className: "absolute inset-0 w-full h-full object-cover",
+                  loading: "lazy",
+                  onError: handleImageError,
+                  alt: post.caption || `${post.user.username}'s post`
+                };
+
+                // Handle legacy format where post.media is a direct URL string
+                if (typeof post.media === 'string') {
+                  return <img {...imageProps} src={post.media}></img>;
+                }
+
+                // Handle new format with variants
+                if (post.media?.variants) {
+                  const imageUrls = {};
                   ['small', 'medium', 'large'].forEach(size => {
-                    if (post.media.variants[size]?.urls) {
-                      urls[size] = post.media.variants[size].urls.webp || 
-                                 post.media.variants[size].urls.jpeg;
+                    const variant = post.media.variants[size];
+                    if (variant?.urls) {
+                      // Prefer WebP if available and supported
+                      imageUrls[size] = variant.urls.webp || variant.urls.jpeg;
                     }
                   });
-                  return Object.entries(urls)
-                    .map(([size, url]) => `${url} ${size === 'small' ? '400w' : size === 'medium' ? '800w' : '1200w'}`)
-                    .join(', ');
-                })()}
-                sizes="(max-width: 400px) 100vw, 600px"
-                alt={post.caption || "Post image"}
-                className="absolute inset-0 w-full h-full object-cover"
-                loading="lazy"
-                onError={(e) => {
-                  console.error('Image load error:', {
-                    type: 'image',
-                    media: post.media,
-                    variants: post.media?.variants,
-                    availableVariants: post.media?.variants ? 
-                      Object.keys(post.media.variants).map(size => ({
-                        size,
-                        urls: post.media.variants[size].urls
-                      })) : 'none',
-                    postId: post._id
-                  });
-                  // Create a more informative fallback UI
-                  const fallback = document.createElement('div');
-                  fallback.className = 'absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-300';
-                  fallback.innerHTML = `
-                    <div class="text-center p-4">
-                      <div class="mb-2">⚠️</div>
-                      <div>Image not available</div>
-                      <div class="text-sm text-gray-500 mt-1">Please try refreshing</div>
-                    </div>
-                  `;
-                  e.target.parentNode.replaceChild(fallback, e.target);
-                }}
-              />
+
+                  // If we have no valid URLs, try to get a fresh URL
+                  if (Object.keys(imageUrls).length === 0) {
+                    return <img {...imageProps} src={post.media.fallback || post.media}></img>;
+                  }
+
+                  // Use the largest available variant as default
+                  const defaultSize = imageUrls.large ? 'large' : imageUrls.medium ? 'medium' : 'small';
+                  return (
+                    <img
+                      {...imageProps}
+                      src={imageUrls[defaultSize]}
+                      srcSet={Object.entries(imageUrls)
+                        .map(([size, url]) => `${url} ${size === 'small' ? '400w' : size === 'medium' ? '800w' : '1200w'}`)
+                        .join(', ')}
+                      sizes="(max-width: 400px) 100vw, 600px"
+                    ></img>
+                  );
+                }
+
+                // Fallback for any other case
+                return <img {...imageProps} src={post.media?.url || post.media}></img>;
+              })()}
             </div>
 
             {/* Post Actions */}
@@ -308,19 +368,32 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                     <ShareRegular className="w-6 h-6" />
                   </button>
                 </div>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSave(post._id);
-                  }}
-                  className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
-                >
-                  {post.saved ? (
-                    <BookmarkFilled className="w-6 h-6" />
-                  ) : (
-                    <BookmarkRegular className="w-6 h-6" />
+                <div className="flex items-center space-x-4">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSave(post._id);
+                    }}
+                    className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
+                  >
+                    {post.saved ? (
+                      <BookmarkFilled className="w-6 h-6" />
+                    ) : (
+                      <BookmarkRegular className="w-6 h-6" />
+                    )}
+                  </button>
+                  {user?.isAdmin && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(post._id);
+                      }}
+                      className="text-white hover:text-red-500 transition-colors relative z-10"
+                    >
+                      <DeleteRegular className="w-6 h-6" />
+                    </button>
                   )}
-                </button>
+                </div>
               </div>
 
               <div className="font-semibold text-white mb-2">{post.likes?.length || 0} likes</div>

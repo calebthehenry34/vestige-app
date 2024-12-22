@@ -383,11 +383,7 @@ const Navbar = () => {
           {/* Left - Logo */}
           {location.pathname === '/' ? (
             <button onClick={() => handleNavigation('/')} className="flex items-center">
-              <span className={`text-xl font-semibold ${
-                theme === 'dark-theme' ? 'text-white' : 'text-black'
-              }`}>
-                <img src="/logos/logo.png" alt="Logo" className="mr-3 h-6 w-auto"/>
-              </span>
+              <img src="/logos/logo.png" alt="Logo" className="h-7 w-auto"/>
             </button>
           ) : (
             <div className="flex items-center">
@@ -396,7 +392,6 @@ const Navbar = () => {
               }`}>
                 {location.pathname.split('/')[1].charAt(0).toUpperCase() + location.pathname.split('/')[1].slice(1)}
               </div>
-              <img src="/logos/logo.png" alt="Logo" className="ml-3 h-6 w-auto opacity-50"/>
             </div>
           )}
 

@@ -6,6 +6,7 @@ import Post from '../models/Post.js';
 import Blacklist from '../models/Blacklist.js';
 import Follow from '../models/Follow.js'; 
 import mongoose from 'mongoose';
+import { deletePost } from '../controllers/postController.js';
 import { deleteUser } from '../controllers/userController.js';
 
 
@@ -279,6 +280,20 @@ router.get('/users/stats', auth, adminAuth, async (req, res) => {
 });
 
 
+
+// Admin delete post
+router.delete('/posts/:postId', auth, adminAuth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    await deletePost(req, res);
+  } catch (error) {
+    console.error('Admin delete post error:', error);
+    res.status(500).json({ error: 'Error deleting post' });
+  }
+});
 
 // Block/Unblock user
 router.post('/users/:id/toggle-block', auth, adminAuth, async (req, res) => {
