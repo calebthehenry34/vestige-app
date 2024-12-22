@@ -112,14 +112,29 @@ export const getPosts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const posts = await Post.find()
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .populate('user', 'username profilePicture')
-      .populate('taggedUsers', 'username profilePicture')
-      .populate('likes', 'username profilePicture')
-      .populate({
+    const posts = await Post.aggregate([
+      {
+        $addFields: {
+          likesCount: { $size: { $ifNull: ["$likes", []] } },
+          commentsCount: { $size: { $ifNull: ["$comments", []] } }
+        }
+      },
+      {
+        $sort: { createdAt: -1 }
+      },
+      {
+        $skip: skip
+      },
+      {
+        $limit: limit
+      }
+    ]);
+
+    await Post.populate(posts, [
+      { path: 'user', select: 'username profilePicture' },
+      { path: 'taggedUsers', select: 'username profilePicture' },
+      { path: 'likes', select: 'username profilePicture' },
+      {
         path: 'comments',
         populate: [
           {
@@ -138,7 +153,8 @@ export const getPosts = async (req, res) => {
             }
           }
         ]
-      });
+      }
+    ]);
 
     const processedPosts = await processPostsWithPresignedUrls(posts);
 
