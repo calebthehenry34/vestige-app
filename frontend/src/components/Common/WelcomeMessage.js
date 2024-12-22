@@ -6,7 +6,7 @@ import { API_URL } from '../../config';
 
 const WelcomeMessage = () => {
   const { user } = useAuth();
-  const { notifications } = useNotifications();
+  const { unreadCount } = useNotifications();
   const { scrollY } = useScroll();
   const [greeting, setGreeting] = useState('');
   const [followRequests, setFollowRequests] = useState(0);
@@ -66,7 +66,7 @@ const WelcomeMessage = () => {
         {greeting}, {user?.username}
       </div>
       <div className="text-gray-400 text-sm">
-        You have {notifications.length} unread notifications
+        You have {unreadCount} unread notifications
       </div>
       <div className="text-gray-400 text-sm">
         You have {followRequests} follow requests

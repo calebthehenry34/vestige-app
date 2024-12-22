@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { PostSkeleton } from '../Common/Skeleton';
 import Post from '../Post/post';
-import axios from 'axios';
 import { API_URL } from '../../config';
 import PostCreator from '../Post/PostCreator';
 import MobileNav from '../Navigation/MobileNav';
@@ -15,12 +14,18 @@ const Feed = ({ onRefreshNeeded }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/api/posts`, {
+      const response = await fetch(`${API_URL}/api/posts`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      setPosts(response.data.posts);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch posts');
+      }
+      
+      const data = await response.json();
+      setPosts(data.posts);
       setError(null);
     } catch (err) {
       console.error('Error fetching posts:', err);
@@ -48,7 +53,7 @@ const Feed = ({ onRefreshNeeded }) => {
   const handleDelete = async (postId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/admin/posts/${postId}`, {
+      const response = await fetch(`${API_URL}/api/posts/${postId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

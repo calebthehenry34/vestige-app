@@ -14,6 +14,7 @@ import {
   ErrorCircleRegular,
 } from '@fluentui/react-icons';
 import { getProfileImageUrl } from '../../utils/imageUtils';
+import { API_URL } from '../../config';
 
 const VideoFeed = () => {
   const navigate = useNavigate();
@@ -46,35 +47,18 @@ const VideoFeed = () => {
       setLoading(true);
       setError(null);
 
-      const mockVideos = [
-        {
-          _id: '1',
-          videoUrl: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-          user: {
-            username: 'johnsmith',
-            profilePicture: null
-          },
-          caption: 'Check out this amazing sunset! 🌅 #nature #video',
-          likes: [],
-          comments: [{ id: 1, text: 'Beautiful!' }],
-          saves: [],
-          createdAt: new Date().toISOString()
-        },
-        {
-          _id: '2',
-          videoUrl: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-          user: {
-            username: 'sarahwilson',
-            profilePicture: null
-          },
-          caption: 'Morning coffee and coding session ☕️',
-          likes: [],
-          comments: [],
-          saves: [],
-          createdAt: new Date().toISOString()
-        },
-      ];
-      setVideos(mockVideos);
+      const response = await fetch(`${API_URL}/api/posts?type=video`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch videos');
+      }
+
+      const data = await response.json();
+      setVideos(data.posts);
     } catch (err) {
       console.error('Error loading videos:', err);
       setError('Failed to load videos');
@@ -106,18 +90,47 @@ const VideoFeed = () => {
   const handleLike = async (videoId) => {
     if (!user?.id || !videoId) return;
 
-    setVideos(videos.map(video => {
-      if (video._id === videoId) {
-        const isLiked = video.likes?.includes(user.id);
-        return {
-          ...video,
-          likes: isLiked 
-            ? (video.likes || []).filter(id => id !== user.id)
-            : [...(video.likes || []), user.id]
-        };
+    try {
+      // Optimistic update
+      setVideos(videos.map(video => {
+        if (video._id === videoId) {
+          const isLiked = video.likes?.includes(user.id);
+          return {
+            ...video,
+            likes: isLiked 
+              ? (video.likes || []).filter(id => id !== user.id)
+              : [...(video.likes || []), user.id]
+          };
+        }
+        return video;
+      }));
+
+      // Make API call
+      const response = await fetch(`${API_URL}/api/posts/${videoId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to like video');
       }
-      return video;
-    }));
+
+      const updatedVideo = await response.json();
+      
+      // Update with server response
+      setVideos(videos.map(video => 
+        video._id === videoId ? updatedVideo : video
+      ));
+    } catch (error) {
+      console.error('Error liking video:', error);
+      // Revert optimistic update on error
+      setVideos(videos.map(video => 
+        video._id === videoId ? { ...video, likes: video.likes || [] } : video
+      ));
+    }
   };
 
   const handleSave = async (videoId) => {

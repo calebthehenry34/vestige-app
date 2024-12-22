@@ -6,6 +6,7 @@ const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [currentNotification, setCurrentNotification] = useState(null);
   const { user } = useAuth();
 
@@ -64,6 +65,7 @@ export const NotificationProvider = ({ children }) => {
       socket.on('notification', (notification) => {
         setCurrentNotification(notification);
         setNotifications(prev => [notification, ...prev]);
+        setUnreadCount(prev => prev + 1);
       });
 
       return () => {
@@ -76,13 +78,25 @@ export const NotificationProvider = ({ children }) => {
     setCurrentNotification(null);
   };
 
+  const updateUnreadCount = (count) => {
+    setUnreadCount(count);
+  };
+
+  const markAllAsRead = () => {
+    setUnreadCount(0);
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
   return (
     <NotificationContext.Provider 
       value={{ 
         notifications, 
         setNotifications,
         currentNotification,
-        clearCurrentNotification
+        clearCurrentNotification,
+        unreadCount,
+        updateUnreadCount,
+        markAllAsRead
       }}
     >
       {children}

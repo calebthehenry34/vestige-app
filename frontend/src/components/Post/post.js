@@ -70,14 +70,15 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
   const [localPost, setLocalPost] = useState(post);
   const [showDetails, setShowDetails] = useState(false);
   const isOwner = localPost?.user?._id === user?.id;
-  const isLiked = localPost?.likes?.some(like => like.user === user?.id);
+  const isLiked = localPost?.likes?.includes(user?.id);
 
   const handleLike = async () => {
     try {
       const response = await fetch(`${API_URL}/api/posts/${localPost._id}/like`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
         }
       });
       
@@ -86,7 +87,15 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
       }
 
       const updatedPost = await response.json();
-      // Update both local state and parent feed
+      // Update local state immediately for better UX
+      setLocalPost(prevPost => ({
+        ...prevPost,
+        likes: isLiked 
+          ? prevPost.likes.filter(id => id !== user?.id)
+          : [...prevPost.likes, user?.id]
+      }));
+      
+      // Then update with server response
       setLocalPost(updatedPost);
       if (onRefresh) {
         onRefresh();

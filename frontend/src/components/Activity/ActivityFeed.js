@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config';
 import FollowButton from '../Common/FollowButton';
 import { ThemeContext } from '../../App';
+import { useNotifications } from '../../context/NotificationContext';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 import { DismissRegular } from '@fluentui/react-icons';
 
-const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
+const ActivityFeed = ({ onClose, isOpen }) => {
   const navigate = useNavigate();
   const { theme } = useContext(ThemeContext);
-  const [notifications, setNotifications] = useState([]);
+  const { notifications, setNotifications, updateUnreadCount, markAllAsRead: contextMarkAllAsRead } = useNotifications();
   const [loading, setLoading] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -47,15 +48,13 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
       const data = await response.json();
       setNotifications(data);
       const unreadCount = data.filter(n => !n.read).length;
-      if (onNotificationsUpdate) {
-        onNotificationsUpdate(unreadCount);
-      }
+      updateUnreadCount(unreadCount);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       setLoading(false);
     }
-  }, [onNotificationsUpdate]);
+  }, [updateUnreadCount, setNotifications]);
 
   useEffect(() => {
     if (isOpen) {
@@ -63,7 +62,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
     }
   }, [isOpen, fetchNotifications]);
 
-  const markAllAsRead = async () => {
+  const handleMarkAllAsRead = async () => {
     try {
       const response = await fetch(`${API_URL}/api/notifications/read-all`, {
         method: 'PATCH',
@@ -73,10 +72,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
       });
 
       if (response.ok) {
-        setNotifications(notifications.map(n => ({ ...n, read: true })));
-        if (onNotificationsUpdate) {
-          onNotificationsUpdate(0);
-        }
+        contextMarkAllAsRead();
       }
     } catch (error) {
       console.error('Error marking notifications as read:', error);
@@ -111,9 +107,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
           n._id === notification._id ? { ...n, read: true } : n
         ));
         const unreadCount = notifications.filter(n => !n.read && n._id !== notification._id).length;
-        if (onNotificationsUpdate) {
-          onNotificationsUpdate(unreadCount);
-        }
+        updateUnreadCount(unreadCount);
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -287,7 +281,7 @@ const ActivityFeed = ({ onClose, isOpen, onNotificationsUpdate }) => {
                   theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
                 }`}>
                   <button
-                    onClick={markAllAsRead}
+                    onClick={handleMarkAllAsRead}
                     className={`text-sm px-3 py-1 rounded-full transition-colors duration-200 ${
                       theme === 'dark-theme' 
                         ? 'text-gray-400 hover:text-white hover:bg-zinc-900' 
