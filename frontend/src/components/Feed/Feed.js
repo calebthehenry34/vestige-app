@@ -217,230 +217,46 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   return (
     <>
       <div 
-      className={`max-w-xl mx-auto max-h[90vh] pb-2 relative z-[95] ${theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`}
-      style={{
-        transform: `translateY(${Math.min(Math.max(0, scrollY * -0.4), -80)}px)`,
-        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        willChange: 'transform',
-        backgroundColor: theme === 'dark-theme' ? '#0d0d0d' : '#ffffff',
-        borderRadius: '24px 24px 0 0',
-        boxShadow: theme === 'dark-theme' 
-          ? '0 -8px 20px rgba(0, 0, 0, 0.2)' 
-          : '0 -8px 20px rgba(0, 0, 0, 0.1)'
-      }}
-    >
-      {/* Post Creator Modal */}
-      <PostCreator
-        isOpen={showPostCreator}
-        onClose={() => setShowPostCreator(false)}
-        onPostCreated={handlePostCreated}
-      />
+        className="max-w-xl mx-auto pb-2 relative z-[95] text-white"
+        style={{
+          transform: `translateY(${Math.min(Math.max(0, scrollY * -0.5), -200)}px)`,
+          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          willChange: 'transform',
+          backgroundColor: '#0d0d0d',
+          maxHeight: `calc(100vh - ${Math.max(50, Math.min(100 - (scrollY / 10), 100))}vh)`,
+          borderRadius: '24px 24px 0 0',
+          boxShadow: '0 -8px 20px rgba(0, 0, 0, 0.2)'
+        }}
+      >
+        {/* Post Creator Modal */}
+        <PostCreator
+          isOpen={showPostCreator}
+          onClose={() => setShowPostCreator(false)}
+          onPostCreated={handlePostCreated}
+        />
 
-      {/* Posts */}
-      <div className="space-y-6">
-        {posts.map((post) => (
-          <div key={post._id} className={`${theme === 'dark-theme' ? 'bg-[#1a1a1a]' : 'bg-white'} rounded-lg shadow relative`}>
-            {/* Clickable overlay for entire post */}
-            <div 
-              onClick={() => navigate(`/post/${post._id}`)}
-              className="absolute inset-0 cursor-pointer z-0"
-            />
-            {/* Post Header */}
-            <div className="flex items-center p-4">
-              <img
-                src={getProfileImageUrl(post.user.profilePicture, post.user.username)}
-                alt={post.user.username}
-                className="h-10 w-10 rounded-full object-cover cursor-pointer relative z-10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/profile/${post.user.username}`);
-                }}
+        {/* Posts */}
+        <div className="space-y-6">
+          {posts.map((post) => (
+            <div key={post._id} className="bg-[#1a1a1a] rounded-lg shadow relative">
+              {/* Clickable overlay for entire post */}
+              <div 
+                onClick={() => navigate(`/post/${post._id}`)}
+                className="absolute inset-0 cursor-pointer z-0"
               />
-              <span 
-                className={`ml-3 font-medium cursor-pointer relative z-10 ${theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/profile/${post.user.username}`);
-                }}
-              >
-                {post.user.username}
-              </span>
-            </div>
-
-            {/* Post Image */}
-            <div className="relative aspect-[4/5] bg-black">
-              {/* Blur placeholder */}
-              {post?.media?.placeholder && (
-                <div 
-                  className="absolute inset-0 bg-gray-200"
-                  style={{
-                    backgroundImage: `url(${post.media.placeholder})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    filter: 'blur(10px)',
-                    transform: 'scale(1.1)', // Prevent blur edges
+              {/* Post Header */}
+              <div className="flex items-center p-4">
+                <img
+                  src={getProfileImageUrl(post.user.profilePicture, post.user.username)}
+                  alt={post.user.username}
+                  className="h-10 w-10 rounded-full object-cover cursor-pointer relative z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/profile/${post.user.username}`);
                   }}
-                  role="presentation" // Changed to presentation since it's decorative
                 />
-              )}
-              {(() => {
-                // Helper function to get direct media URL
-                const getMediaUrl = async (postId) => {
-                  try {
-                    const token = localStorage.getItem('token');
-                    const response = await fetch(`${API_URL}/api/posts/${postId}/media`, {
-                      headers: {
-                        'Authorization': `Bearer ${token}`
-                      }
-                    });
-                    if (!response.ok) throw new Error('Failed to fetch media URL');
-                    const data = await response.json();
-                    return data.url;
-                  } catch (error) {
-                    console.error('Error fetching media URL:', error);
-                    return null;
-                  }
-                };
-
-                const handleImageError = async (e) => {
-                  const freshUrl = await getMediaUrl(post._id);
-                  if (freshUrl) {
-                    e.target.src = freshUrl;
-                    if (e.target.srcSet) {
-                      e.target.srcSet = ''; // Clear srcSet to use only the fresh URL
-                    }
-                  } else {
-                    const fallback = document.createElement('div');
-                    fallback.className = 'absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-300';
-                    fallback.innerHTML = `
-                      <div class="text-center p-4">
-                        <div class="mb-2">⚠️</div>
-                        <div>Image not available</div>
-                        <div class="text-sm text-gray-500 mt-1">Please try refreshing</div>
-                      </div>
-                    `;
-                    e.target.parentNode.replaceChild(fallback, e.target);
-                  }
-                };
-
-                const imageProps = {
-                  className: "absolute inset-0 w-full h-full object-cover",
-                  loading: "lazy",
-                  onError: handleImageError,
-                  alt: post.caption || `Post by ${post.user.username}`
-                };
-
-                // Handle legacy format where post.media is a direct URL string
-                if (typeof post.media === 'string') {
-                  return <img {...imageProps} src={post.media} alt={post.caption || `Post by ${post.user.username}`} />;
-                }
-
-                // Handle new format with variants
-                if (post.media?.variants) {
-                  const imageUrls = {};
-                  ['small', 'medium', 'large'].forEach(size => {
-                    const variant = post.media.variants[size];
-                    if (variant?.urls) {
-                      // Prefer WebP if available and supported
-                      imageUrls[size] = variant.urls.webp || variant.urls.jpeg;
-                    }
-                  });
-
-                  // If we have no valid URLs, try to get a fresh URL
-                  if (Object.keys(imageUrls).length === 0) {
-                    return <img {...imageProps} src={post.media.fallback || post.media} alt={post.caption || `Post by ${post.user.username}`} />;
-                  }
-
-                  // Use the largest available variant as default
-                  const defaultSize = imageUrls.large ? 'large' : imageUrls.medium ? 'medium' : 'small';
-                  return (
-                    <img
-                    alt={post.caption}
-                      {...imageProps}
-                      src={imageUrls[defaultSize]}
-                      srcSet={Object.entries(imageUrls)
-                        .map(([size, url]) => `${url} ${size === 'small' ? '400w' : size === 'medium' ? '800w' : '1200w'}`)
-                        .join(', ')}
-                      sizes="(max-width: 400px) 100vw, 600px"
-                    />
-                  );
-                }
-
-                // Fallback for any other case
-                return <img {...imageProps} src={post.media?.url || post.media} alt={post.caption || `Post by ${post.user.username}`} />;
-              })()}
-            </div>
-
-            {/* Post Actions */}
-            <div className="p-4">
-              <div className="flex justify-between mb-2">
-                <div className="flex space-x-4">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleLike(post._id);
-                    }}
-                    className={`${theme === 'dark-theme' ? 'text-white' : 'text-gray-700'} hover:text-[#ae52e3] transition-colors relative z-10`}
-                  >
-                    {post.likes?.includes(user?.id) ? (
-                      <HeartFilled className="w-6 h-6 text-red-500" />
-                    ) : (
-                      <HeartRegular className="w-6 h-6" />
-                    )}
-                  </button>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowComments(prev => ({ ...prev, [post._id]: !prev[post._id] }));
-                    }}
-                    className={`${theme === 'dark-theme' ? 'text-white' : 'text-gray-700'} hover:text-[#ae52e3] transition-colors relative z-10`}
-                  >
-                    <CommentRegular className="w-6 h-6" />
-                  </button>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleShare(post);
-                    }}
-                    className={`${theme === 'dark-theme' ? 'text-white' : 'text-gray-700'} hover:text-[#ae52e3] transition-colors relative z-10`}
-                  >
-                    <ShareRegular className="w-6 h-6" />
-                  </button>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSave(post._id);
-                    }}
-                    className={`${theme === 'dark-theme' ? 'text-white' : 'text-gray-700'} hover:text-[#ae52e3] transition-colors relative z-10`}
-                  >
-                    {post.saved ? (
-                      <BookmarkFilled className="w-6 h-6" />
-                    ) : (
-                      <BookmarkRegular className="w-6 h-6" />
-                    )}
-                  </button>
-                  {user?.isAdmin && (
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(post._id);
-                      }}
-                      className="text-white hover:text-red-500 transition-colors relative z-10"
-                    >
-                      <DeleteRegular className="w-6 h-6" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className={`font-semibold mb-2 ${theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`}>{post.likes?.length || 0} likes</div>
-
-              {/* Caption */}
-              <div className={theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}>
                 <span 
-                  className="font-semibold mr-2 cursor-pointer relative z-10"
+                  className="ml-3 font-medium cursor-pointer relative z-10 text-white"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/profile/${post.user.username}`);
@@ -448,28 +264,202 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                 >
                   {post.user.username}
                 </span>
-                {renderText(post.caption)}
               </div>
 
-              {/* Comments */}
-              <PostComments
-                post={post}
-                isOpen={showComments[post._id]}
-                onComment={(updatedPost) => {
-                  setPosts(posts.map(p => 
-                    p._id === updatedPost._id ? updatedPost : p
-                  ));
-                }}
-                onReply={(updatedPost) => {
-                  setPosts(posts.map(p => 
-                    p._id === updatedPost._id ? updatedPost : p
-                  ));
-                }}
-              />
+              {/* Post Image */}
+              <div className="relative aspect-[4/5] bg-black">
+                {post?.media?.placeholder && (
+                  <div 
+                    className="absolute inset-0 bg-gray-200"
+                    style={{
+                      backgroundImage: `url(${post.media.placeholder})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      filter: 'blur(10px)',
+                      transform: 'scale(1.1)',
+                    }}
+                    role="presentation"
+                  />
+                )}
+                {(() => {
+                  const getMediaUrl = async (postId) => {
+                    try {
+                      const token = localStorage.getItem('token');
+                      const response = await fetch(`${API_URL}/api/posts/${postId}/media`, {
+                        headers: {
+                          'Authorization': `Bearer ${token}`
+                        }
+                      });
+                      if (!response.ok) throw new Error('Failed to fetch media URL');
+                      const data = await response.json();
+                      return data.url;
+                    } catch (error) {
+                      console.error('Error fetching media URL:', error);
+                      return null;
+                    }
+                  };
+
+                  const handleImageError = async (e) => {
+                    const freshUrl = await getMediaUrl(post._id);
+                    if (freshUrl) {
+                      e.target.src = freshUrl;
+                      if (e.target.srcSet) {
+                        e.target.srcSet = '';
+                      }
+                    } else {
+                      const fallback = document.createElement('div');
+                      fallback.className = 'absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-300';
+                      fallback.innerHTML = `
+                        <div class="text-center p-4">
+                          <div class="mb-2">⚠️</div>
+                          <div>Image not available</div>
+                          <div class="text-sm text-gray-500 mt-1">Please try refreshing</div>
+                        </div>
+                      `;
+                      e.target.parentNode.replaceChild(fallback, e.target);
+                    }
+                  };
+
+                  const imageProps = {
+                    className: "absolute inset-0 w-full h-full object-cover",
+                    loading: "lazy",
+                    onError: handleImageError,
+                    alt: post.caption || `Post by ${post.user.username}`
+                  };
+
+                  if (typeof post.media === 'string') {
+                    return <img {...imageProps} src={post.media} />;
+                  }
+
+                  if (post.media?.variants) {
+                    const imageUrls = {};
+                    ['small', 'medium', 'large'].forEach(size => {
+                      const variant = post.media.variants[size];
+                      if (variant?.urls) {
+                        imageUrls[size] = variant.urls.webp || variant.urls.jpeg;
+                      }
+                    });
+
+                    if (Object.keys(imageUrls).length === 0) {
+                      return <img {...imageProps} src={post.media.fallback || post.media} />;
+                    }
+
+                    const defaultSize = imageUrls.large ? 'large' : imageUrls.medium ? 'medium' : 'small';
+                    return (
+                      <img
+                        {...imageProps}
+                        src={imageUrls[defaultSize]}
+                        srcSet={Object.entries(imageUrls)
+                          .map(([size, url]) => `${url} ${size === 'small' ? '400w' : size === 'medium' ? '800w' : '1200w'}`)
+                          .join(', ')}
+                        sizes="(max-width: 400px) 100vw, 600px"
+                      />
+                    );
+                  }
+
+                  return <img {...imageProps} src={post.media?.url || post.media} />;
+                })()}
+              </div>
+
+              {/* Post Actions */}
+              <div className="p-4">
+                <div className="flex justify-between mb-2">
+                  <div className="flex space-x-4">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLike(post._id);
+                      }}
+                      className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
+                    >
+                      {post.likes?.includes(user?.id) ? (
+                        <HeartFilled className="w-6 h-6 text-red-500" />
+                      ) : (
+                        <HeartRegular className="w-6 h-6" />
+                      )}
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowComments(prev => ({ ...prev, [post._id]: !prev[post._id] }));
+                      }}
+                      className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
+                    >
+                      <CommentRegular className="w-6 h-6" />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShare(post);
+                      }}
+                      className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
+                    >
+                      <ShareRegular className="w-6 h-6" />
+                    </button>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSave(post._id);
+                      }}
+                      className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
+                    >
+                      {post.saved ? (
+                        <BookmarkFilled className="w-6 h-6" />
+                      ) : (
+                        <BookmarkRegular className="w-6 h-6" />
+                      )}
+                    </button>
+                    {user?.isAdmin && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(post._id);
+                        }}
+                        className="text-white hover:text-red-500 transition-colors relative z-10"
+                      >
+                        <DeleteRegular className="w-6 h-6" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="font-semibold mb-2 text-white">{post.likes?.length || 0} likes</div>
+
+                {/* Caption */}
+                <div className="text-white">
+                  <span 
+                    className="font-semibold mr-2 cursor-pointer relative z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/profile/${post.user.username}`);
+                    }}
+                  >
+                    {post.user.username}
+                  </span>
+                  {renderText(post.caption)}
+                </div>
+
+                {/* Comments */}
+                <PostComments
+                  post={post}
+                  isOpen={showComments[post._id]}
+                  onComment={(updatedPost) => {
+                    setPosts(posts.map(p => 
+                      p._id === updatedPost._id ? updatedPost : p
+                    ));
+                  }}
+                  onReply={(updatedPost) => {
+                    setPosts(posts.map(p => 
+                      p._id === updatedPost._id ? updatedPost : p
+                    ));
+                  }}
+                />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
       </div>
       <MobileNav 
         visible={showMobileNav} 
