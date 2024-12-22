@@ -64,8 +64,9 @@ body {
   transform: translateY(150px);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
-  padding:15px;
+  padding: 15px;
   padding-top: 45px!important;
+  padding-bottom: 90px!important; /* Ensure content doesn't get hidden behind mobile nav */
 
   &.scrolled {
     transform: translateY(0);
@@ -115,7 +116,8 @@ body {
   .App {
     background-color: var(--bg-color);
     color: var(--text-color);
-    min-height: calc(100vh - 124px); /* Account for header (64px) and navbar (60px) */
+    min-height: calc(100vh - 140px); /* Account for header (64px) and navbar (76px) */
+  padding-bottom: 76px; /* Add padding for mobile nav */
     display: flex;
     flex-direction: column;
   }

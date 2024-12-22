@@ -14,8 +14,8 @@ const MobileNav = ({ onPostCreatorClick }) => {
   const { theme } = useContext(ThemeContext);
 
   return (
-    <div className={`fixed left-0 right-0 bottom-0 z-[100] backdrop-blur-lg shadow-lg ${
-      theme === 'dark-theme' ? 'bg-[#0d0d0d]/75 border-gray-800' : 'bg-white/75 border-gray-200'} border-t`}>
+    <div className={`fixed left-0 right-0 bottom-0 z-[9999] backdrop-blur-lg shadow-lg ${
+      theme === 'dark-theme' ? 'bg-[#0d0d0d]/90 border-gray-800' : 'bg-white/90 border-gray-200'} border-t w-full`} style={{ position: 'fixed', bottom: 0 }}>
       <div className="flex justify-around items-center h-16 max-w-xl mx-auto px-4">
         <button 
           onClick={() => navigate('/')}

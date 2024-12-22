@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ImageRegular,
   VideoRegular,
-  DismissRegular
+  DismissRegular,
+  TextBulletListRegular,
+  StarRegular,
+  BrightnessRegular,
+  ContrastRegular,
+  ColorRegular,
+  FilterRegular
 } from '@fluentui/react-icons';
 import axios from 'axios';
 import { API_URL } from '../../config';
@@ -12,30 +18,51 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [postType, setPostType] = useState('post'); // 'post' or 'story'
+  const [postType, setPostType] = useState('post'); // 'post', 'story', 'moment'
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [videoUrl, setVideoUrl] = useState(null);
+  const [showImageEditor, setShowImageEditor] = useState(false);
+  const [imageFilters, setImageFilters] = useState({
+    brightness: 100,
+    contrast: 100,
+    saturation: 100,
+    blur: 0
+  });
+  const canvasRef = useRef(null);
 
-  const handleMediaUpload = async (files) => {
+  const handleMediaUpload = async (files, type) => {
     if (!files || files.length === 0) return;
     
     const file = files[0];
-    if (!file.type.startsWith('image/')) {
+    if (type === 'image' && !file.type.startsWith('image/')) {
       setError('Please select an image file');
+      return;
+    }
+    
+    if (type === 'video' && !file.type.startsWith('video/')) {
+      setError('Please select a video file');
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
-      setSelectedImage(file);
+      if (type === 'image') {
+        setSelectedImage(file);
+        setShowImageEditor(true);
+      } else if (type === 'video') {
+        setSelectedVideo(file);
+        setVideoUrl(URL.createObjectURL(file));
+      }
 
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('media', file);
 
       const token = localStorage.getItem('token');
       const result = await axios.post(
-        `${API_URL}/api/posts/upload`, 
+        `${API_URL}/api/posts`, 
         formData,
         {
           headers: {
@@ -46,13 +73,52 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
         }
       );
 
-      setImageUrl(result.data.imageUrl);
+      const mediaUrl = result.data.mediaUrl || result.data.url;
+      if (type === 'image') {
+        setImageUrl(mediaUrl);
+      } else if (type === 'video') {
+        setVideoUrl(mediaUrl);
+      }
     } catch (error) {
       setError(error.response?.data?.error || 'Error uploading image');
-      setSelectedImage(null);
+      if (type === 'image') {
+        setSelectedImage(null);
+        setShowImageEditor(false);
+      } else if (type === 'video') {
+        setSelectedVideo(null);
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyImageFilters = () => {
+    if (!canvasRef.current || !selectedImage) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      ctx.filter = `
+        brightness(${imageFilters.brightness}%) 
+        contrast(${imageFilters.contrast}%) 
+        saturate(${imageFilters.saturation}%)
+        blur(${imageFilters.blur}px)
+      `;
+      
+      ctx.drawImage(img, 0, 0);
+      
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], 'filtered-image.jpg', { type: 'image/jpeg' });
+        await handleMediaUpload([file], 'image');
+      }, 'image/jpeg');
+    };
+    
+    img.src = URL.createObjectURL(selectedImage);
   };
 
   const handlePublish = async () => {
@@ -69,6 +135,9 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
 
       if (imageUrl) {
         postData.imageUrl = imageUrl;
+      }
+      if (videoUrl) {
+        postData.videoUrl = videoUrl;
       }
 
       const result = await axios.post(
@@ -114,7 +183,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 overflow-y-auto">
         <div className="flex gap-3">
           <img 
             src={getProfileImageUrl(user)} 
@@ -132,12 +201,142 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
               className="w-full bg-transparent border-none outline-none resize-none text-white placeholder-gray-500"
               rows={4}
             />
-            {selectedImage && (
+            {selectedImage && !showImageEditor && (
               <div className="mt-4 relative">
                 <img
                   src={URL.createObjectURL(selectedImage)}
                   alt="Selected"
                   className="w-full h-48 object-cover rounded-lg"
+                />
+                <button
+                  onClick={() => setShowImageEditor(true)}
+                  className="absolute bottom-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70"
+                >
+                  <FilterRegular className="w-5 h-5 text-white" />
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedImage(null);
+                    setImageUrl(null);
+                    setShowImageEditor(false);
+                  }}
+                  className="absolute top-2 right-2 p-1 rounded-full bg-black/50 hover:bg-black/70"
+                >
+                  <DismissRegular className="w-5 h-5 text-white" />
+                </button>
+              </div>
+            )}
+            
+            {showImageEditor && selectedImage && (
+              <div className="mt-4 space-y-4">
+                <canvas ref={canvasRef} className="hidden" />
+                <img
+                  src={URL.createObjectURL(selectedImage)}
+                  alt="Editor Preview"
+                  className="w-full h-48 object-cover rounded-lg"
+                  style={{
+                    filter: `
+                      brightness(${imageFilters.brightness}%) 
+                      contrast(${imageFilters.contrast}%) 
+                      saturate(${imageFilters.saturation}%)
+                      blur(${imageFilters.blur}px)
+                    `
+                  }}
+                />
+                
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <BrightnessRegular className="w-5 h-5" />
+                    <input
+                      type="range"
+                      min="0"
+                      max="200"
+                      value={imageFilters.brightness}
+                      onChange={(e) => setImageFilters(prev => ({
+                        ...prev,
+                        brightness: e.target.value
+                      }))}
+                      className="flex-1"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <ContrastRegular className="w-5 h-5" />
+                    <input
+                      type="range"
+                      min="0"
+                      max="200"
+                      value={imageFilters.contrast}
+                      onChange={(e) => setImageFilters(prev => ({
+                        ...prev,
+                        contrast: e.target.value
+                      }))}
+                      className="flex-1"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <ColorRegular className="w-5 h-5" />
+                    <input
+                      type="range"
+                      min="0"
+                      max="200"
+                      value={imageFilters.saturation}
+                      onChange={(e) => setImageFilters(prev => ({
+                        ...prev,
+                        saturation: e.target.value
+                      }))}
+                      className="flex-1"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <FilterRegular className="w-5 h-5" />
+                    <input
+                      type="range"
+                      min="0"
+                      max="10"
+                      value={imageFilters.blur}
+                      onChange={(e) => setImageFilters(prev => ({
+                        ...prev,
+                        blur: e.target.value
+                      }))}
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setShowImageEditor(false);
+                      setImageFilters({
+                        brightness: 100,
+                        contrast: 100,
+                        saturation: 100,
+                        blur: 0
+                      });
+                    }}
+                    className="flex-1 py-2 rounded-lg bg-gray-800 hover:bg-gray-700"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={applyImageFilters}
+                    className="flex-1 py-2 rounded-lg bg-pink-500 hover:bg-pink-600"
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {selectedVideo && (
+              <div className="mt-4 relative">
+                <video
+                  src={videoUrl}
+                  className="w-full h-48 object-cover rounded-lg"
+                  controls
                 />
                 <button
                   onClick={() => {
@@ -160,23 +359,36 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
           <div className="flex gap-4">
             <button
               onClick={() => setPostType('post')}
-              className={`px-4 py-1 rounded-full ${
+              className={`flex items-center gap-1 px-4 py-1 rounded-full ${
                 postType === 'post' 
                   ? 'bg-pink-500 text-white' 
                   : 'text-gray-400'
               }`}
             >
+              <TextBulletListRegular className="w-4 h-4" />
               POST
             </button>
             <button
               onClick={() => setPostType('story')}
-              className={`px-4 py-1 rounded-full ${
+              className={`flex items-center gap-1 px-4 py-1 rounded-full ${
                 postType === 'story' 
                   ? 'bg-pink-500 text-white' 
                   : 'text-gray-400'
               }`}
             >
+              <StarRegular className="w-4 h-4" />
               STORY
+            </button>
+            <button
+              onClick={() => setPostType('moment')}
+              className={`flex items-center gap-1 px-4 py-1 rounded-full ${
+                postType === 'moment' 
+                  ? 'bg-pink-500 text-white' 
+                  : 'text-gray-400'
+              }`}
+            >
+              <ImageRegular className="w-4 h-4" />
+              MOMENT
             </button>
           </div>
           
@@ -186,7 +398,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
               id="imageUpload"
               accept="image/*"
               className="hidden"
-              onChange={(e) => handleMediaUpload(e.target.files)}
+              onChange={(e) => handleMediaUpload(e.target.files, 'image')}
             />
             <label 
               htmlFor="imageUpload"
@@ -196,13 +408,20 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
               <span>Photo</span>
             </label>
             
-            <button 
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 opacity-50 cursor-not-allowed"
-              disabled
+            <input
+              type="file"
+              id="videoUpload"
+              accept="video/*"
+              className="hidden"
+              onChange={(e) => handleMediaUpload(e.target.files, 'video')}
+            />
+            <label 
+              htmlFor="videoUpload"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 cursor-pointer"
             >
               <VideoRegular className="w-5 h-5" />
               <span>Video</span>
-            </button>
+            </label>
           </div>
         </div>
       </div>
