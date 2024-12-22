@@ -166,7 +166,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   }
 
   return (
-    <div className="max-w-xl mx-auto py-8">
+    <div className="max-w-xl mx-auto py-2">
       {/* Post Creator Modal */}
       <PostCreator
         isOpen={showPostCreator}

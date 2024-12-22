@@ -170,9 +170,6 @@ const Explore = () => {
             <h2 className={`text-md font-headlines mb-2 relative z-10 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
               Find Users
             </h2>
-            <p className={`text-sm relative z-10 ${theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-700'}`}>
-              Build your community
-            </p>
           </Box>
 
           <Box
@@ -220,9 +217,6 @@ const Explore = () => {
             <h2 className={`text-md font-headlines mb-2 relative z-10 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
               Search Hashtags
             </h2>
-            <p className={`text-sm relative z-10 ${theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-700'}`}>
-              Explore trending topics
-            </p>
           </Box>
         </div>
 

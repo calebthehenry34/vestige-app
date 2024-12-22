@@ -158,7 +158,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-black/40 backdrop-blur-xl w-full max-w-xl h-[95vh] rounded-lg overflow-hidden flex flex-col border border-white/10">
+      <div className="bg-black/40 backdrop-blur-xl w-full max-w-xl h-[80vh] rounded-lg overflow-hidden flex flex-col border border-white/10">
         {/* Header */}
         <div className="p-4 border-b border-white/10 flex items-center justify-between backdrop-blur-md bg-black/20">
           <button 

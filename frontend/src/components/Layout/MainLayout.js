@@ -14,7 +14,7 @@ const MainLayout = ({ children }) => {
         {children}
       </main>
       {/* Bottom spacer for floating nav */}
-      <div className="h-20 md:h-0" />
+      <div className="nav-spacer" />
     </div>
   );
 };
