@@ -11,6 +11,7 @@ import {
 } from '@fluentui/react-icons';
 import axios from 'axios';
 import { API_URL } from '../../config';
+import { getProfileImageUrl } from '../../utils/imageUtils';
 import PostCreator from '../Post/PostCreator';
 import PostComments from '../Post/PostComments';
 import { useAuth } from '../../context/AuthContext';
@@ -189,15 +190,12 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
             {/* Post Header */}
             <div className="flex items-center p-4">
               <img
-                src={post.user.profilePicture}
+                src={getProfileImageUrl(post.user.profilePicture, post.user.username)}
                 alt={post.user.username}
                 className="h-10 w-10 rounded-full object-cover cursor-pointer relative z-10"
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate(`/profile/${post.user.username}`);
-                }}
-                onError={(e) => {
-                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username)}`;
                 }}
               />
               <span 
@@ -249,10 +247,27 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                 loading="lazy"
                 onError={(e) => {
                   console.error('Image load error:', {
+                    type: 'image',
                     media: post.media,
-                    variants: post.media?.variants
+                    variants: post.media?.variants,
+                    availableVariants: post.media?.variants ? 
+                      Object.keys(post.media.variants).map(size => ({
+                        size,
+                        urls: post.media.variants[size].urls
+                      })) : 'none',
+                    postId: post._id
                   });
-                  e.target.src = 'https://via.placeholder.com/400';
+                  // Create a more informative fallback UI
+                  const fallback = document.createElement('div');
+                  fallback.className = 'absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-300';
+                  fallback.innerHTML = `
+                    <div class="text-center p-4">
+                      <div class="mb-2">⚠️</div>
+                      <div>Image not available</div>
+                      <div class="text-sm text-gray-500 mt-1">Please try refreshing</div>
+                    </div>
+                  `;
+                  e.target.parentNode.replaceChild(fallback, e.target);
                 }}
               />
             </div>

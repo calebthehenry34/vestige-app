@@ -163,7 +163,12 @@ const UserSuggestions = () => {
                 alt={user.username}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}`;
+                  console.error('Profile image load error:', {
+                    type: 'profile',
+                    username: user.username,
+                    profilePicture: user.profilePicture
+                  });
+                  // No need to set fallback src since getProfileImageUrl already handles that
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>

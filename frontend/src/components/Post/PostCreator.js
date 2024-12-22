@@ -8,6 +8,7 @@ import {
 } from '@fluentui/react-icons';
 import axios from 'axios';
 import { API_URL } from '../../config';
+import { getProfileImageUrl } from '../../utils/imageUtils';
 
 const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
   const [showMediaOptions, setShowMediaOptions] = useState(false);
@@ -72,7 +73,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
       <div className="flex-1 p-4">
         <div className="flex gap-3">
           <img 
-            src={user?.profileImage || '/default-avatar.png'} 
+            src={getProfileImageUrl(user?.profileImage, user?.username)} 
             alt="Profile" 
             className="w-8 h-8 rounded-full"
           />
