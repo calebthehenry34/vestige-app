@@ -472,7 +472,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
   const renderUpload = () => (
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-auto p-4 flex flex-col h-[500px]`}>
+      <div className={`${styles.card} overflow-auto p-4 flex flex-col h-[600px]`}>
         <div {...getRootProps()} className="flex-1 p-8 mb-4 rounded-lg border-2 border-dashed cursor-pointer transition-all hover:border-[#ae52e3] border-gray-800 bg-[#1a1a1a] flex items-center justify-center">
           <input {...getInputProps()} />
           <div className="text-center">
@@ -488,7 +488,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
   const renderCrop = () => (
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-hidden h-[500px]`}>
+      <div className={`${styles.card} overflow-hidden h-[600px]`}>
         <div className="relative h-full">
           <Cropper
             image={state.media}
@@ -512,7 +512,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
   const renderFilters = () => (
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-hidden h-[500px]`}>
+      <div className={`${styles.card} overflow-hidden h-[600px]`}>
         <ImageEditor 
           image={state.croppedMedia}
           onSave={handleEditComplete}
@@ -523,10 +523,10 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
   const renderCaption = () => (
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-auto h-[500px]`}>
+      <div className={`${styles.card} overflow-auto h-[600px]`}>
         <div className="h-full flex flex-col">
           {/* Preview Image with Blur Placeholder */}
-          <div className="relative w-full h-[300px]">
+          <div className="relative w-full h-[400px]">
             {state.blurPlaceholder && (
               <div
                 className="absolute inset-0 bg-cover bg-center blur-lg"
@@ -598,7 +598,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
   
   return (
     <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center">
-      <div className="bg-black w-full max-w-2xl mx-4 rounded-lg overflow-hidden">
+      <div className="bg-black w-full max-w-3xl mx-4 rounded-lg overflow-hidden">
         {renderNavigation()}
         <div className="relative overflow-hidden">
           {state.step === 'upload' && renderUpload()}

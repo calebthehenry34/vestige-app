@@ -120,8 +120,11 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
         return (
           <React.Fragment key={index}>
             <button
-              onClick={() => navigate(`/explore/hashtag/${word.slice(1)}`)}
-              className="text-blue-500 hover:underline"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/explore/hashtag/${word.slice(1)}`);
+              }}
+              className="text-blue-500 hover:underline relative z-10"
             >
               {word}
             </button>{' '}
@@ -131,8 +134,11 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
         return (
           <React.Fragment key={index}>
             <button
-              onClick={() => navigate(`/profile/${word.slice(1)}`)}
-              className="text-blue-500 hover:underline"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/profile/${word.slice(1)}`);
+              }}
+              className="text-blue-500 hover:underline relative z-10"
             >
               {word}
             </button>{' '}
@@ -171,21 +177,32 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
       {/* Posts */}
       <div className="space-y-6">
         {posts.map((post) => (
-          <div key={post._id} className="bg-[#1a1a1a] rounded-lg shadow">
+          <div key={post._id} className="bg-[#1a1a1a] rounded-lg shadow relative">
+            {/* Clickable overlay for entire post */}
+            <div 
+              onClick={() => navigate(`/post/${post._id}`)}
+              className="absolute inset-0 cursor-pointer z-0"
+            />
             {/* Post Header */}
             <div className="flex items-center p-4">
               <img
                 src={post.user.profilePicture}
                 alt={post.user.username}
-                className="h-10 w-10 rounded-full object-cover cursor-pointer"
-                onClick={() => navigate(`/profile/${post.user.username}`)}
+                className="h-10 w-10 rounded-full object-cover cursor-pointer relative z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/profile/${post.user.username}`);
+                }}
                 onError={(e) => {
                   e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user.username)}`;
                 }}
               />
               <span 
-                className="ml-3 font-medium text-white cursor-pointer"
-                onClick={() => navigate(`/profile/${post.user.username}`)}
+                className="ml-3 font-medium text-white cursor-pointer relative z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/profile/${post.user.username}`);
+                }}
               >
                 {post.user.username}
               </span>
@@ -196,8 +213,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
               <img 
                 src={post.media}
                 alt={post.caption}
-                className="w-full object-cover cursor-pointer"
-                onClick={() => navigate(`/post/${post._id}`)}
+                className="w-full object-cover"
               />
             </div>
 
@@ -206,8 +222,11 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
               <div className="flex justify-between mb-2">
                 <div className="flex space-x-4">
                   <button 
-                    onClick={() => handleLike(post._id)}
-                    className="text-white hover:text-[#ae52e3] transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleLike(post._id);
+                    }}
+                    className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
                   >
                     {post.likes?.includes(user?.id) ? (
                       <HeartFilled className="w-6 h-6 text-red-500" />
@@ -216,21 +235,30 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                     )}
                   </button>
                   <button 
-                    onClick={() => setShowComments(prev => ({ ...prev, [post._id]: !prev[post._id] }))}
-                    className="text-white hover:text-[#ae52e3] transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowComments(prev => ({ ...prev, [post._id]: !prev[post._id] }));
+                    }}
+                    className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
                   >
                     <CommentRegular className="w-6 h-6" />
                   </button>
                   <button 
-                    onClick={() => handleShare(post)}
-                    className="text-white hover:text-[#ae52e3] transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShare(post);
+                    }}
+                    className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
                   >
                     <ShareRegular className="w-6 h-6" />
                   </button>
                 </div>
                 <button 
-                  onClick={() => handleSave(post._id)}
-                  className="text-white hover:text-[#ae52e3] transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSave(post._id);
+                  }}
+                  className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
                 >
                   {post.saved ? (
                     <BookmarkFilled className="w-6 h-6" />
@@ -245,8 +273,11 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
               {/* Caption */}
               <div className="text-white">
                 <span 
-                  className="font-semibold mr-2 cursor-pointer"
-                  onClick={() => navigate(`/profile/${post.user.username}`)}
+                  className="font-semibold mr-2 cursor-pointer relative z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/profile/${post.user.username}`);
+                  }}
                 >
                   {post.user.username}
                 </span>
