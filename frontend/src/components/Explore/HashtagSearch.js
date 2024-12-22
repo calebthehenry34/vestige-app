@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { SearchRegular, ChatRegular, HeartRegular } from '@fluentui/react-icons';
+import { SearchRegular, ChatRegular, HeartRegular, ArrowLeftRegular } from '@fluentui/react-icons';
 import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
 
@@ -76,9 +76,19 @@ const HashtagSearch = () => {
   return (
     <div className={`min-h-screen ${theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <h1 className={`text-2xl font-bold mb-6 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
-          {hashtag ? `#${hashtag}` : 'Search Hashtags'}
-        </h1>
+        <div className="flex items-center mb-6">
+          <button
+            onClick={() => navigate(-1)}
+            className={`p-2 rounded-full mr-2 hover:bg-opacity-10 hover:bg-gray-500 ${
+              theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
+            }`}
+          >
+            <ArrowLeftRegular className="w-6 h-6" />
+          </button>
+          <h1 className={`text-2xl font-bold ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
+            {hashtag ? `#${hashtag}` : 'Search Hashtags'}
+          </h1>
+        </div>
 
         {/* Search Form */}
         <form onSubmit={handleSearch} className="flex justify-center mb-6">

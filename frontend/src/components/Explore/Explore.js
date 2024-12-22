@@ -119,7 +119,7 @@ const Explore = () => {
 
   return (
     <div className={` mt-50 min-h-screen ${theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-4 py-6 mb-5">
         {/* Two Column Links */}
         <div className="grid grid-cols-2 gap-4">
           <Box
@@ -127,7 +127,7 @@ const Explore = () => {
             to="/explore/users"
             sx={{
               background: theme === 'dark-theme' 
-                ? 'rgba(60, 19, 60, 0.7)' 
+                ?  'rgba(31, 41, 55, 0.7)'  
                 : 'rgba(255, 255, 255, 0.7)',
               backdropFilter: 'blur(10px)',
               borderRadius: '10px',
@@ -154,7 +154,7 @@ const Explore = () => {
               Find Users
             </h2>
             <p className={`text-sm ${theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-600'}`}>
-              Discover and connect with other users
+              Build your community
             </p>
           </Box>
 
@@ -185,11 +185,11 @@ const Explore = () => {
               }
             }}
           >
-            <h2 className={`text-lg font-headlines mb-2 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
+            <h2 className={`text-md font-headlines mb-2 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
               Search Hashtags
             </h2>
             <p className={`text-sm ${theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-600'}`}>
-              Find posts by hashtags
+              Explore trending topics
             </p>
           </Box>
         </div>

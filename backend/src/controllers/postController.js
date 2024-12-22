@@ -162,29 +162,15 @@ export const getExplorePosts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 12;
     const skip = (page - 1) * limit;
 
-    const user = await User.findById(req.user.userId);
-    const following = user.following || [];
-
     const posts = await Post.aggregate([
-      {
-        $match: {
-          user: { $nin: [user._id, ...following] }
-        }
-      },
       {
         $addFields: {
           likesCount: { $size: { $ifNull: ["$likes", []] } },
-          commentsCount: { $size: { $ifNull: ["$comments", []] } },
-          popularity: {
-            $add: [
-              { $size: { $ifNull: ["$likes", []] } },
-              { $multiply: [{ $size: { $ifNull: ["$comments", []] } }, 2] }
-            ]
-          }
+          commentsCount: { $size: { $ifNull: ["$comments", []] } }
         }
       },
       {
-        $sort: { popularity: -1, createdAt: -1 }
+        $sort: { createdAt: -1 }
       },
       {
         $skip: skip
@@ -202,9 +188,7 @@ export const getExplorePosts = async (req, res) => {
 
     const processedPosts = await processPostsWithPresignedUrls(posts);
 
-    const total = await Post.countDocuments({
-      user: { $nin: [user._id, ...following] }
-    });
+    const total = await Post.countDocuments();
 
     res.json({
       posts: processedPosts,

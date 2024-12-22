@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeftRegular } from '@fluentui/react-icons';
 import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 
 const UserSuggestions = () => {
   const { theme } = useContext(ThemeContext);
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -130,62 +132,73 @@ const UserSuggestions = () => {
   }
 
   return (
-    <div className={`rounded-lg shadow-lg mb-6 pt-10 overflow-hidden ${
+    <div className={`rounded-lg shadow-lg mb-6 overflow-hidden ${
       theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
     }`}>
-      <h2 className={`p-4 text-lg font-semibold border-b ${
-        theme === 'dark-theme' ? 'text-white border-gray-800' : 'text-gray-900 border-gray-200'
+      <div className={`p-4 flex items-center border-b ${
+        theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
       }`}>
-        Discover People
-      </h2>
+        <button
+          onClick={() => navigate(-1)}
+          className={`p-2 rounded-full mr-2 hover:bg-opacity-10 hover:bg-gray-500 ${
+            theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
+          }`}
+        >
+          <ArrowLeftRegular className="w-6 h-6" />
+        </button>
+        <h2 className={`text-lg font-semibold ${
+          theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
+        }`}>
+          Discover People
+        </h2>
+      </div>
       
       <div className="grid grid-cols-2 gap-4 p-4 max-h-[600px] overflow-y-auto">
-            {users.map((user, index) => (
-              <div 
-                key={user._id}
-                ref={index === users.length - 1 ? lastUserElementRef : null}
-                className={`relative rounded-lg overflow-hidden aspect-square ${
-                  theme === 'dark-theme' ? 'bg-gray-800' : 'bg-gray-50'
-                }`}
-              >
-                <Link to={`/profile/${user.username}`} className="block w-full h-full">
-                  <img 
-                    src={getProfileImageUrl(user.profilePicture, user.username)}
-                    alt={user.username}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}`;
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                  <div className="absolute bottom-0 left-0 right-0 p-3 text-white z-10">
-                    <h3 className="font-medium truncate">
-                      {user.username}
-                    </h3>
-                    {user.bio && (
-                      <p className="text-sm mt-1 line-clamp-2 text-gray-200">
-                        {user.bio}
-                      </p>
-                    )}
-                  </div>
-                </Link>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleFollow(user._id);
-                  }}
-                  className={`absolute top-3 right-3 px-4 py-1.5 rounded-full text-sm font-medium z-20 ${
-                    user.isFollowing
-                      ? 'bg-white/20 text-white backdrop-blur-sm hover:bg-white/30'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                >
-                  {user.isFollowing ? 'Following' : 'Follow'}
-                </button>
+        {users.map((user, index) => (
+          <div 
+            key={user._id}
+            ref={index === users.length - 1 ? lastUserElementRef : null}
+            className={`relative rounded-lg overflow-hidden aspect-square ${
+              theme === 'dark-theme' ? 'bg-gray-800' : 'bg-gray-50'
+            }`}
+          >
+            <Link to={`/profile/${user.username}`} className="block w-full h-full">
+              <img 
+                src={getProfileImageUrl(user.profilePicture, user.username)}
+                alt={user.username}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}`;
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+              <div className="absolute bottom-0 left-0 right-0 p-3 text-white z-10">
+                <h3 className="font-medium truncate">
+                  {user.username}
+                </h3>
+                {user.bio && (
+                  <p className="text-sm mt-1 line-clamp-2 text-gray-200">
+                    {user.bio}
+                  </p>
+                )}
               </div>
-            ))}
+            </Link>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                handleFollow(user._id);
+              }}
+              className={`absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full text-xs font-medium z-20 transition-all ${
+                user.isFollowing
+                  ? 'bg-white/10 text-white backdrop-blur hover:bg-white/20'
+                  : 'bg-blue-500/80 text-white backdrop-blur hover:bg-blue-500/90'
+              }`}
+            >
+              {user.isFollowing ? '✓' : '+'}
+            </button>
           </div>
-
+        ))}
+      </div>
     </div>
   );
 };
