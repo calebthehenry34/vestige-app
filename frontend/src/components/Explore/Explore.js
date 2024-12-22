@@ -119,7 +119,7 @@ const Explore = () => {
 
   return (
     <div className={` mt-50 min-h-screen ${theme === 'dark-theme' ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="max-w-5xl mx-auto px-4 py-6">
         {/* Two Column Links */}
         <div className="grid grid-cols-2 gap-4">
           <Box
@@ -127,12 +127,13 @@ const Explore = () => {
             to="/explore/users"
             sx={{
               background: theme === 'dark-theme' 
-                ? 'rgba(31, 41, 55, 0.7)' 
+                ? 'rgba(60, 19, 60, 0.7)' 
                 : 'rgba(255, 255, 255, 0.7)',
               backdropFilter: 'blur(10px)',
               borderRadius: '10px',
               padding: '24px',
-              textAlign: 'center',
+              textAlign: 'left',
+              alignContent: ' bottom',
               transition: 'all 0.3s ease',
               textDecoration: 'none',
               boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
@@ -149,7 +150,7 @@ const Explore = () => {
               }
             }}
           >
-            <h2 className={`text-xl font-semibold mb-2 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
+            <h2 className={`text-md font-headlines mb-2 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
               Find Users
             </h2>
             <p className={`text-sm ${theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -184,7 +185,7 @@ const Explore = () => {
               }
             }}
           >
-            <h2 className={`text-xl font-semibold mb-2 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
+            <h2 className={`text-lg font-headlines mb-2 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
               Search Hashtags
             </h2>
             <p className={`text-sm ${theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -194,7 +195,7 @@ const Explore = () => {
         </div>
 
         {/* Explore Posts Grid */}
-        <h2 className={`text-2xl font-bold mb-6 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
+        <h2 className={`text-lg font-headlines mb-6 ${theme === 'dark-theme' ? 'text-white' : 'text-black'}`}>
           Explore Posts
         </h2>
         <div className="grid grid-cols-3 gap-1 md:grid-cols-2 lg:grid-cols-3 md:gap-4">

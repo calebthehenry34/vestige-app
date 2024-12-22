@@ -434,7 +434,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
   };
 
   const renderNavigation = () => (
-    <div className="card-header p-6 border-b border-[#333333] grid grid-cols-3 items-center relative">
+    <div className="p-4 border-b border-[#333333] grid grid-cols-3 items-center relative">
       <div className="flex items-center">
         {state.step !== 'upload' && (
           <button onClick={handleBack} className="text-white hover:text-gray-300 transition-colors">
@@ -463,7 +463,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
       </div>
       <button
         onClick={handleExit}
-        className="absolute right-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors"
+        className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors"
       >
         <DismissRegular className="w-6 h-6" />
       </button>
@@ -472,7 +472,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
   const renderUpload = () => (
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-auto p-4 flex flex-col h-full`}>
+      <div className={`${styles.card} overflow-auto p-4 flex flex-col h-[500px]`}>
         <div {...getRootProps()} className="flex-1 p-8 mb-4 rounded-lg border-2 border-dashed cursor-pointer transition-all hover:border-[#ae52e3] border-gray-800 bg-[#1a1a1a] flex items-center justify-center">
           <input {...getInputProps()} />
           <div className="text-center">
@@ -488,7 +488,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
   const renderCrop = () => (
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-hidden`} style={{ height: 'calc(100vh - 200px)' }}>
+      <div className={`${styles.card} overflow-hidden h-[500px]`}>
         <div className="relative h-full">
           <Cropper
             image={state.media}
@@ -512,7 +512,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
   const renderFilters = () => (
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-hidden`} style={{ height: 'calc(100vh - 200px)' }}>
+      <div className={`${styles.card} overflow-hidden h-[500px]`}>
         <ImageEditor 
           image={state.croppedMedia}
           onSave={handleEditComplete}
@@ -523,10 +523,10 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
 
   const renderCaption = () => (
     <div className={`${styles.cardContainer} ${state.slideDirection}`}>
-      <div className={`${styles.card} overflow-auto`}>
+      <div className={`${styles.card} overflow-auto h-[500px]`}>
         <div className="h-full flex flex-col">
           {/* Preview Image with Blur Placeholder */}
-          <div className="relative w-full" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+          <div className="relative w-full h-[300px]">
             {state.blurPlaceholder && (
               <div
                 className="absolute inset-0 bg-cover bg-center blur-lg"
@@ -597,10 +597,10 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 z-[100] bg-black/90">
-      <div className="h-screen flex flex-col">
+    <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center">
+      <div className="bg-black w-full max-w-2xl mx-4 rounded-lg overflow-hidden">
         {renderNavigation()}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="relative overflow-hidden">
           {state.step === 'upload' && renderUpload()}
           {state.step === 'crop' && state.media && renderCrop()}
           {state.step === 'filters' && state.croppedMedia && renderFilters()}
