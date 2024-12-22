@@ -28,6 +28,9 @@
   position: absolute;
   top: -40px;
   font-size: 0.875rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .replyBox[data-theme='dark-theme'] {
@@ -60,4 +63,36 @@
 .postButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.commentsContainer {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.commentsContainer.closed {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.commentsList {
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+}
+
+.commentsList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.commentsList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.commentsList::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 20px;
+  border: transparent;
 }

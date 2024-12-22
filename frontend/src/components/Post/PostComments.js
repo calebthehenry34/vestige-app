@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './PostComments.module.css';
 import { ThemeContext } from '../../App';  
@@ -17,6 +17,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
   const [replyTo, setReplyTo] = useState(null);
   const { theme } = useContext(ThemeContext);
   const { user } = useAuth();
+  const commentsListRef = useRef(null);
   const [activeCommentMenu, setActiveCommentMenu] = useState(null);
   const [optimisticComments, setOptimisticComments] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -143,9 +144,13 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
     setReplyTo(comment);
   };
 
-  const handleLikeComment = async (commentId) => {
+  const handleLikeComment = async (commentId, isReply = false, parentCommentId = null) => {
     try {
-      const response = await fetch(`${API_URL}/api/posts/${post._id}/comments/${commentId}/like`, {
+      const endpoint = isReply 
+        ? `${API_URL}/api/posts/${post._id}/comments/${parentCommentId}/replies/${commentId}/like`
+        : `${API_URL}/api/posts/${post._id}/comments/${commentId}/like`;
+        
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -207,21 +212,33 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [activeCommentMenu]);
 
-  // Only update optimistic comments when post comments change and we're not submitting
+  // Handle auto-scrolling and optimistic comments updates
   useEffect(() => {
     if (!isSubmitting) {
       setOptimisticComments(post?.comments || []);
     }
   }, [post?.comments, isSubmitting]);
 
+  // Handle auto-scrolling when comments are opened
+  useEffect(() => {
+    if (isOpen && commentsListRef.current) {
+      commentsListRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'nearest'
+      });
+    }
+  }, [isOpen]);
+
   if (!post) return null;
 
   const displayComments = optimisticComments.length > 0 ? optimisticComments : post.comments;
 
   return (
-    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
-      isOpen ? 'max-h-[800px]' : 'max-h-0'
-    }`}>
+    <div 
+      ref={commentsListRef}
+      className={`${styles.commentsContainer} ${!isOpen ? styles.closed : ''} overflow-hidden transition-all duration-300 ease-in-out ${
+        isOpen ? 'max-h-[800px]' : 'max-h-0'
+      }`}>
       <div className={`pt-4 pl-4 pr-4 border-[1px] ${
         theme === 'dark-theme' 
           ? 'bg-black border-zinc-800 text-white' 
@@ -270,7 +287,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
         )}
 
         {/* Comments list with replies */}
-        <div className="space-y-3 mb-4 max-h-[300px] overflow-y-auto">
+        <div className={`${styles.commentsList} space-y-3 mb-4 max-h-[300px]`}>
           {displayComments?.map((comment) => (
             <div key={comment._id} className="space-y-2">
               {/* Main comment */}
@@ -360,6 +377,18 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
                         </span>
                       </div>
                       <div className="flex items-center space-x-2 ml-2">
+                        {!reply.isOptimistic && (
+                          <button 
+                            onClick={() => handleLikeComment(reply._id, true, comment._id)}
+                            className="text-gray-500 hover:text-red-500 transition-colors"
+                          >
+                            {reply.likes?.includes(user?.id) ? (
+                              <HeartFilled className="w-4 h-4 text-red-500" />
+                            ) : (
+                              <HeartRegular className="w-4 h-4" />
+                            )}
+                          </button>
+                        )}
                         {(user?.id === reply.user?._id || user?.id === post.user?._id) && !reply.isOptimistic && (
                           <button
                             onClick={() => handleDeleteReply(comment._id, reply._id)}

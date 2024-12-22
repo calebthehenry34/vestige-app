@@ -13,9 +13,33 @@
   padding-top: 72px; // Navbar height
 }
 
+@font-face {
+  font-family: 'Roobert';
+  src: url('/fonts/Roobert-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roobert';
+  src: url('/fonts/Roobert-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Roobert';
+  src: url('/fonts/Roobert-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 body {
   margin: 0;
-  font-family: 'Roobert-' ;
+  font-family: 'Roobert', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   
@@ -31,7 +55,7 @@ body {
 }
 
 .feed-container {
-  background-color: #0d0d0d;
+  background-color: #1a1a1a;
   border-radius: 24px 24px 0 0;
   box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.2);
   min-height: calc(100vh - 72px);
