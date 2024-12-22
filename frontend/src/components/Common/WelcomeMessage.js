@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
+import { API_URL } from '../../config';
 
-const WelcomeMessage = ({ isVisible = false }) => {
+const WelcomeMessage = () => {
   const { user } = useAuth();
   const { notifications } = useNotifications();
   const [greeting, setGreeting] = useState('');
+  const [followRequests, setFollowRequests] = useState(0);
 
   useEffect(() => {
     const updateGreeting = () => {
@@ -25,19 +27,36 @@ const WelcomeMessage = ({ isVisible = false }) => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const fetchFollowRequests = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/api/users/follow-requests`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setFollowRequests(data.length);
+        }
+      } catch (error) {
+        console.error('Error fetching follow requests:', error);
+      }
+    };
+    fetchFollowRequests();
+  }, []);
+
   return (
-    <div className="bg-[#000] mb-6">
-      <div className="max-w-xl mx-auto px-4 py-2">
-        <div className="bg-[#000] rounded-lg p-4 shadow-lg">
-          <div className="text-lg font-headlines text-white mb-2">
-            {greeting}, {user?.username}!
-          </div>
-          <div className="text-gray-400">
-            {notifications.length > 0 
-              ? `You have ${notifications.length} notification${notifications.length !== 1 ? 's' : ''}`
-              : 'No new notifications'}
-          </div>
-        </div>
+    <div className="px-4 py-6">
+      <div className="text-xl font-medium text-white mb-2">
+        {greeting}, {user?.username}
+      </div>
+      <div className="text-gray-400 text-sm">
+        You have {notifications.length} unread notifications
+      </div>
+      <div className="text-gray-400 text-sm">
+        You have {followRequests} follow requests
       </div>
     </div>
   );

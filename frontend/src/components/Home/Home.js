@@ -359,26 +359,15 @@ const Home = () => {
   }
 
   return (
-    <div className="relative min-h-screen" style={{ backgroundColor: '#000' }}>
-      {/* Fixed Header */}
+    <div className="min-h-screen bg-black">
       <div className="fixed top-0 left-0 right-0 z-50">
         <Navbar />
       </div>
 
-      {/* Feed Container */}
-      <div 
-        className="relative z-30 min-h-screen"
-        style={{
-          marginTop: '120px',
-          backgroundColor: '#1a1a1a',
-          borderRadius: '24px 24px 0 0',
-          boxShadow: '0 -8px 20px rgba(0, 0, 0, 0.2)',
-          transform: 'translateZ(0)',
-          willChange: 'transform'
-        }}
-      >
-
-        <div className="max-w-xl mx-auto p-4 space-y-6">
+      <div className="pt-[60px]">
+        <WelcomeMessage />
+        <Feed />
+      </div>
         {Array.isArray(posts) && posts.map((post) => (
           <div key={post._id} className="bg-[#1a1a1a] rounded-lg shadow-md overflow-hidden">
             <Link 

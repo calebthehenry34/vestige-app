@@ -212,17 +212,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   return (
     <>
       <div 
-        className="bg-[#1a1a1a] max-w-xl mx-auto pb-2 relative z-[5] text-white"
-        style={{
-          transform: `translateY(${Math.min(Math.max(0, scrollY * -0.5), -200)}px)`,
-          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          willChange: 'transform',
-          backgroundColor: '#1a1a1a',
-          maxHeight: `calc(100vh - ${Math.max(50, Math.min(100 - (scrollY / 10), 100))}vh)`,
-          borderRadius: '24px 24px 0 0',
-          boxShadow: '0 -8px 20px rgba(0, 0, 0, 0.2)',
-          paddingTop: '45px',
-        }}
+        className="max-w-xl mx-auto relative z-[5] text-white"
       >
         {/* Post Creator Modal */}
         <PostCreator
@@ -232,9 +222,9 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
         />
 
         {/* Posts */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {posts.map((post) => (
-            <div key={post._id} className="bg-[#1a1a1a] rounded-lg shadow relative">
+            <div key={post._id} className="bg-white rounded-lg shadow relative mb-4">
               {/* Clickable overlay for entire post */}
               <div 
                 onClick={() => navigate(`/post/${post._id}`)}
@@ -252,7 +242,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                   }}
                 />
                 <span 
-                  className="ml-3 font-medium cursor-pointer relative z-10 text-white"
+                  className="ml-3 font-medium cursor-pointer relative z-10 text-black"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/profile/${post.user.username}`);
@@ -360,14 +350,14 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
 
               {/* Post Actions */}
               <div className="p-4">
-                <div className="flex justify-between mb-2">
-                  <div className="flex space-x-4">
+                <div className="flex justify-between mb-3">
+                  <div className="flex space-x-6">
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
                         handleLike(post._id);
                       }}
-                      className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
+                      className="text-black hover:text-[#ae52e3] transition-colors relative z-10"
                     >
                       {post.likes?.includes(user?.id) ? (
                         <HeartFilled className="w-6 h-6 text-red-500" />
@@ -380,7 +370,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                         e.stopPropagation();
                         setShowComments(prev => ({ ...prev, [post._id]: !prev[post._id] }));
                       }}
-                      className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
+                      className="text-black hover:text-[#ae52e3] transition-colors relative z-10"
                     >
                       <CommentRegular className="w-6 h-6" />
                     </button>
@@ -389,7 +379,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                         e.stopPropagation();
                         handleShare(post);
                       }}
-                      className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
+                      className="text-black hover:text-[#ae52e3] transition-colors relative z-10"
                     >
                       <ShareRegular className="w-6 h-6" />
                     </button>
@@ -400,7 +390,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                         e.stopPropagation();
                         handleSave(post._id);
                       }}
-                      className="text-white hover:text-[#ae52e3] transition-colors relative z-10"
+                      className="text-black hover:text-[#ae52e3] transition-colors relative z-10"
                     >
                       {post.saved ? (
                         <BookmarkFilled className="w-6 h-6" />
@@ -422,12 +412,12 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                   </div>
                 </div>
 
-                <div className="font-semibold mb-2 text-white">{post.likes?.length || 0} likes</div>
+                <div className="font-semibold mb-2 text-black">{post.likes?.length || 0} likes</div>
 
                 {/* Caption */}
-                <div className="text-white">
+                <div className="text-black">
                   <span 
-                    className="font-semibold mr-2 cursor-pointer relative z-10"
+                    className="font-semibold mr-2 cursor-pointer relative z-10 text-black"
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate(`/profile/${post.user.username}`);
