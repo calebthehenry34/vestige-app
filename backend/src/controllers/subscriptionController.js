@@ -1,6 +1,39 @@
 import stripe, { createCustomer, createBetaSubscription, SUBSCRIPTION_TIERS } from '../config/stripe.js';
 import User from '../models/User.js';
 
+// Create Stripe customer (called after user registration/first onboarding step)
+export const createStripeCustomer = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Don't create duplicate customers
+    if (user.stripeCustomerId) {
+      return res.status(400).json({ message: 'User already has a Stripe customer ID' });
+    }
+
+    const customer = await createCustomer(user.email, user.username, user.firstName, user.lastName);
+    user.stripeCustomerId = customer.id;
+    await user.save();
+
+    res.json({
+      message: 'Stripe customer created successfully',
+      customerId: customer.id
+    });
+  } catch (error) {
+    console.error('Error creating Stripe customer:', error);
+    res.status(500).json({ 
+      message: 'Failed to create Stripe customer',
+      error: error.message 
+    });
+  }
+};
+
+// Setup subscription (called at end of onboarding)
 export const setupBetaSubscription = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -10,69 +43,48 @@ export const setupBetaSubscription = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if user already has an active subscription
+    // Verify customer exists in Stripe
+    if (!user.stripeCustomerId) {
+      return res.status(400).json({ 
+        message: 'User does not have a Stripe customer ID. Complete registration first.' 
+      });
+    }
+
+    // Check for existing subscription
     if (user.subscriptionStatus === 'active' && user.subscriptionTier === SUBSCRIPTION_TIERS.BETA) {
       return res.status(400).json({ message: 'User already has an active beta subscription' });
     }
 
-    // Check if user already has a Stripe customer ID
-    if (!user.stripeCustomerId) {
-      try {
-        // Create a new customer in Stripe
-        const customer = await createCustomer(user.email, user.username, user.firstName, user.lastName);
-        user.stripeCustomerId = customer.id;
-        await user.save();
-      } catch (error) {
-        console.error('Error creating Stripe customer:', error);
-        return res.status(500).json({ 
-          message: 'Failed to create Stripe customer',
-          error: error.message 
-        });
+    // Create beta subscription
+    const subscription = await createBetaSubscription(user.stripeCustomerId);
+
+    // Update user subscription status
+    user.subscriptionStatus = 'active';
+    user.subscriptionTier = SUBSCRIPTION_TIERS.BETA;
+    user.trialEndsAt = new Date(subscription.trial_end * 1000);
+    await user.save();
+
+    res.json({
+      message: 'Beta subscription activated successfully',
+      subscription: {
+        status: subscription.status,
+        trialEnd: subscription.trial_end,
+        tier: SUBSCRIPTION_TIERS.BETA
       }
-    }
-
-    try {
-      // Create beta subscription
-      const subscription = await createBetaSubscription(user.stripeCustomerId);
-
-      // Update user subscription status
-      user.subscriptionStatus = 'active';
-      user.subscriptionTier = SUBSCRIPTION_TIERS.BETA;
-      user.trialEndsAt = new Date(subscription.trial_end * 1000);
-      await user.save();
-
-      res.json({
-        message: 'Beta subscription activated successfully',
-        subscription: {
-          status: subscription.status,
-          trialEnd: subscription.trial_end,
-          tier: SUBSCRIPTION_TIERS.BETA
-        }
-      });
-    } catch (error) {
-      console.error('Error creating beta subscription:', error);
-      // If we failed to create the subscription, ensure we don't leave the user in an inconsistent state
-      user.subscriptionStatus = 'inactive';
-      user.subscriptionTier = null;
-      user.trialEndsAt = null;
-      await user.save();
-
-      if (error.code === 'resource_missing') {
-        return res.status(400).json({ 
-          message: 'Invalid Stripe configuration',
-          error: 'Beta subscription price not found'
-        });
-      }
-
-      return res.status(500).json({ 
-        message: 'Failed to create beta subscription',
-        error: error.message 
-      });
-    }
+    });
   } catch (error) {
     console.error('Error in setupBetaSubscription:', error);
+    
+    // Handle specific error cases
+    if (error.code === 'resource_missing') {
+      return res.status(400).json({ 
+        message: 'Invalid Stripe configuration',
+        error: 'Beta subscription price not found'
+      });
+    }
+
     res.status(500).json({ 
-      message: 'Internal server error',
+      message: 'Failed to create beta subscription',
       error: error.message 
     });
   }
