@@ -276,7 +276,6 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
                 onCropComplete={onCropComplete}
                 showGrid={true}
                 cropShape="rect"
-                objectFit="contain"
               />
               <button
                 onClick={async () => {
@@ -284,7 +283,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated }) => {
                   setMedia(croppedImage);
                   setStep('edit');
                 }}
-                className="absolute bottom-4 right-4 px-4 py-2 bg-[#ae52e3]/90 backdrop-blur-sm text-white rounded-lg hover:bg-[#ae52e3] transition-colors shadow-[0_0_15px_rgba(174,82,227,0.3)]"
+                className="absolute bottom-20 right-4 px-4 py-2 bg-[#ae52e3]/90 backdrop-blur-sm text-white rounded-lg hover:bg-[#ae52e3] transition-colors shadow-[0_0_15px_rgba(174,82,227,0.3)]"
               >
                 Next
               </button>

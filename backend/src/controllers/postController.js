@@ -808,6 +808,65 @@ export const likeComment = async (req, res) => {
   }
 };
 
+export const getPostMedia = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ error: 'Invalid post ID format' });
+    }
+    
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    // Handle new media structure with variants
+    if (post.media?.variants && post.media.variants.large) {
+      // If CDN URL is available, redirect to it
+      if (post.media.variants.large.cdnUrl) {
+        return res.redirect(post.media.variants.large.cdnUrl);
+      }
+      // Use WebP or JPEG URL
+      const url = post.media.variants.large.urls?.webp || post.media.variants.large.urls?.jpeg;
+      if (url) {
+        if (url.startsWith('http')) {
+          return res.redirect(url);
+        }
+        return res.redirect(`${process.env.API_URL}/uploads/${url}`);
+      }
+    }
+
+    // Handle legacy media structure
+    if (post.media?.legacy) {
+      // If CDN URL is available, redirect to it
+      if (post.media.legacy.cdnUrl) {
+        return res.redirect(post.media.legacy.cdnUrl);
+      }
+      // Use legacy URL
+      if (post.media.legacy.url) {
+        if (post.media.legacy.url.startsWith('http')) {
+          return res.redirect(post.media.legacy.url);
+        }
+        return res.redirect(`${process.env.API_URL}/uploads/${post.media.legacy.url}`);
+      }
+    }
+
+    // Handle direct media string
+    if (typeof post.media === 'string') {
+      if (post.media.startsWith('http')) {
+        return res.redirect(post.media);
+      }
+      return res.redirect(`${process.env.API_URL}/uploads/${post.media}`);
+    }
+
+    return res.status(404).json({ error: 'Media not found' });
+  } catch (error) {
+    console.error('Get post media error:', error);
+    res.status(500).json({ error: 'Error fetching post media' });
+  }
+};
+
 export const deleteReply = async (req, res) => {
   try {
     const post = await Post.findById(req.params.postId);

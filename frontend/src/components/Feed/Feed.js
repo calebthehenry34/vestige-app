@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PostSkeleton } from '../Common/Skeleton';
 import {
   HeartRegular,
   HeartFilled,
@@ -151,8 +152,10 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#ae52e3]"></div>
+      <div className="max-w-xl mx-auto py-2 space-y-6">
+        {[...Array(3)].map((_, index) => (
+          <PostSkeleton key={index} />
+        ))}
       </div>
     );
   }

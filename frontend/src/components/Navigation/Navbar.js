@@ -379,39 +379,56 @@ const Navbar = () => {
           ? 'bg-gray-900 border-gray-800'
           : 'bg-white border-gray-200'
       } border-b`}>
-        <div className="flex items-center h-16 px-4 max-w-6xl mx-auto justify-between">
-          <button onClick={() => handleNavigation('/')} className="flex items-center">
-            <span className={`text-xl font-semibold ${
-              theme === 'dark-theme' ? 'text-white' : 'text-black'
-            }`}>
-              <img src="/logos/logo.png" alt="Logo" className="mr-3 h-6 w-auto"/>
-            </span>
-          </button>
-
+        <div className={`flex items-center ${location.pathname === '/' ? 'h-16' : 'h-14'} px-4 max-w-6xl mx-auto justify-between`}>
+          {/* Left side - Profile photo and menu */}
           <button
             onClick={() => setShowDrawer(true)}
-            className={`md:hidden p-2 rounded-md transition-colors ${
+            className={`p-2 rounded-md transition-colors ${
               theme === 'dark-theme'
                 ? 'hover:bg-gray-800'
                 : 'hover:bg-gray-100'
             }`}
           >
             {user ? (
-             <img
-             src={getProfileImageUrl(user?.profilePicture, user?.username)}
-             alt={user?.username}
-             className="w-6 h-6 rounded-md object-cover"
-             onError={(e) => {
-               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
-               e.target.onError = null;
-             }}
-           />
+              <img
+                src={getProfileImageUrl(user?.profilePicture, user?.username)}
+                alt={user?.username}
+                className="w-6 h-6 rounded-md object-cover"
+                onError={(e) => {
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
+                  e.target.onError = null;
+                }}
+              />
             ) : (
               <div className="w-8 h-8 rounded-md bg-gray-200 flex items-center justify-center">
                 <PersonRegular className="w-5 h-5 text-gray-400" />
               </div>
             )}
           </button>
+
+          {/* Center - Logo for home, page name for other pages */}
+          {location.pathname === '/' ? (
+            <button onClick={() => handleNavigation('/')} className="flex items-center">
+              <span className={`text-xl font-semibold ${
+                theme === 'dark-theme' ? 'text-white' : 'text-black'
+              }`}>
+                <img src="/logos/logo.png" alt="Logo" className="mr-3 h-6 w-auto"/>
+              </span>
+            </button>
+          ) : (
+            <div className={`text-lg font-medium ${
+              theme === 'dark-theme' ? 'text-white' : 'text-black'
+            }`}>
+              {location.pathname.split('/')[1].charAt(0).toUpperCase() + location.pathname.split('/')[1].slice(1)}
+            </div>
+          )}
+
+          {/* Right - Logo placeholder for non-home pages */}
+          {location.pathname !== '/' && (
+            <div className="w-6 h-6">
+              <img src="/logos/logo.png" alt="Logo" className="h-full w-auto opacity-50"/>
+            </div>
+          )}
         </div>
       </div>
 

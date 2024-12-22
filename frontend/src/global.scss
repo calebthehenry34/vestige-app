@@ -12,10 +12,18 @@ body {
     transition: transform 0.3s ease-in-out;
   }
 
-.nav-spacer{
-  height:60px;
+.nav-spacer {
   background-color: var(--bg-color);
+}
 
+/* Home page nav spacer */
+.root-path .nav-spacer {
+  height: 64px;
+}
+
+/* Other pages nav spacer */
+:not(.root-path) .nav-spacer {
+  height: 56px;
 }
 
 

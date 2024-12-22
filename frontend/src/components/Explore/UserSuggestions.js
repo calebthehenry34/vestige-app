@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback, useRef } from 'rea
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeftRegular } from '@fluentui/react-icons';
 import { ThemeContext } from '../../App';
+import { UserSuggestionSkeleton } from '../Common/Skeleton';
 import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 
@@ -92,22 +93,16 @@ const UserSuggestions = () => {
 
   if (loading) {
     return (
-      <div className={`rounded-lg shadow-lg mb-6 pt-10 ${
+      <div className={`rounded-lg shadow-lg mb-6 ${
         theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
       }`}>
         <div className="p-4 border-b border-gray-200">
-          <div className="h-6 bg-gray-300 rounded w-1/4 animate-pulse"></div>
+          <div className="h-6 bg-gray-700 rounded w-1/4 animate-pulse"></div>
         </div>
-        <div className="p-4">
-          <div className="grid grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="animate-pulse">
-                <div className={`aspect-square rounded-lg ${
-                  theme === 'dark-theme' ? 'bg-gray-800' : 'bg-gray-300'
-                }`}></div>
-              </div>
-            ))}
-          </div>
+        <div className="space-y-4 p-4">
+          {[...Array(6)].map((_, i) => (
+            <UserSuggestionSkeleton key={i} />
+          ))}
         </div>
       </div>
     );

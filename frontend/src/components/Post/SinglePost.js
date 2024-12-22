@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { ThemeContext } from '../../App';
+import { SinglePostSkeleton } from '../Common/Skeleton';
 import { 
   HeartRegular, 
   HeartFilled, 
@@ -50,36 +51,37 @@ const SinglePost = () => {
       return url;
     }
     
+    // If it's a full URL
     if (url.startsWith('http')) {
       try {
-        // Parse the URL to extract the path
         const urlObj = new URL(url);
-        const path = urlObj.pathname.startsWith('/uploads/') ? 
-          urlObj.pathname : 
-          `/uploads/${urlObj.pathname.split('/').pop()}`;
         
-        // If the URL is not from our domains, reconstruct it
-        if (!urlObj.hostname.includes('vestige-app.onrender.com') && 
-            !urlObj.hostname.includes('cloudfront.net')) {
-          // Try to use CloudFront URL if available in the post data
-          if (post?.media?.cdnUrl) {
-            return post.media.cdnUrl;
-          }
-          // Fallback to API URL
-          return `${API_URL}${path}`;
+        // If it's already from our API domain, return as is
+        if (urlObj.origin === API_URL) {
+          return url;
         }
-        return url;
+        
+        // If it's a direct post ID (from Netlify), construct proper API URL
+        if (urlObj.pathname.match(/^\/post\/[a-f0-9]+$/)) {
+          const postId = urlObj.pathname.split('/').pop();
+          return `${API_URL}/api/posts/${postId}/media`;
+        }
+        
+        // For other URLs, ensure they go through our API
+        const filename = urlObj.pathname.split('/').pop();
+        return `${API_URL}/uploads/${filename}`;
       } catch (error) {
         console.error('Error parsing URL:', error);
         return url;
       }
     }
     
-    // For relative paths, use API URL
-    if (url.startsWith('/')) {
+    // For relative paths starting with /uploads, prepend API URL
+    if (url.startsWith('/uploads/')) {
       return `${API_URL}${url}`;
     }
     
+    // For other relative paths, assume they're filenames
     return `${API_URL}/uploads/${url}`;
   };
 
@@ -127,31 +129,35 @@ const SinglePost = () => {
     
     // Handle new optimized media structure
     if (media.variants && media.variants.large) {
-      // Prefer WebP format if available
-      const url = media.variants.large.urls.webp || media.variants.large.urls.jpeg;
       // If CDN URL is available, use it
       if (media.variants.large.cdnUrl) {
         return media.variants.large.cdnUrl;
       }
-      return ensureApiUrl(url);
+      // Prefer WebP format if available
+      const url = media.variants.large.urls?.webp || media.variants.large.urls?.jpeg;
+      if (url) {
+        return ensureApiUrl(url);
+      }
     }
     
     // Handle legacy media structure
-    const mediaPath = media.legacy?.url || (typeof media === 'string' ? media : '');
-    if (!mediaPath || typeof mediaPath !== 'string') return '';
-    
-    // If CDN URL is available in legacy format
-    if (media.legacy?.cdnUrl) {
-      return media.legacy.cdnUrl;
+    if (media.legacy) {
+      // If CDN URL is available in legacy format
+      if (media.legacy.cdnUrl) {
+        return media.legacy.cdnUrl;
+      }
+      // Use legacy URL if available
+      if (media.legacy.url) {
+        return ensureApiUrl(media.legacy.url);
+      }
     }
     
-    // Ensure we're using the correct URL
-    if (mediaPath.startsWith('http')) {
-      return ensureApiUrl(mediaPath);
+    // Handle direct string URL (fallback)
+    if (typeof media === 'string') {
+      return ensureApiUrl(media);
     }
     
-    if (!mediaPath.includes('.')) return ''; // Ensure path has an extension
-    return `${API_URL}/uploads/${mediaPath}`;
+    return '';
   };
 
   // Close context menu when clicking outside
@@ -369,13 +375,7 @@ const SinglePost = () => {
   };
 
   if (loading) {
-    return (
-      <div className={`w-full h-full flex items-center justify-center ${
-        theme === 'dark-theme' ? 'bg-black' : 'bg-gray-50'
-      }`}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <SinglePostSkeleton />;
   }
 
   if (error || !post) {

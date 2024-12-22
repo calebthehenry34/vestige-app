@@ -10,6 +10,7 @@ router.get('/', auth, postController.getPosts);
 router.get('/explore', auth, postController.getExplorePosts);
 router.get('/user/:userId', auth, postController.getUserPosts);
 router.get('/:postId', auth, postController.getSinglePost);
+router.get('/:postId/media', auth, postController.getPostMedia);
 router.post('/', auth, upload.handleUpload('media'), postController.createPost);
 router.put('/:postId', auth, postController.updatePost);
 router.delete('/:postId', auth, postController.deletePost);
