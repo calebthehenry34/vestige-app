@@ -28,7 +28,7 @@ import PostCreator from '../Post/PostCreator';
 import ActivityFeed from '../Activity/ActivityFeed';
 import Toast from '../Common/Toast';
 import { useNotifications } from '../../context/NotificationContext';
-import WelcomeMessage from '../Common/WelcomeMessage';
+
 
 const Navbar = () => {
   const { theme, toggleTheme } = useContext(ThemeContext);

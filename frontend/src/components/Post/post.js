@@ -6,14 +6,10 @@ import {
   HeartRegular,
   HeartFilled,
   ArrowExpandAllFilled,
-  BookmarkRegular,
-  BookmarkFilled,
-  ShareRegular,
   MoreHorizontalRegular,
   DeleteRegular,
   EditRegular,
-  FlagRegular,
-  PersonRegular
+  FlagRegular
 } from '@fluentui/react-icons';
 import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
@@ -143,11 +139,17 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
 
   return (
     <div className="bg-white rounded-lg shadow mb-6 relative overflow-hidden">
-      {/* Username with transparent background */}
-      <div className="absolute top-0 right-0 z-10 p-2">
+      {/* Username and Menu */}
+      <div className="absolute top-0 right-0 z-10 p-2 flex items-center gap-2">
         <Link to={`/profile/${localPost.user.username}`} className="text-white text-sm font-medium">
           {localPost.user?.username || 'Unknown User'}
         </Link>
+        <button 
+          onClick={() => setShowMenu(!showMenu)} 
+          className="text-white hover:opacity-80"
+        >
+          <MoreHorizontalRegular />
+        </button>
       </div>
 
       {/* Menu Dropdown */}
