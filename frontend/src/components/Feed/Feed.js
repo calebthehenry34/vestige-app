@@ -37,11 +37,11 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
       const currentScrollY = window.scrollY;
       setScrollY(currentScrollY);
       
-      // Hide nav when scrolling up, show when scrolling down
+      // Show nav when scrolling up, hide when scrolling down
       if (currentScrollY > lastScrollY.current && currentScrollY > 10) {
-        setShowMobileNav(true);
-      } else {
         setShowMobileNav(false);
+      } else {
+        setShowMobileNav(true);
       }
       
       lastScrollY.current = currentScrollY;
@@ -217,7 +217,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   return (
     <>
       <div 
-        className="max-w-xl mx-auto pb-2 relative z-[95] text-white"
+        className="max-w-xl mx-auto pb-2 relative z-[5] text-white"
         style={{
           transform: `translateY(${Math.min(Math.max(0, scrollY * -0.5), -200)}px)`,
           transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -328,7 +328,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                   };
 
                   if (typeof post.media === 'string') {
-                    return <img {...imageProps} src={post.media} />;
+                    return <img {...imageProps} src={post.media} alt={post.caption || `Post by ${post.user.username}`} />;
                   }
 
                   if (post.media?.variants) {
@@ -341,7 +341,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                     });
 
                     if (Object.keys(imageUrls).length === 0) {
-                      return <img {...imageProps} src={post.media.fallback || post.media} />;
+                      return <img {...imageProps} src={post.media.fallback || post.media} alt={post.caption || `Post by ${post.user.username}`} />;
                     }
 
                     const defaultSize = imageUrls.large ? 'large' : imageUrls.medium ? 'medium' : 'small';
@@ -353,11 +353,12 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                           .map(([size, url]) => `${url} ${size === 'small' ? '400w' : size === 'medium' ? '800w' : '1200w'}`)
                           .join(', ')}
                         sizes="(max-width: 400px) 100vw, 600px"
+                        alt={post.caption || `Post by ${post.user.username}`}
                       />
                     );
                   }
 
-                  return <img {...imageProps} src={post.media?.url || post.media} />;
+                  return <img {...imageProps} src={post.media?.url || post.media} alt={post.caption || `Post by ${post.user.username}`} />;
                 })()}
               </div>
 
