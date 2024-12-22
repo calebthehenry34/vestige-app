@@ -9,6 +9,7 @@ const MainLayout = ({ children }) => {
     <div className={`h-screen ${
       theme === 'dark-theme' ? 'bg-black' : 'bg-gray-50'
     }`}>
+      <div className="nav-spacer" />
       <Navbar />
       <main className="pt-16 px-4 pb-24 max-w-6xl mx-auto">
         {children}
