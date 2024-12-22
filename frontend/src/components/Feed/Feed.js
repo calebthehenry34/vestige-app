@@ -211,9 +211,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
 
   return (
     <>
-      <div 
-        className="max-w-xl mx-auto relative z-[5] text-white"
-      >
+      <div className="max-w-xl mx-auto relative z-[5]">
         {/* Post Creator Modal */}
         <PostCreator
           isOpen={showPostCreator}
@@ -222,27 +220,27 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
         />
 
         {/* Posts */}
-        <div className="space-y-4">
+        <div>
           {posts.map((post) => (
-            <div key={post._id} className="bg-white rounded-lg shadow relative mb-4">
+            <div key={post._id} className="bg-white rounded-lg shadow-sm relative mb-3 overflow-hidden">
               {/* Clickable overlay for entire post */}
               <div 
                 onClick={() => navigate(`/post/${post._id}`)}
                 className="absolute inset-0 cursor-pointer z-0"
               />
               {/* Post Header */}
-              <div className="flex items-center p-4">
+              <div className="flex items-center px-4 py-3">
                 <img
                   src={getProfileImageUrl(post.user.profilePicture, post.user.username)}
                   alt={post.user.username}
-                  className="h-10 w-10 rounded-full object-cover cursor-pointer relative z-10"
+                  className="h-8 w-8 rounded-full object-cover cursor-pointer relative z-10"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/profile/${post.user.username}`);
                   }}
                 />
                 <span 
-                  className="ml-3 font-medium cursor-pointer relative z-10 text-black"
+                  className="ml-2 font-medium cursor-pointer relative z-10 text-black text-sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/profile/${post.user.username}`);
@@ -349,9 +347,9 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
               </div>
 
               {/* Post Actions */}
-              <div className="p-4">
-                <div className="flex justify-between mb-3">
-                  <div className="flex space-x-6">
+              <div className="px-4 py-3">
+                <div className="flex justify-between mb-2">
+                  <div className="flex space-x-4">
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
@@ -412,12 +410,12 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                   </div>
                 </div>
 
-                <div className="font-semibold mb-2 text-black">{post.likes?.length || 0} likes</div>
+                <div className="font-medium text-sm mb-2 text-black">{post.likes?.length || 0} likes</div>
 
                 {/* Caption */}
-                <div className="text-black">
+                <div className="text-sm text-black">
                   <span 
-                    className="font-semibold mr-2 cursor-pointer relative z-10 text-black"
+                    className="font-medium mr-2 cursor-pointer relative z-10 text-black"
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate(`/profile/${post.user.username}`);
