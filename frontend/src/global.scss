@@ -6,11 +6,12 @@
 
 
 .feed-layout {
-  background-color:#0d0d0d!important;
-  padding-top: calc(150px - min(150px, var(--scroll-y, 0) * 1px));
-  transition: padding-top 0.3s ease;
+  background-color: #0d0d0d !important;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+  padding-top: 72px; // Navbar height
 }
-
 
 body {
   margin: 0;
@@ -35,40 +36,50 @@ body {
   background-color: #0d0d0d;
   border-radius: 24px 24px 0 0;
   box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.2);
-  min-height: calc(100vh - 150px);
-  margin-top: 150px;
+  min-height: calc(100vh - 72px);
   position: relative;
-  z-index: 40;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.welcome-message {
-  position: fixed;
-  top: 120px;
-  left: 0;
-  right: 0;
-  z-index: 30;
-  transition: opacity 0.3s ease-in-out;
-  pointer-events: none;
-
-  &.visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  &.hidden {
-    opacity: 0;
-  }
-}
-
-.feed-scroll {
-  transform: translateY(0);
+  z-index: 2;
+  transform: translateY(150px);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
 
   &.scrolled {
-    transform: translateY(calc(-1 * var(--scroll-y)));
+    transform: translateY(0);
   }
+
+  // Container for posts
+  .max-w-xl {
+    padding: 0 1rem;
+  }
+
+  // Ensure post content stays above container
+  .bg-white {
+    position: relative;
+    z-index: 3;
+  }
+
+  // Preserve clickable overlays
+  .absolute {
+    z-index: 4;
+  }
+
+  // Keep action buttons above overlays
+  button {
+    position: relative;
+    z-index: 5;
+  }
+}
+
+.welcome-message {
+  position: fixed;
+  top: 72px; // Below navbar
+  left: 0;
+  right: 0;
+  z-index: 1;
+  background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+  padding-top: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
 }
   
   /* Dark Theme */

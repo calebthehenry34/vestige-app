@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
+import { useScroll } from '../../context/ScrollContext';
 import { API_URL } from '../../config';
 
 const WelcomeMessage = () => {
   const { user } = useAuth();
   const { notifications } = useNotifications();
+  const { scrollY } = useScroll();
   const [greeting, setGreeting] = useState('');
   const [followRequests, setFollowRequests] = useState(0);
 
@@ -47,8 +49,18 @@ const WelcomeMessage = () => {
     fetchFollowRequests();
   }, []);
 
+  // Calculate opacity based on scroll position
+  const opacity = Math.max(0, 1 - (scrollY / 100));
+
   return (
-    <div className="px-4 py-6">
+    <div 
+      className="welcome-message px-4 py-6"
+      style={{ 
+        opacity,
+        transform: `translateY(${-scrollY * 0.3}px)`,
+        pointerEvents: opacity === 0 ? 'none' : 'auto'
+      }}
+    >
       <div className="text-xl font-medium text-white mb-2">
         {greeting}, {user?.username}
       </div>
