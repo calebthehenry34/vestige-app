@@ -62,8 +62,9 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
 
       const token = localStorage.getItem('token');
       const postData = {
-        content,
-        type: postType
+        caption: content,
+        type: postType,
+        transparency: true // Adding transparency field
       };
 
       if (imageUrl) {
