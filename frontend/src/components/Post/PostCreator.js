@@ -6,7 +6,7 @@ import {
   TextBulletListRegular,
   StarRegular,
   BrightnessHighRegular,
-  ContrastRegular,
+  DarkThemeFilled,
   ColorRegular,
   FilterRegular
 } from '@fluentui/react-icons';
@@ -261,7 +261,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <ContrastRegular className="w-5 h-5" />
+                    <DarkThemeFilled className="w-5 h-5" />
                     <input
                       type="range"
                       min="0"
