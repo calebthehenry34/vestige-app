@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import {
   ImageRegular,
   VideoRegular,
-  TimerRegular,
-  LinkRegular,
   DismissRegular
 } from '@fluentui/react-icons';
 import axios from 'axios';
@@ -11,15 +9,50 @@ import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 
 const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
-  const [showMediaOptions, setShowMediaOptions] = useState(false);
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [postType, setPostType] = useState('post'); // 'post' or 'story'
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null);
 
-  const handleMediaUpload = async (acceptedFiles, rejectedFiles) => {
-    // TODO: Implement media upload
-    console.log('Media upload not implemented yet');
+  const handleMediaUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    
+    const file = files[0];
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      setSelectedImage(file);
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const token = localStorage.getItem('token');
+      const result = await axios.post(
+        `${API_URL}/api/posts/upload`, 
+        formData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          },
+          withCredentials: true
+        }
+      );
+
+      setImageUrl(result.data.imageUrl);
+    } catch (error) {
+      setError(error.response?.data?.error || 'Error uploading image');
+      setSelectedImage(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePublish = async () => {
@@ -28,8 +61,18 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
       setError(null);
 
       const token = localStorage.getItem('token');
-      const result = await axios.post(`${API_URL}/api/posts`, 
-        { content },
+      const postData = {
+        content,
+        type: postType
+      };
+
+      if (imageUrl) {
+        postData.imageUrl = imageUrl;
+      }
+
+      const result = await axios.post(
+        `${API_URL}/api/posts`, 
+        postData,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -62,7 +105,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
         <span className="font-medium">CREATE</span>
         <button
           onClick={handlePublish}
-          disabled={!content.trim() || loading}
+          disabled={(!content.trim() && !selectedImage) || loading}
           className="text-pink-500 font-medium disabled:opacity-50"
         >
           Publish
@@ -85,55 +128,78 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
               className="w-full bg-transparent border-none outline-none resize-none text-white placeholder-gray-500"
               rows={4}
             />
-            {showMediaOptions && (
-              <div className="flex gap-2 mt-2 p-2 bg-gray-900 rounded-lg">
-                <button className="p-2 hover:bg-gray-800 rounded-lg">
-                  <ImageRegular className="w-5 h-5" />
-                </button>
-                <button className="p-2 hover:bg-gray-800 rounded-lg">
-                  <VideoRegular className="w-5 h-5" />
-                </button>
-                <button className="p-2 hover:bg-gray-800 rounded-lg">
-                  <TimerRegular className="w-5 h-5" />
-                </button>
-                <button className="p-2 hover:bg-gray-800 rounded-lg">
-                  <LinkRegular className="w-5 h-5" />
+            {selectedImage && (
+              <div className="mt-4 relative">
+                <img
+                  src={URL.createObjectURL(selectedImage)}
+                  alt="Selected"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <button
+                  onClick={() => {
+                    setSelectedImage(null);
+                    setImageUrl(null);
+                  }}
+                  className="absolute top-2 right-2 p-1 rounded-full bg-black/50 hover:bg-black/70"
+                >
+                  <DismissRegular className="w-5 h-5 text-white" />
                 </button>
               </div>
             )}
           </div>
         </div>
-        <button
-          onClick={() => setShowMediaOptions(!showMediaOptions)}
-          className="mt-4 w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center"
-        >
-          <span className="text-xl font-medium">+</span>
-        </button>
       </div>
 
       {/* Bottom Bar */}
       <div className="p-4 border-t border-gray-800">
-        <div className="flex gap-4">
-          <button
-            onClick={() => setPostType('post')}
-            className={`px-4 py-1 rounded-full ${
-              postType === 'post' 
-                ? 'bg-pink-500 text-white' 
-                : 'text-gray-400'
-            }`}
-          >
-            POST
-          </button>
-          <button
-            onClick={() => setPostType('story')}
-            className={`px-4 py-1 rounded-full ${
-              postType === 'story' 
-                ? 'bg-pink-500 text-white' 
-                : 'text-gray-400'
-            }`}
-          >
-            STORY
-          </button>
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-4">
+            <button
+              onClick={() => setPostType('post')}
+              className={`px-4 py-1 rounded-full ${
+                postType === 'post' 
+                  ? 'bg-pink-500 text-white' 
+                  : 'text-gray-400'
+              }`}
+            >
+              POST
+            </button>
+            <button
+              onClick={() => setPostType('story')}
+              className={`px-4 py-1 rounded-full ${
+                postType === 'story' 
+                  ? 'bg-pink-500 text-white' 
+                  : 'text-gray-400'
+              }`}
+            >
+              STORY
+            </button>
+          </div>
+          
+          <div className="flex gap-4 pt-2 border-t border-gray-800">
+            <input
+              type="file"
+              id="imageUpload"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleMediaUpload(e.target.files)}
+            />
+            <label 
+              htmlFor="imageUpload"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 cursor-pointer"
+            >
+              <ImageRegular className="w-5 h-5" />
+              <span>Photo</span>
+            </label>
+            
+            <button 
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 opacity-50 cursor-not-allowed"
+              disabled
+            >
+              <VideoRegular className="w-5 h-5" />
+              <span>Video</span>
+            </button>
+          </div>
         </div>
       </div>
 

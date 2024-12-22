@@ -380,7 +380,30 @@ const Navbar = () => {
           : 'bg-white border-gray-200'
       } border-b`}>
         <div className={`flex items-center ${location.pathname === '/' ? 'h-16' : 'h-14'} px-4 max-w-6xl mx-auto justify-between`}>
-          {/* Left side - Profile photo and menu */}
+          {/* Left - Logo */}
+          {location.pathname === '/' ? (
+            <button onClick={() => handleNavigation('/')} className="flex items-center">
+              <span className={`text-xl font-semibold ${
+                theme === 'dark-theme' ? 'text-white' : 'text-black'
+              }`}>
+                <img src="/logos/logo.png" alt="Logo" className="mr-3 h-6 w-auto"/>
+              </span>
+            </button>
+          ) : (
+            <div className="flex items-center">
+              <div className={`text-lg font-medium ${
+                theme === 'dark-theme' ? 'text-white' : 'text-black'
+              }`}>
+                {location.pathname.split('/')[1].charAt(0).toUpperCase() + location.pathname.split('/')[1].slice(1)}
+              </div>
+              <img src="/logos/logo.png" alt="Logo" className="ml-3 h-6 w-auto opacity-50"/>
+            </div>
+          )}
+
+          {/* Center - Empty space for balance */}
+          <div></div>
+
+          {/* Right - Profile photo and menu */}
           <button
             onClick={() => setShowDrawer(true)}
             className={`p-2 rounded-md transition-colors ${
@@ -405,30 +428,6 @@ const Navbar = () => {
               </div>
             )}
           </button>
-
-          {/* Center - Logo for home, page name for other pages */}
-          {location.pathname === '/' ? (
-            <button onClick={() => handleNavigation('/')} className="flex items-center">
-              <span className={`text-xl font-semibold ${
-                theme === 'dark-theme' ? 'text-white' : 'text-black'
-              }`}>
-                <img src="/logos/logo.png" alt="Logo" className="mr-3 h-6 w-auto"/>
-              </span>
-            </button>
-          ) : (
-            <div className={`text-lg font-medium ${
-              theme === 'dark-theme' ? 'text-white' : 'text-black'
-            }`}>
-              {location.pathname.split('/')[1].charAt(0).toUpperCase() + location.pathname.split('/')[1].slice(1)}
-            </div>
-          )}
-
-          {/* Right - Logo placeholder for non-home pages */}
-          {location.pathname !== '/' && (
-            <div className="w-6 h-6">
-              <img src="/logos/logo.png" alt="Logo" className="h-full w-auto opacity-50"/>
-            </div>
-          )}
         </div>
       </div>
 
