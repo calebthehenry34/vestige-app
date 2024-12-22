@@ -24,12 +24,15 @@ import { useAuth } from '../../context/AuthContext';
 import { ThemeContext } from '../../App';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 import PostCreator from '../Post/PostCreator';
-import { API_URL } from '../../config';
+
 import ActivityFeed from '../Activity/ActivityFeed';
 import Toast from '../Common/Toast';
 import { useNotifications } from '../../context/NotificationContext';
+import WelcomeMessage from '../Common/WelcomeMessage';
+import { EyeRegular, EyeOffRegular } from '@fluentui/react-icons';
 
 const Navbar = () => {
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(true);
   const { theme, toggleTheme } = useContext(ThemeContext);
   const { user, logout } = useAuth();
   const { currentNotification, clearCurrentNotification } = useNotifications();
@@ -38,36 +41,17 @@ const Navbar = () => {
   const [showPostCreator, setShowPostCreator] = useState(false);
   const [expandedSection, setExpandedSection] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [activeToast, setActiveToast] = useState(null);
 
-  useEffect(() => {
-    fetchUnreadNotificationsCount();
-  }, []);
+
 
   useEffect(() => {
     if (currentNotification) {
-      setUnreadNotifications(prev => prev + 1);
       setActiveToast(currentNotification);
       clearCurrentNotification();
     }
   }, [currentNotification, clearCurrentNotification]);
 
-  const fetchUnreadNotificationsCount = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/notifications/unread-count`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const { count } = await response.json();
-        setUnreadNotifications(count);
-      }
-    } catch (error) {
-      console.error('Error fetching unread notifications:', error);
-    }
-  };
 
   useEffect(() => {
     if (showDrawer) {
@@ -159,35 +143,51 @@ const Navbar = () => {
               <img src="/logos/logov.png" alt="Logo" className="h-7 w-auto"/>
             </button>
 
-            <button
-              onClick={() => setShowDrawer(true)}
-              className={`p-2 rounded-md transition-colors ${
-                theme === 'dark-theme'
-                  ? 'hover:bg-gray-800'
-                  : 'hover:bg-gray-100'
-              }`}
-            >
-              {user ? (
-                <img
-                  src={getProfileImageUrl(user?.profilePicture, user?.username)}
-                  alt={user?.username}
-                  className="w-6 h-6 rounded-md object-cover"
-                  onError={(e) => {
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
-                    e.target.onError = null;
-                  }}
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-md bg-gray-200 flex items-center justify-center">
-                  <PersonRegular className="w-5 h-5 text-gray-400" />
-                </div>
-              )}
-            </button>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setShowWelcomeMessage(prev => !prev)}
+                className={`p-2 rounded-md transition-colors ${
+                  theme === 'dark-theme'
+                    ? 'hover:bg-gray-800 text-gray-400 hover:text-white'
+                    : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+                }`}
+                title={showWelcomeMessage ? "Hide welcome message" : "Show welcome message"}
+              >
+                {showWelcomeMessage ? (
+                  <EyeOffRegular className="w-5 h-5" />
+                ) : (
+                  <EyeRegular className="w-5 h-5" />
+                )}
+              </button>
+              <button
+                onClick={() => setShowDrawer(true)}
+                className={`p-2 rounded-md transition-colors ${
+                  theme === 'dark-theme'
+                    ? 'hover:bg-gray-800'
+                    : 'hover:bg-gray-100'
+                }`}
+              >
+                {user ? (
+                  <img
+                    src={getProfileImageUrl(user?.profilePicture, user?.username)}
+                    alt={user?.username}
+                    className="w-6 h-6 rounded-md object-cover"
+                    onError={(e) => {
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
+                      e.target.onError = null;
+                    }}
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-md bg-gray-200 flex items-center justify-center">
+                    <PersonRegular className="w-5 h-5 text-gray-400" />
+                  </div>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Bottom Row - Can be covered by feed */}
-    
+        <WelcomeMessage isVisible={showWelcomeMessage} />
       </div>
 
       {/* Settings Drawer */}
@@ -362,7 +362,7 @@ const Navbar = () => {
             <ActivityFeed 
               isOpen={showNotifications} 
               onClose={() => setShowNotifications(false)}
-              onNotificationsUpdate={(count) => setUnreadNotifications(count)}
+              onNotificationsUpdate={() => {}}
             />
           </div>
         </div>
