@@ -276,9 +276,12 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
               {/* Main comment */}
               <div className="flex items-start space-x-2">
                 <img
-                  src={comment.user?.profilePicture ? getProfileImageUrl(comment.user.profilePicture, comment.user.username) : `https://ui-avatars.com/api/?name=${comment.user?.username || 'U'}&background=random`}
+                  src={getProfileImageUrl(comment.user)}
                   alt={comment.user?.username || 'User'}
                   className="h-8 w-8 rounded-md object-cover"
+                  onError={(e) => {
+                    e.target.src = `https://ui-avatars.com/api/?name=${comment.user?.username || 'user'}&background=random`;
+                  }}
                 />
                 <div className="flex-1">
                   <div className="flex justify-between items-start">
@@ -328,9 +331,12 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
               {comment.replies?.map((reply) => (
                 <div key={reply._id} className="text-xs ml-8 flex items-start space-x-2">
                   <img
-                    src={reply.user?.profilePicture ? getProfileImageUrl(reply.user.profilePicture, reply.user.username) : `https://ui-avatars.com/api/?name=${reply.user?.username || 'U'}&background=random`}
+                    src={getProfileImageUrl(reply.user)}
                     alt={reply.user?.username || 'User'}
                     className="w-6 h-6 rounded-md text-sm"
+                    onError={(e) => {
+                      e.target.src = `https://ui-avatars.com/api/?name=${reply.user?.username || 'user'}&background=random`;
+                    }}
                   />
                   <div className="flex-1">
                     <div className="flex justify-between items-start">

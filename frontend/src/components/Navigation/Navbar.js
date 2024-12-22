@@ -154,7 +154,7 @@ const Navbar = () => {
       } ${isHeaderHidden ? 'header-hidden' : ''}`}>
         {/* Top Row - Always visible */}
         <div className="border-b border-gray-800 relative z-[100] bg-inherit">
-          <div className="flex items-center justify-between h-16 px-4 max-w-6xl mx-auto">
+          <div className="flex items-center justify-between h-16 px-4 w-screen">
             <button onClick={() => handleNavigation('/')} className="flex items-center">
               <img src="/logos/logov.png" alt="Logo" className="h-7 w-auto"/>
             </button>
@@ -165,12 +165,11 @@ const Navbar = () => {
             >
               {user ? (
                 <img
-                  src={getProfileImageUrl(user?.profilePicture, user?.username)}
-                  alt={user?.username}
+                  src={getProfileImageUrl(user)}
+                  alt={user?.username || 'User'}
                   className="w-6 h-6 rounded-md object-cover"
                   onError={(e) => {
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
-                    e.target.onError = null;
+                    e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
                   }}
                 />
               ) : (
@@ -204,14 +203,13 @@ const Navbar = () => {
           <div className="flex items-center space-x-3">
             {user ? (
              <img
-             src={getProfileImageUrl(user?.profilePicture, user?.username)}
-             alt={user?.username}
-             className="w-6 h-6 rounded-md object-cover"
-             onError={(e) => {
-               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
-               e.target.onError = null;
-             }}
-           />
+               src={getProfileImageUrl(user)}
+               alt={user?.username || 'User'}
+               className="w-6 h-6 rounded-md object-cover"
+               onError={(e) => {
+                 e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
+               }}
+             />
             ) : (
               <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                 <PersonRegular className="w-6 h-6 text-gray-400" />

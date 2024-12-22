@@ -117,9 +117,12 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
       <div className="flex-1 p-4">
         <div className="flex gap-3">
           <img 
-            src={getProfileImageUrl(user?.profileImage, user?.username)} 
+            src={getProfileImageUrl(user)} 
             alt="Profile" 
             className="w-8 h-8 rounded-full"
+            onError={(e) => {
+              e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
+            }}
           />
           <div className="flex-1">
             <textarea

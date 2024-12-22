@@ -154,12 +154,53 @@ export const clearOldCache = async () => {
   }
 };
 
-// Get profile image URL (existing function)
-export const getProfileImageUrl = (profilePicture, username) => {
+// Get profile image URL
+export const getProfileImageUrl = (user) => {
+  if (!user) return `https://ui-avatars.com/api/?name=user&background=random`;
+  
+  const profilePicture = user.profilePicture || user.avatar;
   if (!profilePicture) {
-    return `https://ui-avatars.com/api/?name=${username}&background=random`;
+    return `https://ui-avatars.com/api/?name=${user.username || 'user'}&background=random`;
   }
-  return profilePicture;
+
+  // Handle new media structure with variants
+  if (profilePicture.variants) {
+    const variant = profilePicture.variants.small || profilePicture.variants.original;
+    if (variant) {
+      // Try CDN URL first
+      if (variant.cdnUrl) return variant.cdnUrl;
+      // Then try WebP or JPEG URL
+      if (variant.urls) {
+        const url = variant.urls.webp || variant.urls.jpeg;
+        if (url) {
+          if (url.startsWith('http')) return url;
+          return `${process.env.REACT_APP_API_URL || ''}/uploads/${url}`;
+        }
+      }
+      // Fallback to direct URL if available
+      if (variant.url) {
+        if (variant.url.startsWith('http')) return variant.url;
+        return `${process.env.REACT_APP_API_URL || ''}/uploads/${variant.url}`;
+      }
+    }
+  }
+
+  // Handle legacy media structure
+  if (profilePicture.legacy) {
+    if (profilePicture.legacy.cdnUrl) return profilePicture.legacy.cdnUrl;
+    if (profilePicture.legacy.url) {
+      if (profilePicture.legacy.url.startsWith('http')) return profilePicture.legacy.url;
+      return `${process.env.REACT_APP_API_URL || ''}/uploads/${profilePicture.legacy.url}`;
+    }
+  }
+
+  // Handle direct URL string
+  if (typeof profilePicture === 'string') {
+    if (profilePicture.startsWith('http')) return profilePicture;
+    return `${process.env.REACT_APP_API_URL || ''}/uploads/${profilePicture}`;
+  }
+
+  return `https://ui-avatars.com/api/?name=${user.username || 'user'}&background=random`;
 };
 
 // Create optimized image component props

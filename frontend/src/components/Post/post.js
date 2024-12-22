@@ -149,6 +149,9 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
               src={getProfileImageUrl(localPost.user)}
               alt={localPost.user?.username || 'User'}
               className="w-8 h-8 rounded-md object-cover border border-white/20"
+              onError={(e) => {
+                e.target.src = `https://ui-avatars.com/api/?name=${localPost.user?.username || 'user'}&background=random`;
+              }}
             />
           </Link>
           <Link to={`/profile/${localPost.user.username}`} className="text-white text-sm font-medium">

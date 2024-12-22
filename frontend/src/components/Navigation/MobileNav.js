@@ -14,8 +14,8 @@ const MobileNav = ({ visible, onPostCreatorClick }) => {
   const { theme } = useContext(ThemeContext);
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 transform transition-transform duration-300 ${
-      theme === 'dark-theme' ? 'bg-[#0d0d0d] border-gray-800' : 'bg-white border-gray-200'} border-t ${
+    <div className={`fixed bottom-0 left-0 right-0 transform transition-transform duration-300 z-50 backdrop-blur-md ${
+      theme === 'dark-theme' ? 'bg-[#0d0d0d]/95 border-gray-800' : 'bg-white/95 border-gray-200'} border-t ${
       visible ? 'translate-y-0' : 'translate-y-full'
     }`}>
       <div className="flex justify-around items-center h-16 max-w-xl mx-auto px-4">

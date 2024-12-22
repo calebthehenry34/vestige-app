@@ -217,9 +217,12 @@ const VideoFeed = () => {
               <div className="flex items-center mb-4">
                 {currentVideo.user ? (
                   <img
-                    src={getProfileImageUrl(currentVideo.user.profilePicture, currentVideo.user.username)}
-                    alt={currentVideo.user.username}
+                    src={getProfileImageUrl(currentVideo.user)}
+                    alt={currentVideo.user.username || 'User'}
                     className="w-10 h-10 rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.src = `https://ui-avatars.com/api/?name=${currentVideo.user?.username || 'user'}&background=random`;
+                    }}
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
