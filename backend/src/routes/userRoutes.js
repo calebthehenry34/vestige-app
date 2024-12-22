@@ -51,36 +51,37 @@ router.post('/follow/:userId', auth, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Check if already following
+    // Check if already following or has pending request
     const existingFollow = await Follow.findOne({
       follower: req.user.userId,
       following: req.params.userId
     });
 
     if (existingFollow) {
-      return res.status(400).json({ error: 'Already following this user' });
+      if (existingFollow.status === 'pending') {
+        return res.status(400).json({ error: 'Follow request already pending' });
+      } else {
+        return res.status(400).json({ error: 'Already following this user' });
+      }
     }
 
-    // Create new follow relationship
+    // Create new follow relationship with pending status
     const follow = new Follow({
       follower: req.user.userId,
-      following: req.params.userId
+      following: req.params.userId,
+      status: 'pending'
     });
 
     await follow.save();
 
-    // Create follow notification
+    // Create follow request notification
     await Notification.create({
       recipient: req.params.userId,
       sender: req.user.userId,
-      type: 'follow'
+      type: 'follow_request'
     });
 
-    // Update follower counts
-    await User.findByIdAndUpdate(req.user.userId, { $inc: { followingCount: 1 } });
-    await User.findByIdAndUpdate(req.params.userId, { $inc: { followersCount: 1 } });
-
-    res.status(200).json({ message: 'Successfully followed user' });
+    res.status(200).json({ message: 'Follow request sent successfully' });
   } catch (error) {
     console.error('Follow error:', error);
     res.status(500).json({ error: 'Error following user' });
@@ -123,10 +124,108 @@ router.delete('/follow/:userId', auth, async (req, res) => {
   }
 });
 
+// Get follow requests for the authenticated user
+router.get('/follow-requests', auth, async (req, res) => {
+  try {
+    const followRequests = await Follow.find({
+      following: req.user.userId,
+      status: 'pending'
+    })
+    .populate('follower', 'username profilePicture bio')
+    .sort({ createdAt: -1 });
+
+    // Process and return the follow requests
+    const processedRequests = await Promise.all(
+      followRequests
+        .filter(request => request.follower !== null)
+        .map(async request => ({
+          ...(await processUserWithPresignedUrl(request.follower)),
+          requestId: request._id
+        }))
+    );
+
+    res.json(processedRequests);
+  } catch (error) {
+    console.error('Error fetching follow requests:', error);
+    res.status(500).json({ error: 'Error fetching follow requests' });
+  }
+});
+
+// Accept a follow request
+router.post('/follow-requests/:requestId/accept', auth, async (req, res) => {
+  try {
+    const followRequest = await Follow.findOne({
+      _id: req.params.requestId,
+      following: req.user.userId,
+      status: 'pending'
+    });
+
+    if (!followRequest) {
+      return res.status(404).json({ error: 'Follow request not found' });
+    }
+
+    // Update the follow request status to accepted
+    followRequest.status = 'accepted';
+    await followRequest.save();
+
+    // Update follower counts
+    await User.findByIdAndUpdate(followRequest.follower, { $inc: { followingCount: 1 } });
+    await User.findByIdAndUpdate(req.user.userId, { $inc: { followersCount: 1 } });
+
+    // Update the notification
+    await Notification.findOneAndUpdate(
+      {
+        recipient: req.user.userId,
+        sender: followRequest.follower,
+        type: 'follow_request'
+      },
+      {
+        type: 'follow',
+        read: false
+      }
+    );
+
+    res.json({ message: 'Follow request accepted' });
+  } catch (error) {
+    console.error('Error accepting follow request:', error);
+    res.status(500).json({ error: 'Error accepting follow request' });
+  }
+});
+
+// Reject a follow request
+router.post('/follow-requests/:requestId/reject', auth, async (req, res) => {
+  try {
+    const followRequest = await Follow.findOneAndDelete({
+      _id: req.params.requestId,
+      following: req.user.userId,
+      status: 'pending'
+    });
+
+    if (!followRequest) {
+      return res.status(404).json({ error: 'Follow request not found' });
+    }
+
+    // Delete the follow request notification
+    await Notification.deleteOne({
+      recipient: req.user.userId,
+      sender: followRequest.follower,
+      type: 'follow_request'
+    });
+
+    res.json({ message: 'Follow request rejected' });
+  } catch (error) {
+    console.error('Error rejecting follow request:', error);
+    res.status(500).json({ error: 'Error rejecting follow request' });
+  }
+});
+
 // Get user's followers
 router.get('/:userId/followers', auth, async (req, res) => {
   try {
-    const followers = await Follow.find({ following: req.params.userId })
+    const followers = await Follow.find({ 
+      following: req.params.userId,
+      status: 'accepted'
+    })
       .populate('follower', 'username profilePicture bio')
       .sort({ createdAt: -1 });
 
@@ -140,7 +239,10 @@ router.get('/:userId/followers', auth, async (req, res) => {
       }));
 
     // Get the current user's following list to determine who they follow
-    const currentUserFollowing = await Follow.find({ follower: req.user.userId })
+    const currentUserFollowing = await Follow.find({ 
+      follower: req.user.userId,
+      status: 'accepted'
+    })
       .select('following');
     
     const followingIds = currentUserFollowing.map(f => f.following.toString());
@@ -163,7 +265,10 @@ router.get('/:userId/followers', auth, async (req, res) => {
 // Get user's following
 router.get('/:userId/following', auth, async (req, res) => {
   try {
-    const following = await Follow.find({ follower: req.params.userId })
+    const following = await Follow.find({ 
+      follower: req.params.userId,
+      status: 'accepted'
+    })
       .populate('following', 'username profilePicture bio')
       .sort({ createdAt: -1 });
 
