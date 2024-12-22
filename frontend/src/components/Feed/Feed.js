@@ -212,7 +212,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   return (
     <>
       <div 
-        className="max-w-xl mx-auto pb-2 relative z-[5] text-white"
+        className="bg-[#0d0d0d] max-w-xl mx-auto pb-2 relative z-[5] text-white"
         style={{
           transform: `translateY(${Math.min(Math.max(0, scrollY * -0.5), -200)}px)`,
           transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
