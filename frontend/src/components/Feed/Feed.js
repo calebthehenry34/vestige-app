@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PostSkeleton } from '../Common/Skeleton';
 import {
@@ -16,11 +16,9 @@ import { getProfileImageUrl } from '../../utils/imageUtils';
 import PostCreator from '../Post/PostCreator';
 import PostComments from '../Post/PostComments';
 import { useAuth } from '../../context/AuthContext';
-import { ThemeContext } from '../../App';
 import MobileNav from '../Navigation/MobileNav';
 
 const Feed = ({ onStoryClick, onRefreshNeeded }) => {
-  const { theme } = useContext(ThemeContext);
   const navigate = useNavigate();
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
@@ -197,13 +195,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
   };
 
   if (loading) {
-    return (
-      <div className="max-w-xl mx-auto py-2 space-y-6">
-        {[...Array(3)].map((_, index) => (
-          <PostSkeleton key={index} />
-        ))}
-      </div>
-    );
+    return <PostSkeleton />;
   }
 
   if (error) {
@@ -225,7 +217,8 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
           backgroundColor: '#0d0d0d',
           maxHeight: `calc(100vh - ${Math.max(50, Math.min(100 - (scrollY / 10), 100))}vh)`,
           borderRadius: '24px 24px 0 0',
-          boxShadow: '0 -8px 20px rgba(0, 0, 0, 0.2)'
+          boxShadow: '0 -8px 20px rgba(0, 0, 0, 0.2)',
+          paddingTop: '25px',
         }}
       >
         {/* Post Creator Modal */}

@@ -40,35 +40,24 @@ export const SinglePostSkeleton = () => (
 );
 
 export const PostSkeleton = () => (
-  <div className="bg-[#1a1a1a] rounded-lg shadow animate-pulse">
-    {/* Header */}
-    <div className="flex items-center p-4">
-      <div className="h-10 w-10 rounded-full bg-gray-700"></div>
-      <div className="ml-3 h-4 w-24 bg-gray-700 rounded"></div>
+  <div className="min-h-screen bg-black text-white p-4">
+    {/* Top Navigation */}
+    <div className="flex justify-between items-center mb-6">
+      <div className="w-8 h-8 bg-[#ae52e3]"></div>
+      <div className="w-8 h-8 bg-white rounded"></div>
     </div>
 
-    {/* Image */}
-    <div className="aspect-square w-full bg-gray-700"></div>
+    {/* Welcome Text */}
+    <div className="mb-6">
+      <div className="text-xl font-medium mb-2">Good morning, username</div>
+      <div className="text-gray-400 text-sm mb-1">You have XX unread notifications</div>
+      <div className="text-gray-400 text-sm">You have XX follow requests</div>
+    </div>
 
-    {/* Actions */}
-    <div className="p-4">
-      <div className="flex justify-between mb-2">
-        <div className="flex space-x-4">
-          <div className="w-6 h-6 bg-gray-700 rounded"></div>
-          <div className="w-6 h-6 bg-gray-700 rounded"></div>
-          <div className="w-6 h-6 bg-gray-700 rounded"></div>
-        </div>
-        <div className="w-6 h-6 bg-gray-700 rounded"></div>
-      </div>
-
-      {/* Likes */}
-      <div className="h-4 w-20 bg-gray-700 rounded mb-2"></div>
-
-      {/* Caption */}
-      <div className="space-y-2">
-        <div className="h-4 w-3/4 bg-gray-700 rounded"></div>
-        <div className="h-4 w-1/2 bg-gray-700 rounded"></div>
-      </div>
+    {/* Placeholder Images */}
+    <div className="space-y-4">
+      <div className="w-full aspect-square bg-[#1a1a1a] rounded-lg"></div>
+      <div className="w-full aspect-square bg-[#1a1a1a] rounded-lg"></div>
     </div>
   </div>
 );
