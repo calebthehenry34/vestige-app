@@ -18,43 +18,8 @@ import {
   ErrorCircleRegular
 } from '@fluentui/react-icons';
 import { API_URL } from '../../config';
-import { getProfileImageUrl } from '../../utils/imageUtils';
+import { getProfileImageUrl, generateSrcSet, generateSizes } from '../../utils/imageUtils';
 import PostComments from './PostComments';
-
-// Function to generate different image sizes
-const getResponsiveImageUrl = (media, size) => {
-  if (!media) return '';
-  
-  // Handle new optimized media structure
-  if (media.variants && media.variants[size]) {
-    return media.variants[size].urls.webp || media.variants[size].urls.jpeg;
-  }
-  
-  // Handle legacy media structure
-  const mediaPath = media.legacy?.url || (typeof media === 'string' ? media : '');
-  if (!mediaPath || typeof mediaPath !== 'string') return '';
-  
-  // Return original URL for external media
-  if (mediaPath.startsWith('http')) return mediaPath;
-  
-  try {
-    // Extract base path and extension
-    const lastDot = mediaPath.lastIndexOf('.');
-    if (lastDot === -1) return ''; // Invalid path without extension
-    
-    const basePath = mediaPath.substring(0, lastDot);
-    const ext = mediaPath.substring(lastDot);
-    
-    // Validate size parameter
-    const validSizes = ['thumbnail', 'small', 'medium', 'large'];
-    if (!validSizes.includes(size)) return '';
-    
-    return `${API_URL}/uploads/${basePath}-${size}${ext}`;
-  } catch (error) {
-    console.error('Error generating responsive image URL:', error);
-    return '';
-  }
-};
 
 const SinglePost = () => {
   const { theme } = useContext(ThemeContext);
@@ -76,6 +41,119 @@ const SinglePost = () => {
   const imageRef = useRef(null);
   const contextMenuRef = useRef(null);
 
+  // Function to ensure URL uses correct domain
+  const ensureApiUrl = (url) => {
+    if (!url) return '';
+    
+    // If it's already a CloudFront URL, return as is
+    if (url.includes('.cloudfront.net')) {
+      return url;
+    }
+    
+    if (url.startsWith('http')) {
+      try {
+        // Parse the URL to extract the path
+        const urlObj = new URL(url);
+        const path = urlObj.pathname.startsWith('/uploads/') ? 
+          urlObj.pathname : 
+          `/uploads/${urlObj.pathname.split('/').pop()}`;
+        
+        // If the URL is not from our domains, reconstruct it
+        if (!urlObj.hostname.includes('vestige-app.onrender.com') && 
+            !urlObj.hostname.includes('cloudfront.net')) {
+          // Try to use CloudFront URL if available in the post data
+          if (post?.media?.cdnUrl) {
+            return post.media.cdnUrl;
+          }
+          // Fallback to API URL
+          return `${API_URL}${path}`;
+        }
+        return url;
+      } catch (error) {
+        console.error('Error parsing URL:', error);
+        return url;
+      }
+    }
+    
+    // For relative paths, use API URL
+    if (url.startsWith('/')) {
+      return `${API_URL}${url}`;
+    }
+    
+    return `${API_URL}/uploads/${url}`;
+  };
+
+  // Function to generate different image sizes
+  const getResponsiveImageUrl = (media, size) => {
+    if (!media) return '';
+    
+    // Handle new optimized media structure
+    if (media.variants && media.variants[size]) {
+      const url = media.variants[size].urls.webp || media.variants[size].urls.jpeg;
+      return ensureApiUrl(url);
+    }
+    
+    // Handle legacy media structure
+    const mediaPath = media.legacy?.url || (typeof media === 'string' ? media : '');
+    if (!mediaPath || typeof mediaPath !== 'string') return '';
+    
+    // Ensure we're using the API URL
+    if (mediaPath.startsWith('http')) {
+      return ensureApiUrl(mediaPath);
+    }
+    
+    try {
+      // Extract base path and extension
+      const lastDot = mediaPath.lastIndexOf('.');
+      if (lastDot === -1) return ''; // Invalid path without extension
+      
+      const basePath = mediaPath.substring(0, lastDot);
+      const ext = mediaPath.substring(lastDot);
+      
+      // Validate size parameter
+      const validSizes = ['thumbnail', 'small', 'medium', 'large'];
+      if (!validSizes.includes(size)) return '';
+      
+      return `${API_URL}/uploads/${basePath}-${size}${ext}`;
+    } catch (error) {
+      console.error('Error generating responsive image URL:', error);
+      return '';
+    }
+  };
+
+  // Function to get media URL
+  const getMediaUrl = (media) => {
+    if (!media) return '';
+    
+    // Handle new optimized media structure
+    if (media.variants && media.variants.large) {
+      // Prefer WebP format if available
+      const url = media.variants.large.urls.webp || media.variants.large.urls.jpeg;
+      // If CDN URL is available, use it
+      if (media.variants.large.cdnUrl) {
+        return media.variants.large.cdnUrl;
+      }
+      return ensureApiUrl(url);
+    }
+    
+    // Handle legacy media structure
+    const mediaPath = media.legacy?.url || (typeof media === 'string' ? media : '');
+    if (!mediaPath || typeof mediaPath !== 'string') return '';
+    
+    // If CDN URL is available in legacy format
+    if (media.legacy?.cdnUrl) {
+      return media.legacy.cdnUrl;
+    }
+    
+    // Ensure we're using the correct URL
+    if (mediaPath.startsWith('http')) {
+      return ensureApiUrl(mediaPath);
+    }
+    
+    if (!mediaPath.includes('.')) return ''; // Ensure path has an extension
+    return `${API_URL}/uploads/${mediaPath}`;
+  };
+
   // Close context menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -87,6 +165,39 @@ const SinglePost = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Fetch post data
+  useEffect(() => {
+    const fetchPost = async () => {
+      if (!id) return;
+      
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/api/posts/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch post');
+        }
+
+        const data = await response.json();
+        setPost(data);
+      } catch (error) {
+        console.error('Error fetching post:', error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPost();
+  }, [id]);
 
   const handleEdit = async () => {
     try {
@@ -154,85 +265,6 @@ const SinglePost = () => {
       console.error('Error reporting post:', error);
     }
   };
-
-  useEffect(() => {
-    // Set up intersection observer for lazy loading
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const img = entry.target;
-            img.src = img.dataset.src;
-            img.srcset = img.dataset.srcset;
-            observer.unobserve(img);
-          }
-        });
-      },
-      {
-        rootMargin: '50px 0px',
-        threshold: 0.1
-      }
-    );
-
-    const currentImageRef = imageRef.current;
-    if (currentImageRef) {
-      observer.observe(currentImageRef);
-    }
-
-    return () => {
-      if (currentImageRef) {
-        observer.unobserve(currentImageRef);
-      }
-    };
-  }, [post]);
-
-  const getMediaUrl = (media) => {
-    if (!media) return '';
-    
-    // Handle new optimized media structure
-    if (media.variants && media.variants.large) {
-      return media.variants.large.urls.webp || media.variants.large.urls.jpeg;
-    }
-    
-    // Handle legacy media structure
-    const mediaPath = media.legacy?.url || (typeof media === 'string' ? media : '');
-    if (!mediaPath || typeof mediaPath !== 'string') return '';
-    if (mediaPath.startsWith('http')) return mediaPath;
-    if (!mediaPath.includes('.')) return ''; // Ensure path has an extension
-    return `${API_URL}/uploads/${mediaPath}`;
-  };
-  
-  useEffect(() => {
-    const fetchPost = async () => {
-      if (!id) return;
-      
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/api/posts/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include'
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch post');
-        }
-
-        const data = await response.json();
-        setPost(data);
-      } catch (error) {
-        console.error('Error fetching post:', error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPost();
-  }, [id]);
 
   const handleLike = async () => {
     if (!id) return;
@@ -599,28 +631,33 @@ const SinglePost = () => {
                 
                 <img
                   ref={imageRef}
-                  data-src={getMediaUrl(post?.media)}
-                  data-srcset={(() => {
+                  src={getMediaUrl(post?.media)}
+                  srcSet={(() => {
                     if (!post?.media) return '';
                     
-                    // Get URLs for each size
-                    const small = getResponsiveImageUrl(post.media, 'small');
-                    const medium = getResponsiveImageUrl(post.media, 'medium');
-                    const large = getResponsiveImageUrl(post.media, 'large');
+                    // For new media structure with variants
+                    if (post.media.variants) {
+                      const urls = {};
+                      ['small', 'medium', 'large'].forEach(size => {
+                        if (post.media.variants[size]?.urls) {
+                          urls[size] = post.media.variants[size].urls.webp || 
+                                     post.media.variants[size].urls.jpeg;
+                        }
+                      });
+                      if (Object.keys(urls).length > 0) {
+                        return generateSrcSet(urls);
+                      }
+                    }
                     
-                    // Get dimensions from variants if available
-                    const getWidth = (size) => {
-                      return post.media.variants?.[size]?.dimensions?.width || {
-                        small: 400,
-                        medium: 800,
-                        large: 1200
-                      }[size];
-                    };
+                    // For legacy media structure
+                    const mediaUrl = getMediaUrl(post.media);
+                    if (mediaUrl) {
+                      return `${mediaUrl} 800w`; // Default to medium size
+                    }
                     
-                    if (!small || !medium || !large) return '';
-                    return `${small} ${getWidth('small')}w, ${medium} ${getWidth('medium')}w, ${large} ${getWidth('large')}w`;
+                    return '';
                   })()}
-                  sizes="(max-width: 768px) 100vw, 58.333vw"
+                  sizes={generateSizes('large')}
                   alt="Post content"
                   className={`transition-transform duration-300 ${
                     isZoomed 
@@ -645,18 +682,29 @@ const SinglePost = () => {
                       media: post.media,
                       src: e.target.src,
                       srcset: e.target.srcset,
-                      generatedSrc: getMediaUrl(post.media),
-                      generatedSrcSet: `${getResponsiveImageUrl(post.media, 'small')} 400w, ${getResponsiveImageUrl(post.media, 'medium')} 800w, ${getResponsiveImageUrl(post.media, 'large')} 1200w`
+                      mediaStructure: post.media?.variants ? 'new' : 'legacy',
+                      availableVariants: post.media?.variants ? 
+                        Object.keys(post.media.variants).map(size => ({
+                          size,
+                          urls: post.media.variants[size].urls
+                        })) : 'none'
                     });
-                    // Replace the image with a fallback UI that respects theme
+                    
+                    // Create a more informative fallback UI
                     const fallback = document.createElement('div');
                     fallback.className = `w-full h-full flex items-center justify-center ${
                       theme === 'dark-theme' ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-500'
                     }`;
+                    
+                    const errorMessage = post.media?.variants ?
+                      'Image format not supported' :
+                      'Image not available';
+                    
                     fallback.innerHTML = `
                       <div class="text-center p-4">
                         <div class="mb-2">⚠️</div>
-                        <div>Failed to load image</div>
+                        <div>${errorMessage}</div>
+                        <div class="text-sm text-gray-500 mt-1">Please try refreshing the page</div>
                       </div>
                     `;
                     e.target.parentNode.replaceChild(fallback, e.target);
@@ -760,7 +808,6 @@ const SinglePost = () => {
                     ))}
                   </div>
                 )}
-
               </div>
             </div>
 
