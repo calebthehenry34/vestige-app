@@ -19,12 +19,47 @@ import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 
 // Helper function to handle media URLs
-const getMediaUrl = (url) => {
-  if (!url) return '';
-  // If it's already a full URL (e.g., S3), use it directly
-  if (url.startsWith('http')) return url;
-  // For local files, ensure we're using the correct base URL
-  return `${API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+const getMediaUrl = (media) => {
+  if (!media) return '';
+  
+  // Handle new media structure with variants
+  if (media.variants) {
+    const variant = media.variants.large || media.variants.original;
+    if (variant) {
+      // Try CDN URL first
+      if (variant.cdnUrl) return variant.cdnUrl;
+      // Then try WebP or JPEG URL
+      if (variant.urls) {
+        const url = variant.urls.webp || variant.urls.jpeg;
+        if (url) {
+          if (url.startsWith('http')) return url;
+          return `${API_URL}/uploads/${url}`;
+        }
+      }
+      // Fallback to direct URL if available
+      if (variant.url) {
+        if (variant.url.startsWith('http')) return variant.url;
+        return `${API_URL}/uploads/${variant.url}`;
+      }
+    }
+  }
+
+  // Handle legacy media structure
+  if (media.legacy) {
+    if (media.legacy.cdnUrl) return media.legacy.cdnUrl;
+    if (media.legacy.url) {
+      if (media.legacy.url.startsWith('http')) return media.legacy.url;
+      return `${API_URL}/uploads/${media.legacy.url}`;
+    }
+  }
+
+  // Handle direct media string
+  if (typeof media === 'string') {
+    if (media.startsWith('http')) return media;
+    return `${API_URL}/uploads/${media}`;
+  }
+
+  return '';
 };
 
 const Post = ({ post, onDelete, onReport, onEdit }) => {
@@ -108,8 +143,8 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
 
   return (
     <div className="bg-white rounded-lg shadow mb-6 relative overflow-hidden">
-      {/* Username with gradient background */}
-      <div className="absolute top-0 right-0 z-10 p-2 bg-gradient-to-l from-black/50 to-transparent">
+      {/* Username with transparent background */}
+      <div className="absolute top-0 right-0 z-10 p-2">
         <Link to={`/profile/${localPost.user.username}`} className="text-white text-sm font-medium">
           {localPost.user?.username || 'Unknown User'}
         </Link>
@@ -164,8 +199,8 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
           </div>
         )}
 
-        {/* Bottom gradient with actions */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+        {/* Bottom actions with transparent background */}
+        <div className="absolute bottom-0 left-0 right-0 bg-black/30 p-4">
           <div className="flex justify-between items-center text-white">
             <button onClick={handleLike} className="transform hover:scale-110 transition-transform">
               {isLiked ? (

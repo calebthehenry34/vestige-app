@@ -266,83 +266,71 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
                   />
                 )}
                 {(() => {
-                  const getMediaUrl = async (postId) => {
-                    try {
-                      const token = localStorage.getItem('token');
-                      const response = await fetch(`${API_URL}/api/posts/${postId}/media`, {
-                        headers: {
-                          'Authorization': `Bearer ${token}`
+                  const getMediaUrl = (media) => {
+                    if (!media) return '';
+                    
+                    // Handle new media structure with variants
+                    if (media.variants) {
+                      const variant = media.variants.large || media.variants.original;
+                      if (variant) {
+                        // Try CDN URL first
+                        if (variant.cdnUrl) return variant.cdnUrl;
+                        // Then try WebP or JPEG URL
+                        if (variant.urls) {
+                          const url = variant.urls.webp || variant.urls.jpeg;
+                          if (url) {
+                            if (url.startsWith('http')) return url;
+                            return `${API_URL}/uploads/${url}`;
+                          }
                         }
-                      });
-                      if (!response.ok) throw new Error('Failed to fetch media URL');
-                      const data = await response.json();
-                      return data.url;
-                    } catch (error) {
-                      console.error('Error fetching media URL:', error);
-                      return null;
+                        // Fallback to direct URL if available
+                        if (variant.url) {
+                          if (variant.url.startsWith('http')) return variant.url;
+                          return `${API_URL}/uploads/${variant.url}`;
+                        }
+                      }
                     }
+
+                    // Handle legacy media structure
+                    if (media.legacy) {
+                      if (media.legacy.cdnUrl) return media.legacy.cdnUrl;
+                      if (media.legacy.url) {
+                        if (media.legacy.url.startsWith('http')) return media.legacy.url;
+                        return `${API_URL}/uploads/${media.legacy.url}`;
+                      }
+                    }
+
+                    // Handle direct media string
+                    if (typeof media === 'string') {
+                      if (media.startsWith('http')) return media;
+                      return `${API_URL}/uploads/${media}`;
+                    }
+
+                    return '';
                   };
 
-                  const handleImageError = async (e) => {
-                    const freshUrl = await getMediaUrl(post._id);
-                    if (freshUrl) {
-                      e.target.src = freshUrl;
-                      if (e.target.srcSet) {
-                        e.target.srcSet = '';
-                      }
-                    } else {
-                      const fallback = document.createElement('div');
-                      fallback.className = 'absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-300';
-                      fallback.innerHTML = `
-                        <div class="text-center p-4">
-                          <div class="mb-2">⚠️</div>
-                          <div>Image not available</div>
-                          <div class="text-sm text-gray-500 mt-1">Please try refreshing</div>
-                        </div>
-                      `;
-                      e.target.parentNode.replaceChild(fallback, e.target);
-                    }
+                  const handleImageError = (e) => {
+                    const fallback = document.createElement('div');
+                    fallback.className = 'absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-300';
+                    fallback.innerHTML = `
+                      <div class="text-center p-4">
+                        <div class="mb-2">⚠️</div>
+                        <div>Image not available</div>
+                        <div class="text-sm text-gray-500 mt-1">Please try refreshing</div>
+                      </div>
+                    `;
+                    e.target.parentNode.replaceChild(fallback, e.target);
                   };
 
                   const imageProps = {
                     className: "absolute inset-0 w-full h-full object-cover",
                     loading: "lazy",
                     onError: handleImageError,
+                    src: getMediaUrl(post.media),
                     alt: post.caption || `Post by ${post.user.username}`
                   };
 
-                  if (typeof post.media === 'string') {
-                    return <img {...imageProps} src={post.media} alt={post.caption || `Post by ${post.user.username}`} />;
-                  }
-
-                  if (post.media?.variants) {
-                    const imageUrls = {};
-                    ['small', 'medium', 'large'].forEach(size => {
-                      const variant = post.media.variants[size];
-                      if (variant?.urls) {
-                        imageUrls[size] = variant.urls.webp || variant.urls.jpeg;
-                      }
-                    });
-
-                    if (Object.keys(imageUrls).length === 0) {
-                      return <img {...imageProps} src={post.media.fallback || post.media} alt={post.caption || `Post by ${post.user.username}`} />;
-                    }
-
-                    const defaultSize = imageUrls.large ? 'large' : imageUrls.medium ? 'medium' : 'small';
-                    return (
-                      <img
-                        {...imageProps}
-                        src={imageUrls[defaultSize]}
-                        srcSet={Object.entries(imageUrls)
-                          .map(([size, url]) => `${url} ${size === 'small' ? '400w' : size === 'medium' ? '800w' : '1200w'}`)
-                          .join(', ')}
-                        sizes="(max-width: 400px) 100vw, 600px"
-                        alt={post.caption || `Post by ${post.user.username}`}
-                      />
-                    );
-                  }
-
-                  return <img {...imageProps} src={post.media?.url || post.media} alt={post.caption || `Post by ${post.user.username}`} />;
+                  return <img {...imageProps} />;
                 })()}
               </div>
 
