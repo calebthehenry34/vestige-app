@@ -154,28 +154,31 @@ const Navbar = () => {
       } ${isHeaderHidden ? 'header-hidden' : ''}`}>
         {/* Top Row - Always visible */}
         <div className="border-b border-gray-800 relative z-[100] bg-inherit">
-          <div className="flex items-center h-16 px-4 max-w-6xl mx-auto justify-between">
+          <div className="flex items-center justify-between h-16 px-4 max-w-6xl mx-auto">
             <button onClick={() => handleNavigation('/')} className="flex items-center">
               <img src="/logos/logov.png" alt="Logo" className="h-7 w-auto"/>
             </button>
 
-            <div className="flex items-center space-x-4">
-                {user ? (
-                  <img
-                    src={getProfileImageUrl(user?.profilePicture, user?.username)}
-                    alt={user?.username}
-                    className="w-6 h-6 rounded-md object-cover"
-                    onError={(e) => {
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
-                      e.target.onError = null;
-                    }}
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-md bg-gray-200 flex items-center justify-center">
-                    <PersonRegular className="w-5 h-5 text-gray-400" />
-                  </div>
-                )}
-            </div>
+            <button 
+              onClick={() => setShowDrawer(true)} 
+              className="flex items-center"
+            >
+              {user ? (
+                <img
+                  src={getProfileImageUrl(user?.profilePicture, user?.username)}
+                  alt={user?.username}
+                  className="w-6 h-6 rounded-md object-cover"
+                  onError={(e) => {
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'User')}`;
+                    e.target.onError = null;
+                  }}
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-md bg-gray-200 flex items-center justify-center">
+                  <PersonRegular className="w-5 h-5 text-gray-400" />
+                </div>
+              )}
+            </button>
           </div>
         </div>
       </div>

@@ -61,7 +61,7 @@ const WelcomeMessage = () => {
         pointerEvents: opacity === 0 ? 'none' : 'auto'
       }}
     >
-      <div className="text-xl font-medium text-white mb-2">
+      <div className="text-xl font-headlines text-white mb-2">
         {greeting}, {user?.username}
       </div>
       <div className="text-gray-400 text-sm">

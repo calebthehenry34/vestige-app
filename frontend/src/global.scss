@@ -6,7 +6,7 @@
 
 
 .feed-layout {
-  background-color: #0d0d0d !important;
+  background-color: black !important;
   min-height: 100vh;
   position: relative;
   z-index: 1;
@@ -71,10 +71,10 @@ body {
 .welcome-message {
   position: fixed;
   top: 72px; // Below navbar
-  left: 0;
+  left: 10px;
   right: 0;
   z-index: 1;
-  background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+  background: black;
   padding-top: 20px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, opacity;

@@ -148,7 +148,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
             <img
               src={getProfileImageUrl(localPost.user)}
               alt={localPost.user?.username || 'User'}
-              className="w-8 h-8 rounded-full object-cover border border-white/20"
+              className="w-8 h-8 rounded-md object-cover border border-white/20"
             />
           </Link>
           <Link to={`/profile/${localPost.user.username}`} className="text-white text-sm font-medium">
@@ -222,7 +222,10 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
                 <HeartRegular className="w-6 h-6" />
               )}
             </button>
-            <button className="transform hover:scale-110 transition-transform">
+            <button 
+              onClick={() => setShowDetails(!showDetails)} 
+              className="transform hover:scale-110 transition-transform"
+            >
               <CommentRegular className="w-6 h-6" />
             </button>
             <button className="transform hover:scale-110 transition-transform">
