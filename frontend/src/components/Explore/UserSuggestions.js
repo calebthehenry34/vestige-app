@@ -35,7 +35,14 @@ const UserSuggestions = () => {
       }
       const data = await response.json();
       const newUsers = Array.isArray(data) ? data : data.users || [];
-      setUsers(prevUsers => pageNum === 1 ? newUsers : [...prevUsers, ...newUsers]);
+      setUsers(prevUsers => {
+        if (pageNum === 1) return newUsers;
+        // Create a Set of existing user IDs for O(1) lookup
+        const existingUserIds = new Set(prevUsers.map(user => user._id));
+        // Filter out any users that already exist in the previous state
+        const uniqueNewUsers = newUsers.filter(user => !existingUserIds.has(user._id));
+        return [...prevUsers, ...uniqueNewUsers];
+      });
       setHasMore(newUsers.length > 0);
       setError(null);
     } catch (error) {

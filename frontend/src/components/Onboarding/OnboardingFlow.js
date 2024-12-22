@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Theme, Checkbox } from '@carbon/react';
 import { ErrorFilled, Add, ArrowRight, Reset } from '@carbon/icons-react';
 import { useAuth } from '../../context/AuthContext';
-import { useStripe } from '../../context/StripeContext';
 import { API_URL } from '../../config';
 import ProfileImageEditor from './ProfileImageEditor';
 import UserSuggestions from '../Explore/UserSuggestions';
@@ -95,7 +94,6 @@ const OnboardingFlow = () => {
     }
   };
 
-  const { setupBetaSubscription } = useStripe();
 
   const handleNext = async () => {
     if (step === 1) {
@@ -112,17 +110,7 @@ const OnboardingFlow = () => {
       }
     }
 
-    if (step === 4) {
-      try {
-        setLoading(true);
-        await setupBetaSubscription();
-      } catch (error) {
-        setError(error.message || 'Failed to setup beta subscription');
-        return;
-      } finally {
-        setLoading(false);
-      }
-    }
+    // Step 4 (plan selection) is now informational only, no setup needed
     
     setError('');
     if (step < 5) {
@@ -487,45 +475,20 @@ const OnboardingFlow = () => {
             <div className="h-full flex flex-col">
               <div className="w-full max-w-2xl mx-auto space-y-6">
                 <div className="flex flex-col gap-4">
-                  {/* Beta Access Plan */}
+                  {/* Beta Access Info */}
                   <div className={`${styles.pricingCard} ${styles.active} p-8`}>
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="text-xl font-headlines text-white mb-1">Beta Access</h3>
-                        <p className="text-gray-400 text-sm">Early adopter benefits</p>
+                        <p className="text-gray-400 text-sm">Welcome to the beta!</p>
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-white">Free</div>
-                        <p className="text-gray-400 text-sm">Limited time</p>
+                        <p className="text-gray-400 text-sm">Beta period</p>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Monthly Plan */}
-                  <div className={`${styles.pricingCard} ${styles.disabled} p-8`}>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="text-xl font-headlines text-white mb-1">Monthly</h3>
-                        <p className="text-gray-400 text-sm">Full access</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-white">$7.99<span className="text-gray-400 text-sm">/mo</span></div>
-                        <p className="text-gray-400 text-sm">Coming soon</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Annual Plan */}
-                  <div className={`${styles.pricingCard} ${styles.disabled} p-8`}>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="text-xl font-headlines text-white mb-1">Annual</h3>
-                        <p className="text-gray-400 text-sm">Save 22%</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-white">$74.99<span className="text-gray-400 text-sm">/yr</span></div>
-                        <p className="text-gray-400 text-sm">Coming soon</p>
-                      </div>
+                    <div className="mt-4 text-gray-400">
+                      <p>You now have full access to all features during our beta period. Enjoy!</p>
                     </div>
                   </div>
                 </div>

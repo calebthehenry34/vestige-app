@@ -135,10 +135,10 @@ const handleImageChange = async (e) => {
   });
 
   const subscriptionData = {
-    plan: 'Pro',
+    plan: 'Beta',
     status: 'Active',
-    nextBilling: '2024-01-05',
-    amount: '$9.99'
+    nextBilling: null,
+    amount: 'Free'
   };
 
   return (
@@ -345,44 +345,26 @@ const handleImageChange = async (e) => {
                 </div>
               )}
 
-              {/* Subscription Tab */}
-              {activeTab === 'subscription' && (
-                <div className="space-y-6">
-                  <h3 className="text-xl font-semibold">Subscription Details</h3>
-                  
-                  {/* Current Plan */}
-                  <div>
-                    <div className="flex justify-between items-center mb-4">
+                  {/* Subscription Tab */}
+                  {activeTab === 'subscription' && (
+                    <div className="space-y-6">
+                      <h3 className="text-xl font-semibold">Beta Access</h3>
+                      
+                      {/* Current Plan */}
                       <div>
-                        <h4 className="text-lg font-medium">Current Plan: {subscriptionData.plan}</h4>
-                        <p className="text-gray-600">Status: {subscriptionData.status}</p>
+                        <div className="flex justify-between items-center mb-4">
+                          <div>
+                            <h4 className="text-lg font-medium">Current Plan: {subscriptionData.plan}</h4>
+                            <p className="text-gray-600">Status: {subscriptionData.status}</p>
+                          </div>
+                          <span className="text-2xl font-bold text-green-600">{subscriptionData.amount}</span>
+                        </div>
+                        <p className="text-gray-600">
+                          You have full access to all features during our beta period. Thank you for being an early adopter!
+                        </p>
                       </div>
-                      <span className="text-2xl font-bold">{subscriptionData.amount}/mo</span>
                     </div>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Next billing date: {subscriptionData.nextBilling}
-                    </p>
-                    <div className="space-x-4">
-                      <button 
-                        onClick={() => window.open('https://billing.stripe.com/p/login/test', '_blank')}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                      >
-                        Update Billing Info
-                      </button>
-                      <button 
-                        onClick={() => {
-                          if (window.confirm('Canceling your subscription will set your profile to private. Are you sure?')) {
-                            // Handle cancellation
-                          }
-                        }}
-                        className="px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50"
-                      >
-                        Cancel Subscription
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
               {/* Analytics Tab */}
               {activeTab === 'analytics' && (
