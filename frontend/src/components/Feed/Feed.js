@@ -221,7 +221,7 @@ const Feed = ({ onStoryClick, onRefreshNeeded }) => {
           maxHeight: `calc(100vh - ${Math.max(50, Math.min(100 - (scrollY / 10), 100))}vh)`,
           borderRadius: '24px 24px 0 0',
           boxShadow: '0 -8px 20px rgba(0, 0, 0, 0.2)',
-          paddingTop: '25px',
+          paddingTop: '45px',
         }}
       >
         {/* Post Creator Modal */}

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 
-const WelcomeMessage = ({ isVisible }) => {
+const WelcomeMessage = ({ isVisible = false }) => {
   const { user } = useAuth();
   const { notifications } = useNotifications();
   const [greeting, setGreeting] = useState('');
@@ -26,15 +26,7 @@ const WelcomeMessage = ({ isVisible }) => {
   }, []);
 
   return (
-    <div 
-      className={`fixed top-[64px] left-0 right-0 z-20 transition-all duration-300 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[-10px] pointer-events-none'
-      }`}
-      style={{
-        transform: 'translateZ(0)',
-        willChange: 'transform'
-      }}
-    >
+    <div className="bg-[#000] mb-6">
       <div className="max-w-xl mx-auto px-4 py-2">
         <div className="bg-[#000] rounded-lg p-4 shadow-lg">
           <div className="text-lg font-headlines text-white mb-2">
