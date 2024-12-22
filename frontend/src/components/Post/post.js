@@ -179,25 +179,8 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
           </Link>
         )}
 
-        {/* Caption Preview */}
-        <div className="absolute bottom-20 left-0 right-0 px-4 py-2 bg-black bg-opacity-50">
-          <div className="text-white">
-            <span className="text-xs font-medium mr-2">{localPost.user?.username}</span>
-            <span className="text-xs">
-              {localPost.caption && (localPost.caption.length > 100 ? (
-                <>
-                  {localPost.caption.slice(0, 100)}...{' '}
-                  <Link to={`/post/${localPost._id}`} className="text-white hover:underline">
-                    read caption
-                  </Link>
-                </>
-              ) : localPost.caption)}
-            </span>
-          </div>
-        </div>
-
         {/* Action Bar */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4">
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-black bg-opacity-50">
           <div className="flex justify-between items-center text-white">
             <div className="flex space-x-4">
               <button onClick={handleLike} className="transform hover:scale-110 transition-transform">
@@ -227,7 +210,7 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
 
       {/* Post Details */}
       <div className="p-4">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-2">
           <div className="font-medium text-sm">
             {localPost.likes?.length || 0} likes
           </div>
@@ -236,9 +219,26 @@ const Post = ({ post, onDelete, onReport, onEdit }) => {
           </div>
         </div>
 
+        {/* Caption */}
+        {localPost.caption && (
+          <div className="mb-2">
+            <span className="text-sm font-medium mr-2">{localPost.user?.username}</span>
+            <span className="text-sm">
+              {localPost.caption.length > 100 ? (
+                <>
+                  {localPost.caption.slice(0, 100)}...{' '}
+                  <Link to={`/post/${localPost._id}`} className="text-blue-500 hover:underline">
+                    more
+                  </Link>
+                </>
+              ) : localPost.caption}
+            </span>
+          </div>
+        )}
+
         {/* Comments */}
         {localPost.comments?.length > 0 && (
-          <Link to={`/post/${localPost._id}`} className="block text-gray-500 mt-2">
+          <Link to={`/post/${localPost._id}`} className="block text-gray-500 text-sm">
             View all {localPost.comments.length} comments
           </Link>
         )}
