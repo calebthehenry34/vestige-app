@@ -293,7 +293,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
             {/* Current Image */}
             <div className={`relative rounded-lg overflow-hidden bg-black flex items-center justify-center`} style={{ 
               height: images[currentImageIndex] && Math.abs(images[currentImageIndex].aspectRatio - 0.5625) < 0.01 
-                ? `min(${Math.round(window.innerWidth * 1.778)}px, calc(90vh - 100px))` // 9:16 ratio (1.778 is inverse of 0.5625)
+                ? `min(${Math.round(window.innerWidth * 2.667)}px, calc(90vh - 100px))` // 9:16 ratio (1.778 * 1.5 = 2.667)
                 : images[currentImageIndex]?.aspectRatio > 0.5625
                   ? `min(${Math.round(window.innerWidth * (images[currentImageIndex].aspectRatio || 1))}px, calc(90vh - 300px))`
                   : `min(${Math.round(window.innerWidth * 0.5625)}px, calc(180vh - 300px))`,
@@ -468,8 +468,21 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
               )}
 
 
-              {/* Editor Controls - Adjusted z-index */}
-              <div className="absolute bottom-4 right-4 flex gap-2 z-20">
+
+              {/* Aspect Ratio Info */}
+              {showCropper && (
+                <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/50 text-white/70 text-sm">
+                  Aspect ratio locked to first image
+                </div>
+              )}
+            </div>
+
+            {/* Menu Icons and Aspect Ratio */}
+            <div className="flex items-center justify-between bg-white/5 rounded-lg p-4 mt-4">
+              <div className="text-white/70 text-sm">
+                Aspect Ratio: {images[currentImageIndex]?.aspectRatio || defaultAspectRatio}
+              </div>
+              <div className="flex gap-2">
                 <button
                   onClick={() => {
                     setShowCropper(false);
@@ -511,18 +524,6 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                   </button>
                 )}
               </div>
-
-              {/* Aspect Ratio Indicator - Moved to bottom left */}
-              <div className="absolute bottom-20 left-4 px-3 py-1 rounded-full bg-black/50 text-white/70 text-sm">
-                {images[currentImageIndex]?.aspectRatio || defaultAspectRatio}
-              </div>
-
-              {/* Aspect Ratio Info */}
-              {showCropper && (
-                <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/50 text-white/70 text-sm">
-                  Aspect ratio locked to first image
-                </div>
-              )}
             </div>
 
             {/* Caption and Details - Hidden during editing */}
