@@ -297,7 +297,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                 // Otherwise, scale down the height for portrait images
                 images[currentImageIndex].aspectRatio > 0.5625 ?
                   `min(${Math.round(window.innerWidth * (images[currentImageIndex].aspectRatio || 1))}px, calc(90vh - 300px))` :
-                  `min(${Math.round(window.innerWidth * 0.5625)}px, calc(70vh - 200px))` 
+                  `min(${Math.round(window.innerWidth * 0.5625)}px, calc(105vh - 300px))` 
                 : 'min(600px, calc(90vh - 300px))',
               maxWidth: '100%'
             }}>
