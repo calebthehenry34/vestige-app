@@ -8,10 +8,10 @@ import {
     AddRegular 
   } from '@fluentui/react-icons';
 import { API_URL } from '../../config';
-import ChatMessage from './ChatMessage';
+import ChatMessage, { EncryptionStatus } from './ChatMessage';
 
 const Chat = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -22,28 +22,63 @@ const Chat = () => {
   const [searchResults, setSearchResults] = useState([]);
   const messagesEndRef = useRef(null);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [encryptionStatus, setEncryptionStatus] = useState('connecting');
 
   const initializeEncryption = React.useCallback(async () => {
-    const key = await window.crypto.subtle.generateKey(
-      {
-        name: "AES-GCM",
-        length: 256,
-      },
-      true,
-      ["encrypt", "decrypt"]
-    );
-    setEncryptionKey(key);
+    try {
+      const key = await window.crypto.subtle.generateKey(
+        {
+          name: "AES-GCM",
+          length: 256,
+        },
+        true,
+        ["encrypt", "decrypt"]
+      );
+      setEncryptionKey(key);
+      setEncryptionStatus('secured');
+    } catch (err) {
+      console.error('Failed to initialize encryption:', err);
+      setEncryptionStatus('error');
+      // If encryption fails, we should prevent the user from sending messages
+      setEncryptionKey(null);
+    }
   }, []);
+
+  // Add effect to reset encryption status when changing chats
+  useEffect(() => {
+    if (activeChat) {
+      setEncryptionStatus('connecting');
+      initializeEncryption();
+    }
+  }, [activeChat, initializeEncryption]);
 
   const fetchChats = React.useCallback(async () => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
       const response = await fetch(`${API_URL}/api/messages/chats`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
         },
       });
 
-      if (!response.ok) throw new Error('Failed to fetch chats');
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication token expired');
+        }
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch chats: ${response.status} ${errorText}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Invalid response format. Expected JSON but received: ' + contentType);
+      }
 
       const data = await response.json();
       setChats(data);
@@ -51,8 +86,13 @@ const Chat = () => {
     } catch (err) {
       console.error('Failed to load chats:', err);
       setLoading(false);
+      if (err.message.includes('token expired') || err.message.includes('No authentication token found')) {
+        // Handle authentication error by logging out and redirecting to login
+        logout();
+        setChats([]);
+      }
     }
-  }, []);
+  }, [logout]);
 
   useEffect(() => {
     const init = async () => {
@@ -67,28 +107,52 @@ const Chat = () => {
   };
 
   const decryptMessage = React.useCallback(async (encryptedContent, iv) => {
-    const decryptedData = await window.crypto.subtle.decrypt(
-      {
-        name: "AES-GCM",
-        iv: new Uint8Array(atob(iv).split('').map((c) => c.charCodeAt(0))),
-      },
-      encryptionKey,
-      new Uint8Array(atob(encryptedContent).split('').map((c) => c.charCodeAt(0)))
-    );
+    try {
+      const decryptedData = await window.crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv: new Uint8Array(atob(iv).split('').map((c) => c.charCodeAt(0))),
+        },
+        encryptionKey,
+        new Uint8Array(atob(encryptedContent).split('').map((c) => c.charCodeAt(0)))
+      );
 
-    return new TextDecoder().decode(decryptedData);
+      return new TextDecoder().decode(decryptedData);
+    } catch (err) {
+      console.error('Failed to decrypt message:', err);
+      setEncryptionStatus('error');
+      throw err;
+    }
   }, [encryptionKey]);
 
   const fetchMessages = React.useCallback(async () => {
     if (!activeChat || !encryptionKey) return;
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
       const response = await fetch(`${API_URL}/api/messages/${activeChat}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
         },
       });
 
-      if (!response.ok) throw new Error('Failed to fetch messages');
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication token expired');
+        }
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch messages: ${response.status} ${errorText}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Invalid response format. Expected JSON but received: ' + contentType);
+      }
 
       const encryptedMessages = await response.json();
       const decryptedMessages = await Promise.all(
@@ -102,8 +166,13 @@ const Chat = () => {
       scrollToBottom();
     } catch (err) {
       console.error('Failed to load messages:', err);
+      if (err.message.includes('token expired') || err.message.includes('No authentication token found')) {
+        // Handle authentication error by logging out and redirecting to login
+        logout();
+        setMessages([]);
+      }
     }
-  }, [activeChat, encryptionKey, decryptMessage]);
+  }, [activeChat, encryptionKey, decryptMessage, logout]);
 
   useEffect(() => {
     if (activeChat) {
@@ -114,22 +183,28 @@ const Chat = () => {
   }, [activeChat, fetchMessages]);
 
   const encryptMessage = React.useCallback(async (message) => {
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-    const encodedMessage = new TextEncoder().encode(message);
+    try {
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      const encodedMessage = new TextEncoder().encode(message);
 
-    const encryptedData = await window.crypto.subtle.encrypt(
-      {
-        name: "AES-GCM",
-        iv: iv,
-      },
-      encryptionKey,
-      encodedMessage
-    );
+      const encryptedData = await window.crypto.subtle.encrypt(
+        {
+          name: "AES-GCM",
+          iv: iv,
+        },
+        encryptionKey,
+        encodedMessage
+      );
 
-    return {
-      encryptedContent: btoa(String.fromCharCode(...new Uint8Array(encryptedData))),
-      iv: btoa(String.fromCharCode(...iv)),
-    };
+      return {
+        encryptedContent: btoa(String.fromCharCode(...new Uint8Array(encryptedData))),
+        iv: btoa(String.fromCharCode(...iv)),
+      };
+    } catch (err) {
+      console.error('Failed to encrypt message:', err);
+      setEncryptionStatus('error');
+      throw err;
+    }
   }, [encryptionKey]);
 
   const sendMessage = async (e) => {
@@ -145,12 +220,18 @@ const Chat = () => {
     setMessages((prev) => [...prev, tempMessage]);
 
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
       const { encryptedContent, iv } = await encryptMessage(newMessage);
 
       const response = await fetch(`${API_URL}/api/messages`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -160,13 +241,30 @@ const Chat = () => {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to send message');
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication token expired');
+        }
+        const errorText = await response.text();
+        throw new Error(`Failed to send message: ${response.status} ${errorText}`);
+      }
 
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Invalid response format. Expected JSON but received: ' + contentType);
+      }
+
+      await response.json(); // Validate JSON response
       fetchMessages();
       fetchChats();
     } catch (err) {
       setMessages((prev) => prev.filter((msg) => msg._id !== tempMessage._id));
       console.error('Failed to send message:', err);
+      if (err.message.includes('token expired') || err.message.includes('No authentication token found')) {
+        // Handle authentication error by logging out and redirecting to login
+        logout();
+        setMessages((prev) => prev.filter((msg) => msg._id !== tempMessage._id));
+      }
     } finally {
       setNewMessage('');
     }
@@ -187,19 +285,48 @@ const Chat = () => {
     }
 
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
       const response = await fetch(`${API_URL}/api/users/search?term=${term}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
       });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication token expired');
+        }
+        const errorText = await response.text();
+        throw new Error(`Failed to search users: ${response.status} ${errorText}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Invalid response format. Expected JSON but received: ' + contentType);
+      }
+
       const data = await response.json();
       setSearchResults(data);
-    } catch (error) {
-      console.error('Error searching users:', error);
+    } catch (err) {
+      console.error('Error searching users:', err);
+      if (err.message.includes('token expired') || err.message.includes('No authentication token found')) {
+        // Handle authentication error by logging out and redirecting to login
+        logout();
+        setSearchResults([]);
+      }
     }
   };
 
   const handleStartChat = async (userId) => {
+    // Clear any pending messages when switching chats
+    setMessages([]);
+    setNewMessage('');
     setActiveChat(userId);
     setShowNewChatModal(false);
     setSearchTerm('');
@@ -267,6 +394,7 @@ const Chat = () => {
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900">
+                  <EncryptionStatus status={encryptionStatus} />
                   {messages.map((message) => (
                     <ChatMessage
                       key={message._id}
@@ -282,14 +410,24 @@ const Chat = () => {
                     <button 
                       type="button" 
                       onClick={() => {/* TODO: Implement emoji picker */}}
-                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                      disabled={!encryptionKey || encryptionStatus === 'error'}
+                      className={`p-2 rounded-full ${
+                        (!encryptionKey || encryptionStatus === 'error')
+                          ? 'opacity-50 cursor-not-allowed'
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
                     >
                       <span role="img" aria-label="emoji" className="text-xl">😊</span>
                     </button>
                     <button 
                       type="button"
                       onClick={() => {/* TODO: Implement image upload */}}
-                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                      disabled={!encryptionKey || encryptionStatus === 'error'}
+                      className={`p-2 rounded-full ${
+                        (!encryptionKey || encryptionStatus === 'error')
+                          ? 'opacity-50 cursor-not-allowed'
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
                     >
                       <svg className="w-6 h-6 dark:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -300,12 +438,18 @@ const Chat = () => {
                       type="text"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
-                      className="flex-1 rounded-full border border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-                      placeholder="Type a message..."
+                      disabled={!encryptionKey || encryptionStatus === 'error'}
+                      className={`flex-1 rounded-full border border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white ${
+                        (!encryptionKey || encryptionStatus === 'error') ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                      placeholder={(!encryptionKey || encryptionStatus === 'error') ? "Encryption unavailable" : "Type a message..."}
                     />
                     <button
                       type="submit"
-                      className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+                      disabled={!encryptionKey || encryptionStatus === 'error'}
+                      className={`p-3 bg-blue-500 text-white rounded-full transition-colors ${
+                        (!encryptionKey || encryptionStatus === 'error') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'
+                      }`}
                     >
                       <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
