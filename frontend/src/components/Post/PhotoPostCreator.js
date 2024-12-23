@@ -2,8 +2,7 @@ import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { 
   getProfileImageUrl, 
-  getImageDimensions, 
-  ASPECT_RATIOS,
+  getImageDimensions,
   getAspectRatioDimensions 
 } from '../../utils/imageUtils';
 import { motion } from 'framer-motion';
@@ -26,7 +25,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
       <img 
         src={getProfileImageUrl(user)} 
         alt="Profile" 
-        className="w-8 h-8 rounded-full"
+        className="w-8 h-8 rounded-md"
         onError={(e) => {
           e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
         }}
@@ -41,9 +40,10 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
   const [location, setLocation] = useState('');
   const [showImageEditor, setShowImageEditor] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [aspectRatios, setAspectRatios] = useState([]);
+  const [defaultAspectRatio, setDefaultAspectRatio] = useState(null);
   const [userSuggestions, setUserSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
@@ -94,11 +94,19 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
           };
         })
       );
-      setImages(prev => [...prev, ...processedImages].slice(0, 10));
-      setAspectRatios(prev => [
-        ...prev,
-        ...processedImages.map(img => img.aspectRatio)
-      ].slice(0, 10));
+      // Set default aspect ratio from first image if not already set
+      if (!defaultAspectRatio && processedImages.length > 0) {
+        setDefaultAspectRatio(processedImages[0].aspectRatio);
+      }
+
+      // Apply default aspect ratio to all images
+      const aspectRatio = defaultAspectRatio || processedImages[0].aspectRatio;
+      const imagesWithAspectRatio = processedImages.map(img => ({
+        ...img,
+        aspectRatio
+      }));
+
+      setImages(prev => [...prev, ...imagesWithAspectRatio].slice(0, 10));
     }
   });
 
@@ -183,7 +191,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
       });
 
       // Get aspect ratio dimensions
-      const { width: aspectWidth, height: aspectHeight } = getAspectRatioDimensions(aspectRatios[index]);
+      const { width: aspectWidth, height: aspectHeight } = getAspectRatioDimensions(img.aspectRatio);
       const aspectRatio = aspectWidth / aspectHeight;
       
       // Calculate dimensions to maintain aspect ratio
@@ -259,7 +267,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                   crop={crop}
                   zoom={zoom}
                   aspect={(() => {
-                    const { width, height } = getAspectRatioDimensions(aspectRatios[currentImageIndex]);
+                    const { width, height } = getAspectRatioDimensions(images[currentImageIndex].aspectRatio);
                     return width / height;
                   })()}
                   onCropChange={setCrop}
@@ -302,129 +310,155 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                 <button
                   onClick={() => {
                     setShowCropper(false);
+                    setShowFilters(false);
                     setShowImageEditor(!showImageEditor);
                   }}
                   className="p-2 rounded-full bg-black/50 hover:bg-black/70"
                 >
-                  <FilterRegular className="w-5 h-5 text-white" />
+                  <BrightnessHighRegular className="w-5 h-5 text-white" />
                 </button>
                 <button
                   onClick={() => {
                     setShowImageEditor(false);
+                    setShowFilters(false);
                     setShowCropper(!showCropper);
                   }}
                   className="p-2 rounded-full bg-black/50 hover:bg-black/70"
                 >
                   <CropRegular className="w-5 h-5 text-white" />
                 </button>
+                <button
+                  onClick={() => {
+                    setShowImageEditor(false);
+                    setShowCropper(false);
+                    setShowFilters(!showFilters);
+                  }}
+                  className="p-2 rounded-full bg-black/50 hover:bg-black/70"
+                >
+                  <FilterRegular className="w-5 h-5 text-white" />
+                </button>
               </div>
 
               {/* Aspect Ratio Indicator */}
               <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/50 text-white/70 text-sm">
-                {aspectRatios[currentImageIndex]}
+                {images[currentImageIndex]?.aspectRatio || defaultAspectRatio}
               </div>
 
-              {/* Aspect Ratio Selector */}
+              {/* Aspect Ratio Info */}
               {showCropper && (
-                <div className="absolute top-4 right-4 flex gap-2">
-                  {Object.values(ASPECT_RATIOS).map((ratio) => (
-                    <button
-                      key={ratio}
-                      onClick={() => {
-                        const newAspectRatios = [...aspectRatios];
-                        newAspectRatios[currentImageIndex] = ratio;
-                        setAspectRatios(newAspectRatios);
-                      }}
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        aspectRatios[currentImageIndex] === ratio
-                          ? 'bg-pink-500 text-white'
-                          : 'bg-black/50 text-white/70 hover:bg-black/70'
-                      }`}
-                    >
-                      {ratio}
-                    </button>
-                  ))}
+                <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/50 text-white/70 text-sm">
+                  Aspect ratio locked to first image
                 </div>
               )}
             </div>
 
             {/* Image Thumbnails */}
             {images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2">
+              <motion.div className="flex gap-2 overflow-x-auto pb-2">
                 {images.map((img, idx) => (
-                  <motion.button
+                  <motion.div
                     key={img.preview}
                     drag="x"
                     dragConstraints={{ left: 0, right: 0 }}
-                    onClick={() => setCurrentImageIndex(idx)}
-                    className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden
+                    dragElastic={1}
+                    dragMomentum={false}
+                    onDragStart={() => setCurrentImageIndex(idx)}
+                    onDragEnd={(e, { offset }) => {
+                      const moveDistance = offset.x;
+                      const moveThreshold = 50; // minimum distance to trigger reorder
+                      
+                      if (Math.abs(moveDistance) >= moveThreshold) {
+                        const direction = moveDistance > 0 ? -1 : 1;
+                        const newIndex = Math.max(0, Math.min(images.length - 1, idx + direction));
+                        
+                        if (newIndex !== idx) {
+                          const newImages = [...images];
+                          const [movedImage] = newImages.splice(idx, 1);
+                          newImages.splice(newIndex, 0, movedImage);
+                          setImages(newImages);
+                          setCurrentImageIndex(newIndex);
+                        }
+                      }
+                    }}
+                    whileDrag={{
+                      scale: 1.1,
+                      zIndex: 1,
+                      boxShadow: "0px 5px 10px rgba(0,0,0,0.3)"
+                    }}
+                    className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden cursor-move
                       ${currentImageIndex === idx ? 'ring-2 ring-pink-500' : ''}`}
                   >
                     <img
                       src={img.preview}
                       alt={`Thumbnail ${idx + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover pointer-events-none"
+                      draggable={false}
                     />
-                  </motion.button>
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                      <span className="text-white text-xs">Drag to reorder</span>
+                    </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
 
-            {/* Caption and Details */}
-            <div className="space-y-4">
-              <div className="relative">
-                <textarea
-                  ref={captionRef}
-                  placeholder="Write a caption... Use @ to mention users and # for hashtags"
-                  value={caption}
-                  onChange={handleCaptionChange}
-                  onKeyDown={(e) => {
-                    if (e.key === 'ArrowDown' && showSuggestions) {
-                      e.preventDefault();
-                      // Handle suggestion navigation
-                    }
-                  }}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white placeholder-white/50 resize-none"
-                  rows={3}
-                />
+            {/* Caption and Details - Hidden during editing */}
+            {!showCropper && !showImageEditor && !showFilters && (
+              <div className="space-y-4">
+                <div className="relative">
+                  <textarea
+                    ref={captionRef}
+                    placeholder="Write a caption... Use @ to mention users and # for hashtags"
+                    value={caption}
+                    onChange={handleCaptionChange}
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowDown' && showSuggestions) {
+                        e.preventDefault();
+                        // Handle suggestion navigation
+                      }
+                    }}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white placeholder-white/50 resize-none"
+                    rows={3}
+                  />
+                  
+                  {/* User Suggestions Dropdown */}
+                  {showSuggestions && userSuggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 mt-1 bg-gray-900 border border-white/10 rounded-lg max-h-40 overflow-y-auto">
+                      {userSuggestions.map((user) => (
+                        <button
+                          key={user.username}
+                          onClick={() => handleSuggestionClick(user.username)}
+                          className="w-full px-3 py-2 text-left hover:bg-white/5 flex items-center gap-2"
+                        >
+                          <img
+                            src={getProfileImageUrl(user)}
+                            alt={user.username}
+                            className="w-6 h-6 rounded-full"
+                          />
+                          <span className="text-white">{user.username}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 
-                {/* User Suggestions Dropdown */}
-                {showSuggestions && userSuggestions.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-gray-900 border border-white/10 rounded-lg max-h-40 overflow-y-auto">
-                    {userSuggestions.map((user) => (
-                      <button
-                        key={user.username}
-                        onClick={() => handleSuggestionClick(user.username)}
-                        className="w-full px-3 py-2 text-left hover:bg-white/5 flex items-center gap-2"
-                      >
-                        <img
-                          src={getProfileImageUrl(user)}
-                          alt={user.username}
-                          className="w-6 h-6 rounded-full"
-                        />
-                        <span className="text-white">{user.username}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <div className="flex-1 flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg p-3">
+                  <LocationRegular className="w-5 h-5 text-white/70" />
+                  <input
+                    type="text"
+                    placeholder="Add location"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="bg-transparent text-white placeholder-white/50 flex-1"
+                  />
+                </div>
               </div>
-              
-              <div className="flex-1 flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg p-3">
-                <LocationRegular className="w-5 h-5 text-white/70" />
-                <input
-                  type="text"
-                  placeholder="Add location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="bg-transparent text-white placeholder-white/50 flex-1"
-                />
-              </div>
-            </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Filter Controls */}
+      {/* Adjustment Controls */}
       {showImageEditor && images.length > 0 && (
         <div className="p-4 border-t border-white/10 space-y-3">
           <div className="flex items-center gap-2">
@@ -438,7 +472,12 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
               className="flex-1"
             />
           </div>
-          
+        </div>
+      )}
+
+      {/* Filter Controls */}
+      {showFilters && images.length > 0 && (
+        <div className="p-4 border-t border-white/10 space-y-3">
           <div className="flex items-center gap-2">
             <DarkThemeFilled className="w-5 h-5 text-white/70" />
             <input
