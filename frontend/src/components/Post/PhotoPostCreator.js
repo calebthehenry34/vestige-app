@@ -291,16 +291,16 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
           // Image Preview and Editor
           <div className="space-y-4">
             {/* Current Image */}
-            <div className="relative rounded-lg overflow-hidden bg-black flex items-center justify-center" style={{ 
-              height: images[currentImageIndex] ? 
-                // For 9:16 aspect ratio (0.5625), use fixed height of 490px
-                // For other aspect ratios, use normal calculation
-                Math.abs(images[currentImageIndex].aspectRatio - 0.5625) < 0.01 ?
-                  '490px' :
-                  images[currentImageIndex].aspectRatio > 0.5625 ?
-                    `min(${Math.round(window.innerWidth * (images[currentImageIndex].aspectRatio || 1))}px, calc(90vh - 300px))` :
-                    `min(${Math.round(window.innerWidth * 0.5625)}px, calc(180vh - 300px))` 
-                : 'min(600px, calc(90vh - 300px))',
+            <div className={`relative rounded-lg overflow-hidden bg-black flex items-center justify-center ${
+              images[currentImageIndex] && Math.abs(images[currentImageIndex].aspectRatio - 0.5625) < 0.01 
+                ? 'h-[490px] min-h-[490px] max-h-[490px]' 
+                : ''
+            }`} style={{ 
+              ...(images[currentImageIndex] && Math.abs(images[currentImageIndex].aspectRatio - 0.5625) >= 0.01 && {
+                height: images[currentImageIndex].aspectRatio > 0.5625
+                  ? `min(${Math.round(window.innerWidth * (images[currentImageIndex].aspectRatio || 1))}px, calc(90vh - 300px))`
+                  : `min(${Math.round(window.innerWidth * 0.5625)}px, calc(180vh - 300px))`
+              }),
               maxWidth: '100%'
             }}>
               {/* Overlay to close menus when clicking outside */}
@@ -377,7 +377,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                   <img
                     src={images[currentImageIndex].preview}
                     alt={`Preview ${currentImageIndex + 1}`}
-                  className="max-w-full max-h-full object-contain"
+                  className="w-full h-full object-contain"
                   onError={(e) => {
                     console.error('Error loading image:', e);
                   }}
@@ -400,7 +400,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                 <img
                   src={images[currentImageIndex].preview}
                   alt={`Preview ${currentImageIndex + 1}`}
-                  className="max-w-full max-h-full object-contain"
+                  className="w-full h-full object-contain"
                   style={{
                     filter: `
                       brightness(${images[currentImageIndex].filters.brightness}%) 
