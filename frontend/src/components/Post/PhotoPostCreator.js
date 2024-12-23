@@ -291,31 +291,15 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
           // Image Preview and Editor
           <div className="space-y-4">
             {/* Current Image */}
-            <div className={`relative rounded-lg overflow-hidden bg-black flex items-center justify-center ${
-              images[currentImageIndex] && Math.abs(images[currentImageIndex].aspectRatio - 0.5625) < 0.01 
-                ? 'h-[490px] min-h-[490px] max-h-[490px]' 
-                : ''
-            }`} style={{ 
-              ...(images[currentImageIndex] && Math.abs(images[currentImageIndex].aspectRatio - 0.5625) >= 0.01 && {
-                height: images[currentImageIndex].aspectRatio > 0.5625
+            <div className={`relative rounded-lg overflow-hidden bg-black flex items-center justify-center`} style={{ 
+              height: images[currentImageIndex] && Math.abs(images[currentImageIndex].aspectRatio - 0.5625) < 0.01 
+                ? `min(${Math.round(window.innerWidth * 1.778)}px, calc(90vh - 100px))` // 9:16 ratio (1.778 is inverse of 0.5625)
+                : images[currentImageIndex]?.aspectRatio > 0.5625
                   ? `min(${Math.round(window.innerWidth * (images[currentImageIndex].aspectRatio || 1))}px, calc(90vh - 300px))`
-                  : `min(${Math.round(window.innerWidth * 0.5625)}px, calc(180vh - 300px))`
-              }),
-              maxWidth: '100%'
+                  : `min(${Math.round(window.innerWidth * 0.5625)}px, calc(180vh - 300px))`,
+              maxWidth: '100%',
+              maxHeight: '90vh'
             }}>
-              {/* Overlay to close menus when clicking outside */}
-              {(showImageEditor || showCropper || showFilters) && (
-                <div 
-                  className="absolute inset-0 bg-transparent"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowImageEditor(false);
-                    setShowCropper(false);
-                    setShowFilters(false);
-                  }}
-                />
-              )}
-
               {showCropper ? (
                 <>
                   {/* Close button for crop menu */}
@@ -353,23 +337,26 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                     }}
                     objectFit="contain"
                     showGrid={true}
-                    style={{
-                      containerStyle: {
-                        position: 'relative',
-                        width: '100%',
-                        height: '100%',
-                        backgroundColor: '#000'
-                      },
-                      mediaStyle: {
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain'
-                      },
-                      cropAreaStyle: {
-                        border: '2px solid #fff',
-                        color: 'rgba(255, 255, 255, 0.5)'
-                      }
-                    }}
+                  style={{
+                    containerStyle: {
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: '#000',
+                      zIndex: 30
+                    },
+                    mediaStyle: {
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain'
+                    },
+                    cropAreaStyle: {
+                      border: '2px solid #fff',
+                      color: 'rgba(255, 255, 255, 0.5)'
+                    }
+                  }}
                   />
                 </>
               ) : showImageEditor ? (
@@ -453,48 +440,29 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                 />
               )}
 
-              {/* Slide Indicators with connecting lines - Moved to top */}
+              {/* Slide Indicators */}
               {images.length > 1 && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center z-10">
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
                   {images.map((_, idx) => (
-                    <React.Fragment key={idx}>
-                      {idx > 0 && (
-                        <motion.div 
-                          className={`w-6 h-0.5 ${
-                            idx === currentImageIndex || idx === currentImageIndex + 1
-                              ? 'bg-white'
-                              : 'bg-white/30'
-                          }`}
-                          initial={false}
-                          animate={{
-                            backgroundColor: idx === currentImageIndex || idx === currentImageIndex + 1
-                              ? 'rgb(255, 255, 255)'
-                              : 'rgba(255, 255, 255, 0.3)',
-                          }}
-                          transition={{
-                            duration: 0.3
-                          }}
-                        />
-                      )}
-                      <motion.div
-                        className={`w-2.5 h-2.5 rounded-full ${
-                          idx === currentImageIndex ? 'bg-white' : 'bg-white/30'
-                        }`}
-                        animate={{
-                          scale: idx === currentImageIndex ? 1.25 : 1,
-                          backgroundColor: idx === currentImageIndex
-                            ? 'rgb(255, 255, 255)'
-                            : 'rgba(255, 255, 255, 0.3)',
-                        }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 300,
-                          damping: 20
-                        }}
-                        onClick={() => setCurrentImageIndex(idx)}
-                        style={{ cursor: 'pointer' }}
-                      />
-                    </React.Fragment>
+                    <motion.div
+                      key={idx}
+                      className={`w-2 h-2 rounded-full ${
+                        idx === currentImageIndex ? 'bg-white' : 'bg-white/30'
+                      }`}
+                      animate={{
+                        scale: idx === currentImageIndex ? 1 : 1,
+                        backgroundColor: idx === currentImageIndex
+                          ? 'rgb(255, 255, 255)'
+                          : 'rgba(255, 255, 255, 0.3)',
+                      }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 20
+                      }}
+                      onClick={() => setCurrentImageIndex(idx)}
+                      style={{ cursor: 'pointer' }}
+                    />
                   ))}
                 </div>
               )}
