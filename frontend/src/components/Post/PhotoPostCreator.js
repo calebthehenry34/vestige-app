@@ -293,11 +293,13 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
             {/* Current Image */}
             <div className="relative rounded-lg overflow-hidden bg-black flex items-center justify-center" style={{ 
               height: images[currentImageIndex] ? 
-                // If aspect ratio is greater than 9:16 (0.5625), use normal calculation
-                // Otherwise, scale down the height for portrait images
-                images[currentImageIndex].aspectRatio > 0.5625 ?
-                  `min(${Math.round(window.innerWidth * (images[currentImageIndex].aspectRatio || 1))}px, calc(90vh - 300px))` :
-                  `min(${Math.round(window.innerWidth * 0.5625)}px, calc(180vh - 300px))` 
+                // For 9:16 aspect ratio (0.5625), use fixed height of 490px
+                // For other aspect ratios, use normal calculation
+                Math.abs(images[currentImageIndex].aspectRatio - 0.5625) < 0.01 ?
+                  '490px' :
+                  images[currentImageIndex].aspectRatio > 0.5625 ?
+                    `min(${Math.round(window.innerWidth * (images[currentImageIndex].aspectRatio || 1))}px, calc(90vh - 300px))` :
+                    `min(${Math.round(window.innerWidth * 0.5625)}px, calc(180vh - 300px))` 
                 : 'min(600px, calc(90vh - 300px))',
               maxWidth: '100%'
             }}>
