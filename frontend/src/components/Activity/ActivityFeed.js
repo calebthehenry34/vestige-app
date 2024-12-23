@@ -5,7 +5,8 @@ import FollowButton from '../Common/FollowButton';
 import { ThemeContext } from '../../App';
 import { useNotifications } from '../../context/NotificationContext';
 import { getProfileImageUrl } from '../../utils/imageUtils';
-import { DismissRegular } from '@fluentui/react-icons';
+import { DismissRegular, HeartRegular } from '@fluentui/react-icons';
+import { NotificationSkeleton } from '../Common/Skeleton';
 
 const ActivityFeed = ({ onClose, isOpen }) => {
   const navigate = useNavigate();
@@ -231,79 +232,63 @@ const ActivityFeed = ({ onClose, isOpen }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-start justify-center">
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={handleClose}
-      />
-      <div 
-        className={`${
-          theme === 'dark-theme' 
-            ? 'bg-black border-zinc-800 text-white' 
-            : 'bg-white border-gray-200 text-black'
-        } w-[95vw] max-w-md rounded-2xl transform transition-all duration-300 ease-out shadow-xl relative ${
-          isAnimating ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
-        }`}
-      >
-        <div className={`flex items-center justify-between px-6 py-4 border-b ${
-          theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
-        }`}>
+    <div className="flex flex-col h-full">
+      <div className={`flex items-center justify-between px-6 py-4 border-b ${
+        theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
+      }`}>
+        <div className="flex items-center space-x-4">
           <h2 className="text-xl font-headlines">Activity</h2>
-          <button
-            onClick={handleClose}
-            className={`p-2 rounded-full transition-colors duration-200 ${
-              theme === 'dark-theme' 
-                ? 'hover:bg-zinc-900 text-gray-400 hover:text-gray-200' 
-                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <DismissRegular className="w-6 h-6" />
-          </button>
-        </div>
-
-        <div className="max-h-[50vh] overflow-y-auto">
-          {loading ? (
-            <div className="flex justify-center items-center p-6">
-              <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
-                theme === 'dark-theme' ? 'border-blue-400' : 'border-blue-500'
-              }`}></div>
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className={`text-center p-6 ${
-              theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
-            }`}>
-              No notifications yet
-            </div>
-          ) : (
-            <>
-              {notifications.length > 0 && (
-                <div className={`flex justify-end px-6 py-2 border-b ${
-                  theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
-                }`}>
-                  <button
-                    onClick={handleMarkAllAsRead}
-                    className={`text-sm px-3 py-1 rounded-full transition-colors duration-200 ${
-                      theme === 'dark-theme' 
-                        ? 'text-gray-400 hover:text-white hover:bg-zinc-900' 
-                        : 'text-gray-600 hover:text-black hover:bg-gray-100'
-                    }`}
-                  >
-                    Mark all as read
-                  </button>
-                </div>
-              )}
-              <div className={`divide-y ${
-                theme === 'dark-theme' ? 'divide-zinc-800' : 'divide-gray-200'
-              }`}>
-                {notifications.map(notification => (
-                  <div key={notification._id}>
-                    {renderActivity(notification)}
-                  </div>
-                ))}
-              </div>
-            </>
+          {notifications.length > 0 && (
+            <button
+              onClick={handleMarkAllAsRead}
+              className={`text-sm px-3 py-1 rounded-full transition-colors duration-200 ${
+                theme === 'dark-theme' 
+                  ? 'text-gray-400 hover:text-white hover:bg-zinc-900' 
+                  : 'text-gray-600 hover:text-black hover:bg-gray-100'
+              }`}
+            >
+              Dismiss all
+            </button>
           )}
         </div>
+        <button
+          onClick={handleClose}
+          className={`p-2 rounded-full transition-colors duration-200 ${
+            theme === 'dark-theme' 
+              ? 'hover:bg-zinc-900 text-gray-400 hover:text-gray-200' 
+              : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <DismissRegular className="w-6 h-6" />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {loading ? (
+          <div className="space-y-2">
+            <NotificationSkeleton />
+            <NotificationSkeleton />
+            <NotificationSkeleton />
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className={`flex flex-col items-center justify-center h-full p-6 ${
+            theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            <HeartRegular className="w-12 h-12 mb-4 opacity-50" />
+            <div className="text-lg font-medium">No notifications yet</div>
+            <div className="text-sm">When you get notifications, they'll show up here</div>
+          </div>
+        ) : (
+          <div className={`divide-y ${
+            theme === 'dark-theme' ? 'divide-zinc-800' : 'divide-gray-200'
+          }`}>
+            {notifications.map(notification => (
+              <div key={notification._id}>
+                {renderActivity(notification)}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
