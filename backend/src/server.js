@@ -3,8 +3,8 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import fs from 'fs';
-import { Server as SocketServer } from 'socket.io';
 import { createServer } from 'http';
+import { initializeSocket } from './services/socketService.js';
 import authRoutes from './routes/authRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
@@ -42,42 +42,7 @@ const uploadsDir = path.join(rootDir, 'uploads');
 
 const app = express();
 const httpServer = createServer(app);
-const io = new SocketServer(httpServer, {
-  cors: {
-    origin: [
-      'https://gleeful-starburst-18884e.netlify.app',
-      'http://localhost:3000',
-      'http://localhost:3001'
-    ],
-    methods: ['GET', 'POST'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization']
-  },
-  allowEIO3: true, // Allow Engine.IO version 3 clients
-  cookie: {
-    name: "io",
-    httpOnly: true,
-    sameSite: "none",
-    secure: true
-  }
-});
-
-// Socket.IO connection handling
-io.on('connection', (socket) => {
-  console.log('Client connected');
-
-  // Join user's room for notifications
-  socket.on('join', (userId) => {
-    socket.join(userId);
-    console.log(`User ${userId} joined their notification room`);
-  });
-
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
-  });
-});
-
-// Make io accessible to routes
+const io = initializeSocket(httpServer);
 app.set('io', io);
 
 app.set('trust proxy', 'loopback, linklocal, uniquelocal');
