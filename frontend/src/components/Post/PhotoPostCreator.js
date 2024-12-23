@@ -8,8 +8,6 @@ import {
 import { motion } from 'framer-motion';
 import {
   BrightnessHighRegular,
-  DarkThemeFilled,
-  ColorRegular,
   FilterRegular,
   LocationRegular,
   CropRegular
@@ -41,6 +39,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
   const [showImageEditor, setShowImageEditor] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showReorderModal, setShowReorderModal] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [defaultAspectRatio, setDefaultAspectRatio] = useState(null);
@@ -48,12 +47,24 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
   const captionRef = useRef(null);
-  const [imageFilters, setImageFilters] = useState({
-    brightness: 100,
-    contrast: 100,
-    saturation: 100,
-    blur: 0
-  });
+  // Define Instagram-like filter presets
+  const FILTER_PRESETS = {
+    Normal: { brightness: 100, contrast: 100, saturation: 100, blur: 0 },
+    Clarendon: { brightness: 110, contrast: 130, saturation: 120, blur: 0 },
+    Gingham: { brightness: 105, contrast: 90, saturation: 95, blur: 0 },
+    Moon: { brightness: 95, contrast: 95, saturation: 0, blur: 0 },
+    Lark: { brightness: 105, contrast: 95, saturation: 110, blur: 0 },
+    Reyes: { brightness: 110, contrast: 85, saturation: 80, blur: 0 },
+    Juno: { brightness: 105, contrast: 115, saturation: 115, blur: 0 },
+    Slumber: { brightness: 95, contrast: 90, saturation: 80, blur: 0 },
+    Crema: { brightness: 105, contrast: 95, saturation: 90, blur: 0 },
+    Ludwig: { brightness: 105, contrast: 105, saturation: 95, blur: 0 },
+    Aden: { brightness: 95, contrast: 90, saturation: 85, blur: 0 },
+    Perpetua: { brightness: 100, contrast: 110, saturation: 105, blur: 0 }
+  };
+
+  const [imageFilters, setImageFilters] = useState(FILTER_PRESETS.Normal);
+  const [selectedFilter, setSelectedFilter] = useState('Normal');
 
   // Function to fetch user suggestions
   const fetchUserSuggestions = async (query) => {
@@ -155,16 +166,18 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
     }
   };
 
-  const handleFilterChange = (type, value) => {
-    setImageFilters(prev => ({
-      ...prev,
+  const handleFilterChange = (type, value, preset = null) => {
+    const newFilters = preset || {
+      ...imageFilters,
       [type]: value
-    }));
+    };
+    
+    setImageFilters(newFilters);
     
     // Update current image's filters
     setImages(prev => prev.map((img, idx) => 
       idx === currentImageIndex 
-        ? { ...img, filters: { ...img.filters, [type]: value } }
+        ? { ...img, filters: newFilters }
         : img
     ));
   };
@@ -260,7 +273,10 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
           // Image Preview and Editor
           <div className="space-y-4">
             {/* Current Image */}
-            <div className="relative aspect-square rounded-lg overflow-hidden bg-black">
+            <div className="relative rounded-lg overflow-hidden bg-black" style={{ 
+              minHeight: '300px',
+              maxHeight: '600px'
+            }}>
               {showCropper ? (
                 <Cropper
                   image={images[currentImageIndex].preview}
@@ -279,6 +295,9 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                     src={images[currentImageIndex].preview}
                     alt={`Preview ${currentImageIndex + 1}`}
                     className="w-full h-full object-contain"
+                    onError={(e) => {
+                      console.error('Error loading image:', e);
+                    }}
                     style={{
                       filter: `
                         brightness(${images[currentImageIndex].filters.brightness}%) 
@@ -293,7 +312,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                 <img
                   src={images[currentImageIndex].preview}
                   alt={`Preview ${currentImageIndex + 1}`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   style={{
                     filter: `
                       brightness(${images[currentImageIndex].filters.brightness}%) 
@@ -305,6 +324,40 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                 />
               )}
               
+              {/* Swipeable Image Container */}
+              {images.length > 1 && (
+                <motion.div
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.2}
+                  onDragEnd={(e, { offset, velocity }) => {
+                    const swipe = offset.x;
+                    if (Math.abs(swipe) > 50) {
+                      if (swipe > 0 && currentImageIndex > 0) {
+                        setCurrentImageIndex(prev => prev - 1);
+                      } else if (swipe < 0 && currentImageIndex < images.length - 1) {
+                        setCurrentImageIndex(prev => prev + 1);
+                      }
+                    }
+                  }}
+                  className="absolute inset-0"
+                />
+              )}
+
+              {/* Slide Indicators */}
+              {images.length > 1 && (
+                <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-2">
+                  {images.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        idx === currentImageIndex ? 'bg-white' : 'bg-white/30'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+
               {/* Editor Controls */}
               <div className="absolute bottom-4 right-4 flex gap-2">
                 <button
@@ -337,6 +390,16 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                 >
                   <FilterRegular className="w-5 h-5 text-white" />
                 </button>
+                {images.length > 1 && (
+                  <button
+                    onClick={() => setShowReorderModal(true)}
+                    className="p-2 rounded-full bg-black/50 hover:bg-black/70"
+                  >
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </button>
+                )}
               </div>
 
               {/* Aspect Ratio Indicator */}
@@ -351,56 +414,6 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                 </div>
               )}
             </div>
-
-            {/* Image Thumbnails */}
-            {images.length > 1 && (
-              <motion.div className="flex gap-2 overflow-x-auto pb-2">
-                {images.map((img, idx) => (
-                  <motion.div
-                    key={img.preview}
-                    drag="x"
-                    dragConstraints={{ left: 0, right: 0 }}
-                    dragElastic={1}
-                    dragMomentum={false}
-                    onDragStart={() => setCurrentImageIndex(idx)}
-                    onDragEnd={(e, { offset }) => {
-                      const moveDistance = offset.x;
-                      const moveThreshold = 50; // minimum distance to trigger reorder
-                      
-                      if (Math.abs(moveDistance) >= moveThreshold) {
-                        const direction = moveDistance > 0 ? -1 : 1;
-                        const newIndex = Math.max(0, Math.min(images.length - 1, idx + direction));
-                        
-                        if (newIndex !== idx) {
-                          const newImages = [...images];
-                          const [movedImage] = newImages.splice(idx, 1);
-                          newImages.splice(newIndex, 0, movedImage);
-                          setImages(newImages);
-                          setCurrentImageIndex(newIndex);
-                        }
-                      }
-                    }}
-                    whileDrag={{
-                      scale: 1.1,
-                      zIndex: 1,
-                      boxShadow: "0px 5px 10px rgba(0,0,0,0.3)"
-                    }}
-                    className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden cursor-move
-                      ${currentImageIndex === idx ? 'ring-2 ring-pink-500' : ''}`}
-                  >
-                    <img
-                      src={img.preview}
-                      alt={`Thumbnail ${idx + 1}`}
-                      className="w-full h-full object-cover pointer-events-none"
-                      draggable={false}
-                    />
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                      <span className="text-white text-xs">Drag to reorder</span>
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
 
             {/* Caption and Details - Hidden during editing */}
             {!showCropper && !showImageEditor && !showFilters && (
@@ -477,29 +490,46 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
 
       {/* Filter Controls */}
       {showFilters && images.length > 0 && (
-        <div className="p-4 border-t border-white/10 space-y-3">
-          <div className="flex items-center gap-2">
-            <DarkThemeFilled className="w-5 h-5 text-white/70" />
-            <input
-              type="range"
-              min="0"
-              max="200"
-              value={images[currentImageIndex].filters.contrast}
-              onChange={(e) => handleFilterChange('contrast', e.target.value)}
-              className="flex-1"
-            />
+        <div className="p-4 border-t border-white/10">
+          {/* Selected Filter Name */}
+          <div className="text-center mb-4">
+            <span className="text-white/70">{selectedFilter}</span>
           </div>
           
-          <div className="flex items-center gap-2">
-            <ColorRegular className="w-5 h-5 text-white/70" />
-            <input
-              type="range"
-              min="0"
-              max="200"
-              value={images[currentImageIndex].filters.saturation}
-              onChange={(e) => handleFilterChange('saturation', e.target.value)}
-              className="flex-1"
-            />
+          {/* Filter Presets */}
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {Object.entries(FILTER_PRESETS).map(([name, filters]) => (
+              <button
+                key={name}
+                onClick={() => {
+                  setSelectedFilter(name);
+                  handleFilterChange(null, null, filters);
+                }}
+                className={`flex-shrink-0 flex flex-col items-center gap-2 ${
+                  selectedFilter === name ? 'opacity-100' : 'opacity-70'
+                }`}
+              >
+                <div className="w-16 h-16 rounded-lg overflow-hidden">
+                  <img
+                    src={images[currentImageIndex].preview}
+                    alt={`Preview with ${name} filter applied`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error('Error loading filter preview:', e);
+                    }}
+                    style={{
+                      filter: `
+                        brightness(${filters.brightness}%) 
+                        contrast(${filters.contrast}%) 
+                        saturate(${filters.saturation}%)
+                        blur(${filters.blur}px)
+                      `
+                    }}
+                  />
+                </div>
+                <span className="text-xs text-white/70">{name}</span>
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -522,6 +552,85 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
           </button>
         </div>
       </div>
+
+      {/* Reorder Modal */}
+      {showReorderModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-lg w-full max-w-md p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-white text-lg">Reorder Images</h3>
+              <button
+                onClick={() => setShowReorderModal(false)}
+                className="text-white/70 hover:text-white"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-2">
+              {images.map((img, idx) => (
+                <motion.div
+                  key={img.preview}
+                  drag
+                  dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+                  dragElastic={1}
+                  className={`relative aspect-square rounded-lg overflow-hidden cursor-move
+                    ${currentImageIndex === idx ? 'ring-2 ring-pink-500' : ''}`}
+                  onDragEnd={(e, { offset, velocity }) => {
+                    const moveThreshold = 50;
+                    if (Math.abs(offset.x) >= moveThreshold || Math.abs(offset.y) >= moveThreshold) {
+                      // Find the closest position based on mouse/touch position
+                      const element = e.target;
+                      const rect = element.getBoundingClientRect();
+                      const centerX = rect.x + rect.width / 2;
+                      const centerY = rect.y + rect.height / 2;
+                      
+                      // Find the element we're hovering over
+                      const elements = document.elementsFromPoint(centerX, centerY);
+                      const dropTarget = elements.find(el => 
+                        el !== element && el.getAttribute('data-image-index') !== null
+                      );
+                      
+                      if (dropTarget) {
+                        const newIndex = parseInt(dropTarget.getAttribute('data-image-index'));
+                        if (newIndex !== idx) {
+                          const newImages = [...images];
+                          const [movedImage] = newImages.splice(idx, 1);
+                          newImages.splice(newIndex, 0, movedImage);
+                          setImages(newImages);
+                          setCurrentImageIndex(newIndex);
+                        }
+                      }
+                    }
+                  }}
+                  data-image-index={idx}
+                >
+                  <img
+                    src={img.preview}
+                    alt={`Preview of uploaded post ${idx + 1} - Click and drag to reorder`}
+                    className="w-full h-full object-cover pointer-events-none"
+                    onError={(e) => {
+                      console.error('Error loading thumbnail:', e);
+                    }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity">
+                    <span className="text-white text-sm">#{idx + 1}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowReorderModal(false)}
+              className="w-full mt-4 py-2 rounded-lg bg-pink-500 hover:bg-pink-600 text-white"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
