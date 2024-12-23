@@ -8,7 +8,7 @@ import {
   SearchRegular,
   AddCircleRegular,
   HeartRegular,
-  PersonRegular
+  ChatRegular
 } from '@fluentui/react-icons';
 
 const MobileNav = ({ onPostCreatorClick }) => {
@@ -27,7 +27,7 @@ const MobileNav = ({ onPostCreatorClick }) => {
             <HomeFilled className="w-6 h-6" />
           </button>
           <button 
-            onClick={() => navigate('/explore')}
+            onClick={() => navigate('/explorenew')}
             className={`${theme === 'dark-theme' ? 'text-white' : 'text-gray-700'} hover:text-[#ae52e3] transition-colors`}
           >
             <SearchRegular className="w-6 h-6" />
@@ -50,10 +50,10 @@ const MobileNav = ({ onPostCreatorClick }) => {
             )}
           </button>
           <button 
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate('/chat')}
             className={`${theme === 'dark-theme' ? 'text-white' : 'text-gray-700'} hover:text-[#ae52e3] transition-colors`}
           >
-            <PersonRegular className="w-6 h-6" />
+            <ChatRegular className="w-6 h-6" />
           </button>
         </div>
       {showMobileNotifications && (
