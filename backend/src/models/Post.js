@@ -44,7 +44,7 @@ const postSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
-  // New optimized media structure
+  // Media structure supporting both single and multiple items
   media: {
     type: {
       type: String,
@@ -63,12 +63,33 @@ const postSchema = new mongoose.Schema({
       format: String,
       size: Number
     },
-    placeholder: String, // Base64 blur placeholder
+    placeholder: String,
     legacy: {
-      url: String, // Original media URL (for backward compatibility)
-      key: String  // Original S3 key (for backward compatibility)
+      url: String,
+      key: String
     }
   },
+  // New field for multiple media items
+  mediaItems: [{
+    type: {
+      type: String,
+      enum: ['image', 'video'],
+      default: 'image'
+    },
+    variants: {
+      thumbnail: imageVariantSchema,
+      small: imageVariantSchema,
+      medium: imageVariantSchema,
+      large: imageVariantSchema
+    },
+    metadata: {
+      originalWidth: Number,
+      originalHeight: Number,
+      format: String,
+      size: Number
+    },
+    placeholder: String
+  }],
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -97,28 +118,58 @@ postSchema.virtual('likeCount').get(function() {
   return this.likes ? this.likes.length : 0;
 });
 
-// Helper method to get the best image URL based on size and format
-postSchema.methods.getImageUrl = function(size = 'medium', preferWebP = true) {
-  if (!this.media || !this.media.variants) {
-    return this.media?.legacy?.url || null;
+// Helper method to get image URLs for a specific media item
+postSchema.methods.getImageUrl = function(index = 0, size = 'medium', preferWebP = true) {
+  // Handle legacy single media
+  if (index === 0 && (!this.mediaItems || this.mediaItems.length === 0)) {
+    if (!this.media || !this.media.variants) {
+      return this.media?.legacy?.url || null;
+    }
+    const variant = this.media.variants[size] || this.media.variants.medium;
+    if (!variant) {
+      return this.media.legacy?.url || null;
+    }
+    return preferWebP ? variant.urls.webp : variant.urls.jpeg;
   }
 
-  const variant = this.media.variants[size] || this.media.variants.medium;
+  // Handle media items array
+  if (!this.mediaItems || !this.mediaItems[index]) {
+    return null;
+  }
+
+  const mediaItem = this.mediaItems[index];
+  const variant = mediaItem.variants[size] || mediaItem.variants.medium;
   if (!variant) {
-    return this.media.legacy?.url || null;
+    return null;
   }
 
   return preferWebP ? variant.urls.webp : variant.urls.jpeg;
 };
 
 // Helper method to get srcset for responsive images
-postSchema.methods.getImageSrcset = function(preferWebP = true) {
-  if (!this.media || !this.media.variants) {
+postSchema.methods.getImageSrcset = function(index = 0, preferWebP = true) {
+  // Handle legacy single media
+  if (index === 0 && (!this.mediaItems || this.mediaItems.length === 0)) {
+    if (!this.media || !this.media.variants) {
+      return '';
+    }
+    const format = preferWebP ? 'webp' : 'jpeg';
+    return Object.entries(this.media.variants)
+      .map(([size, variant]) => {
+        if (!variant.urls[format]) return '';
+        return `${variant.urls[format]} ${variant.dimensions.width}w`;
+      })
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  // Handle media items array
+  if (!this.mediaItems || !this.mediaItems[index]) {
     return '';
   }
 
   const format = preferWebP ? 'webp' : 'jpeg';
-  return Object.entries(this.media.variants)
+  return Object.entries(this.mediaItems[index].variants)
     .map(([size, variant]) => {
       if (!variant.urls[format]) return '';
       return `${variant.urls[format]} ${variant.dimensions.width}w`;

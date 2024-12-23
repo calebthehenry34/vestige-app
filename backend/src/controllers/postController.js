@@ -65,7 +65,6 @@ const processPostsWithPresignedUrls = async (posts) => {
         }
       } catch (error) {
         console.error('Error processing legacy post:', error);
-        // Keep the original media URL as fallback
         postObj.media = {
           type: 'image',
           legacy: {
@@ -76,16 +75,27 @@ const processPostsWithPresignedUrls = async (posts) => {
       }
     }
     // Handle new format posts (with variants)
-    else if (postObj.media?.variants && isS3Available()) {
+    else if ((postObj.media?.variants || postObj.mediaItems) && isS3Available()) {
       try {
-        // No need to generate pre-signed URLs as they're now handled by the S3UploadService
-        // Just ensure the post object structure is correct
-        postObj.media = {
-          type: postObj.media.type || 'image',
-          variants: postObj.media.variants,
-          metadata: postObj.media.metadata,
-          placeholder: postObj.media.placeholder
-        };
+        // Handle single media
+        if (postObj.media?.variants) {
+          postObj.media = {
+            type: postObj.media.type || 'image',
+            variants: postObj.media.variants,
+            metadata: postObj.media.metadata,
+            placeholder: postObj.media.placeholder
+          };
+        }
+        
+        // Handle multiple media items
+        if (postObj.mediaItems) {
+          postObj.mediaItems = postObj.mediaItems.map(item => ({
+            type: item.type || 'image',
+            variants: item.variants,
+            metadata: item.metadata,
+            placeholder: item.placeholder
+          }));
+        }
       } catch (error) {
         console.error('Error processing post with variants:', error);
       }
@@ -314,6 +324,9 @@ export const getSinglePost = async (req, res) => {
   }
 };
 
+// Import the createMultiImagePost function
+export { createMultiImagePost } from './createMultiImagePost.js';
+
 export const createPost = async (req, res) => {
   try {
     if (!req.file || !req.file.buffer) {
@@ -471,22 +484,99 @@ export const deletePost = async (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    if (post.mediaKey) {
-      try {
-        if (isS3Available()) {
+    // Delete media files
+    try {
+      if (isS3Available()) {
+        // Delete legacy media
+        if (post.mediaKey) {
           await s3.send(new DeleteObjectCommand({
             Bucket: getS3BucketName(),
             Key: post.mediaKey
           }));
-        } else {
+        }
+
+        // Delete media variants
+        if (post.media?.variants) {
+          for (const variant of Object.values(post.media.variants)) {
+            if (variant.urls?.webp) {
+              await s3.send(new DeleteObjectCommand({
+                Bucket: getS3BucketName(),
+                Key: variant.urls.webp
+              }));
+            }
+            if (variant.urls?.jpeg) {
+              await s3.send(new DeleteObjectCommand({
+                Bucket: getS3BucketName(),
+                Key: variant.urls.jpeg
+              }));
+            }
+          }
+        }
+
+        // Delete multiple media items
+        if (post.mediaItems) {
+          for (const mediaItem of post.mediaItems) {
+            for (const variant of Object.values(mediaItem.variants)) {
+              if (variant.urls?.webp) {
+                await s3.send(new DeleteObjectCommand({
+                  Bucket: getS3BucketName(),
+                  Key: variant.urls.webp
+                }));
+              }
+              if (variant.urls?.jpeg) {
+                await s3.send(new DeleteObjectCommand({
+                  Bucket: getS3BucketName(),
+                  Key: variant.urls.jpeg
+                }));
+              }
+            }
+          }
+        }
+      } else {
+        // Delete local files
+        if (post.mediaKey) {
           const filePath = path.join(process.cwd(), 'uploads', post.mediaKey);
           if (fs.existsSync(filePath)) {
             await fs.promises.unlink(filePath);
           }
         }
-      } catch (deleteError) {
-        console.error('Error deleting media:', deleteError);
+        if (post.media?.variants) {
+          for (const variant of Object.values(post.media.variants)) {
+            if (variant.urls?.webp) {
+              const filePath = path.join(process.cwd(), 'uploads', variant.urls.webp);
+              if (fs.existsSync(filePath)) {
+                await fs.promises.unlink(filePath);
+              }
+            }
+            if (variant.urls?.jpeg) {
+              const filePath = path.join(process.cwd(), 'uploads', variant.urls.jpeg);
+              if (fs.existsSync(filePath)) {
+                await fs.promises.unlink(filePath);
+              }
+            }
+          }
+        }
+        if (post.mediaItems) {
+          for (const mediaItem of post.mediaItems) {
+            for (const variant of Object.values(mediaItem.variants)) {
+              if (variant.urls?.webp) {
+                const filePath = path.join(process.cwd(), 'uploads', variant.urls.webp);
+                if (fs.existsSync(filePath)) {
+                  await fs.promises.unlink(filePath);
+                }
+              }
+              if (variant.urls?.jpeg) {
+                const filePath = path.join(process.cwd(), 'uploads', variant.urls.jpeg);
+                if (fs.existsSync(filePath)) {
+                  await fs.promises.unlink(filePath);
+                }
+              }
+            }
+          }
+        }
       }
+    } catch (deleteError) {
+      console.error('Error deleting media:', deleteError);
     }
 
     await post.deleteOne();
@@ -838,6 +928,7 @@ export const likeComment = async (req, res) => {
 export const getPostMedia = async (req, res) => {
   try {
     const { postId } = req.params;
+    const { index = 0 } = req.query;
     
     if (!mongoose.Types.ObjectId.isValid(postId)) {
       return res.status(400).json({ error: 'Invalid post ID format' });
@@ -848,7 +939,26 @@ export const getPostMedia = async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    // Handle new media structure with variants
+    // Handle multiple media items
+    if (post.mediaItems && post.mediaItems[index]) {
+      const mediaItem = post.mediaItems[index];
+      if (mediaItem.variants?.large) {
+        // If CDN URL is available, redirect to it
+        if (mediaItem.variants.large.cdnUrl) {
+          return res.redirect(mediaItem.variants.large.cdnUrl);
+        }
+        // Use WebP or JPEG URL
+        const url = mediaItem.variants.large.urls?.webp || mediaItem.variants.large.urls?.jpeg;
+        if (url) {
+          if (url.startsWith('http')) {
+            return res.redirect(url);
+          }
+          return res.redirect(`${process.env.API_URL}/uploads/${url}`);
+        }
+      }
+    }
+
+    // Handle single media (legacy support)
     if (post.media?.variants && post.media.variants.large) {
       // If CDN URL is available, redirect to it
       if (post.media.variants.large.cdnUrl) {
