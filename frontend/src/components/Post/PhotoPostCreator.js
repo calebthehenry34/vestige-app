@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { 
   getProfileImageUrl, 
@@ -16,6 +16,9 @@ import { useDropzone } from 'react-dropzone';
 import Cropper from 'react-easy-crop';
 import { debounce } from 'lodash';
 
+
+
+
 const PhotoPostCreator = ({ onBack, onPublish, user }) => {
   // Add profile section above the upload area
   const renderProfileSection = () => (
@@ -31,7 +34,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
       <span className="text-white/70">{user?.username || 'user'}</span>
     </div>
   );
-
+  
   const [images, setImages] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [caption, setCaption] = useState('');
@@ -52,7 +55,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
     Normal: { brightness: 100, contrast: 100, saturation: 100, vibrance: 100, clarity: 100, exposure: 100, highlights: 100, shadows: 100, blur: 0 },
     Clarendon: { brightness: 110, contrast: 130, saturation: 120, vibrance: 110, clarity: 110, exposure: 105, highlights: 110, shadows: 90, blur: 0 },
     Gingham: { brightness: 105, contrast: 90, saturation: 95, vibrance: 95, clarity: 95, exposure: 100, highlights: 95, shadows: 105, blur: 0 },
-    Moon: { brightness: 95, contrast: 95, saturation: 0, vibrance: 0, clarity: 110, exposure: 95, highlights: 90, shadows: 110, blur: 0 },
+    Moon: { brightness: 95, contrast: 95, saturation: 100, vibrance: 100, clarity: 110, exposure: 95, highlights: 90, shadows: 110, blur: 0 },
     Lark: { brightness: 105, contrast: 95, saturation: 110, vibrance: 110, clarity: 100, exposure: 105, highlights: 105, shadows: 100, blur: 0 },
     Reyes: { brightness: 110, contrast: 85, saturation: 80, vibrance: 85, clarity: 90, exposure: 95, highlights: 90, shadows: 105, blur: 0 },
     Juno: { brightness: 105, contrast: 115, saturation: 115, vibrance: 110, clarity: 105, exposure: 100, highlights: 105, shadows: 95, blur: 0 }
@@ -163,7 +166,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
     }
   };
 
-  const handleFilterChange = (type, value, preset = null) => {
+  const handleFilterChange = useCallback((type, value, preset = null) => {
     if (preset) {
       setImageFilters(preset);
       setImages(prev => prev.map((img, idx) => 
@@ -173,24 +176,20 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
       ));
       return;
     }
-
-    // Convert the -100 to 100 range to 0 to 200 range
+  
     const adjustedValue = Number(value) + 100;
-    
     const newFilters = {
       ...imageFilters,
       [type]: adjustedValue
     };
     
     setImageFilters(newFilters);
-    
-    // Update current image's filters
     setImages(prev => prev.map((img, idx) => 
       idx === currentImageIndex 
         ? { ...img, filters: newFilters }
         : img
     ));
-  };
+  }, [currentImageIndex, imageFilters]);
 
   // Format caption with links
   const formatCaption = (text) => {
@@ -293,7 +292,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
             {/* Current Image */}
             <div className={`relative rounded-lg overflow-hidden bg-black flex items-center justify-center`} style={{ 
               height: images[currentImageIndex] && Math.abs(images[currentImageIndex].aspectRatio - 0.5625) < 0.01 
-                ? `min(${Math.round(window.innerWidth * 2.667)}px, calc(90vh - 100px))` // 9:16 ratio (1.778 * 1.5 = 2.667)
+              ? `min(${Math.round(window.innerWidth * 3.334)}px, calc(90vh - 100px))` // 9:16 ratio (increased by 25%
                 : images[currentImageIndex]?.aspectRatio > 0.5625
                   ? `min(${Math.round(window.innerWidth * (images[currentImageIndex].aspectRatio || 1))}px, calc(90vh - 300px))`
                   : `min(${Math.round(window.innerWidth * 0.5625)}px, calc(180vh - 300px))`,
@@ -303,16 +302,33 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
               {showCropper ? (
                 <>
                   {/* Close button for crop menu */}
-                  <div className="absolute top-4 right-4 z-50">
-                    <button
-                      onClick={() => setShowCropper(false)}
-                      className="p-2 rounded-full bg-black/50 hover:bg-black/70"
-                    >
-                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
+                  <div className="absolute top-4 right-4 z-50 flex gap-2">
+  <button
+    onClick={() => {
+      setShowCropper(false);
+    }}
+    className="p-2 rounded-full bg-green-500/50 hover:bg-green-500/70"
+  >
+    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  </button>
+  <button
+    onClick={() => {
+      setImages(prev => prev.map((img, idx) => 
+        idx === currentImageIndex 
+          ? { ...img, crop: { x: 0, y: 0 }, zoom: 1 }
+          : img
+      ));
+      setShowCropper(false);
+    }}
+    className="p-2 rounded-full bg-black/50 hover:bg-black/70"
+  >
+    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  </button>
+</div>
                   <Cropper
                     image={images[currentImageIndex].preview}
                     crop={images[currentImageIndex].crop}
@@ -406,38 +422,58 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
               
               {/* Swipeable Image Container with Animations */}
               {images.length > 1 && (
-                <motion.div
-                  drag="x"
-                  dragConstraints={{ left: 0, right: 0 }}
-                  dragElastic={0.2}
-                  onDragEnd={(e, { offset, velocity }) => {
-                    const swipe = offset.x;
-                    if (Math.abs(swipe) > 50) {
-                      if (swipe > 0 && currentImageIndex > 0) {
-                        setCurrentImageIndex(prev => prev - 1);
-                      } else if (swipe < 0 && currentImageIndex < images.length - 1) {
-                        setCurrentImageIndex(prev => prev + 1);
-                      }
-                    }
-                  }}
-                  className="absolute inset-0"
-                  initial={false}
-                  animate={{
-                    x: 0,
-                    opacity: 1,
-                    transition: {
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 30
-                    }
-                  }}
-                  exit={{
-                    opacity: 0,
-                    transition: {
-                      duration: 0.2
-                    }
-                  }}
-                />
+                <div className="flex gap-2">
+                  {images.map((img, idx) => (
+                    <motion.div
+                      key={img.preview}
+                      drag
+                      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+                      dragElastic={1}
+                      className={`relative aspect-square rounded-lg overflow-hidden cursor-move
+                        ${currentImageIndex === idx ? 'ring-2 ring-pink-500' : ''}`}
+                      whileDrag={{
+                        scale: 1.1,
+                        zIndex: 50,
+                        transition: { duration: 0.2 }
+                      }}
+                      onDragEnd={(e) => {
+                        const element = e.target;
+                        const rect = element.getBoundingClientRect();
+                        const centerX = rect.x + rect.width / 2;
+                        const centerY = rect.y + rect.height / 2;
+                        
+                        const elements = document.elementsFromPoint(centerX, centerY);
+                        const dropTarget = elements.find(el => 
+                          el !== element && el.getAttribute('data-image-index') !== null
+                        );
+                        
+                        if (dropTarget) {
+                          const newIndex = parseInt(dropTarget.getAttribute('data-image-index'));
+                          if (newIndex !== idx) {
+                            const newImages = [...images];
+                            const [movedImage] = newImages.splice(idx, 1);
+                            newImages.splice(newIndex, 0, movedImage);
+                            setImages(newImages);
+                            setCurrentImageIndex(newIndex);
+                          }
+                        }
+                      }}
+                      data-image-index={idx}
+                    >
+                      <img
+                        src={img.preview}
+                        alt={`Preview of uploaded post ${idx + 1} - Click and drag to reorder`}
+                        className="w-full h-full object-cover pointer-events-none"
+                        onError={(e) => {
+                          console.error('Error loading thumbnail:', e);
+                        }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity">
+                        <span className="text-white text-sm">#{idx + 1}</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               )}
 
               {/* Slide Indicators */}
@@ -479,9 +515,9 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
 
             {/* Menu Icons and Aspect Ratio */}
             <div className="flex items-center justify-between bg-white/5 rounded-lg p-4 mt-4">
-              <div className="text-white/70 text-sm">
-                Aspect Ratio: {images[currentImageIndex]?.aspectRatio || defaultAspectRatio}
-              </div>
+              {images[currentImageIndex] && Math.abs(images[currentImageIndex].aspectRatio - 0.5625) < 0.01 && (
+                <div className="text-white/70 text-sm">9x16</div>
+              )}
               <div className="flex gap-2">
                 <button
                   onClick={() => {
@@ -598,7 +634,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
           </div>
 
           {/* Scrollable Icons */}
-          <div className="flex overflow-x-auto gap-6 py-4 px-2">
+          <div className="flex gap-6 py-4 px-2">
             {[
               { name: 'brightness', icon: <BrightnessHighRegular className="w-6 h-6" /> },
               { name: 'contrast', icon: (
@@ -704,7 +740,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
           </div>
           
           {/* Filter Presets */}
-          <div className="flex gap-4 overflow-x-auto pb-4">
+          <div className="flex gap-4    pb-4">
             {Object.entries(FILTER_PRESETS).map(([name, filters]) => (
               <button
                 key={name}
@@ -744,6 +780,8 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
           </div>
         </div>
       )}
+
+      
 
       {/* Action Buttons */}
       <div className="p-4 border-t border-white/10">
