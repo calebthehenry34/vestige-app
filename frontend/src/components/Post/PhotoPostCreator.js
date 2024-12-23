@@ -202,6 +202,8 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
 
   const handlePublish = async () => {
     // Process images with filters and crops before publishing
+    // Use first image's aspect ratio for consistency
+    const firstImageAspectRatio = images[0].aspectRatio;
     const processedImages = await Promise.all(images.map(async (img, index) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -212,20 +214,21 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
         image.src = img.preview;
       });
 
-      // Get aspect ratio dimensions
-      const { width: aspectWidth, height: aspectHeight } = getAspectRatioDimensions(img.aspectRatio);
+      // Get dimensions based on first image's aspect ratio
+      const { width: aspectWidth, height: aspectHeight } = getAspectRatioDimensions(firstImageAspectRatio);
       const aspectRatio = aspectWidth / aspectHeight;
       
-      // Calculate dimensions to maintain aspect ratio
-      let targetWidth = image.width;
-      let targetHeight = image.height;
+      // Calculate dimensions to maintain first image's aspect ratio
       const currentRatio = image.width / image.height;
+      let targetWidth, targetHeight;
       
       if (currentRatio > aspectRatio) {
         // Image is wider than target ratio
+        targetHeight = image.height;
         targetWidth = targetHeight * aspectRatio;
       } else {
         // Image is taller than target ratio
+        targetWidth = image.width;
         targetHeight = targetWidth / aspectRatio;
       }
       
@@ -310,7 +313,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                   crop={images[currentImageIndex].crop}
                   zoom={images[currentImageIndex].zoom}
                   aspect={(() => {
-                    const { width, height } = getAspectRatioDimensions(images[currentImageIndex].aspectRatio);
+                    const { width, height } = getAspectRatioDimensions(images[0].aspectRatio);
                     return width / height;
                   })()}
                   onCropChange={(newCrop) => {
@@ -331,11 +334,16 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                     width: 800,
                     height: 600
                   }}
+                  objectFit="contain"
+                  showGrid={true}
                   style={{
                     containerStyle: {
                       width: '100%',
                       height: '100%',
                       backgroundColor: 'black'
+                    },
+                    cropAreaStyle: {
+                      border: '2px solid #fff'
                     }
                   }}
                 />
@@ -420,9 +428,9 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                 />
               )}
 
-              {/* Slide Indicators with connecting lines */}
+              {/* Slide Indicators with connecting lines - Moved to top */}
               {images.length > 1 && (
-                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex items-center">
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center z-10">
                   {images.map((_, idx) => (
                     <React.Fragment key={idx}>
                       {idx > 0 && (
@@ -467,8 +475,8 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
               )}
 
 
-              {/* Editor Controls */}
-              <div className="absolute bottom-4 right-4 flex gap-2 z-10">
+              {/* Editor Controls - Adjusted z-index */}
+              <div className="absolute bottom-4 right-4 flex gap-2 z-20">
                 <button
                   onClick={() => {
                     setShowCropper(false);
@@ -767,18 +775,10 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
       <div className="p-4 border-t border-white/10">
         <div className="flex gap-2">
           <button
-            onClick={() => {
-              if (showImageEditor || showCropper || showFilters) {
-                setShowImageEditor(false);
-                setShowCropper(false);
-                setShowFilters(false);
-              } else {
-                onBack();
-              }
-            }}
+            onClick={onBack}
             className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10"
           >
-            Back
+            Cancel
           </button>
           <button
             onClick={handlePublish}
