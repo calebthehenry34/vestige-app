@@ -290,9 +290,9 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
           // Image Preview and Editor
           <div className="space-y-4">
             {/* Current Image */}
-            <div className="relative rounded-lg overflow-hidden bg-black" style={{ 
-              minHeight: '400px',
-              maxHeight: '700px'
+            <div className="relative rounded-lg overflow-hidden bg-black flex items-center justify-center" style={{ 
+              height: '600px',
+              maxWidth: '100%'
             }}>
               {/* Overlay to close menus when clicking outside */}
               {(showImageEditor || showCropper || showFilters) && (
@@ -308,54 +308,70 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
               )}
 
               {showCropper ? (
-                <Cropper
-                  image={images[currentImageIndex].preview}
-                  crop={images[currentImageIndex].crop}
-                  zoom={images[currentImageIndex].zoom}
-                  aspect={(() => {
-                    const { width, height } = getAspectRatioDimensions(images[0].aspectRatio);
-                    return width / height;
-                  })()}
-                  onCropChange={(newCrop) => {
-                    setImages(prev => prev.map((img, idx) => 
-                      idx === currentImageIndex 
-                        ? { ...img, crop: newCrop }
-                        : img
-                    ));
-                  }}
-                  onZoomChange={(newZoom) => {
-                    setImages(prev => prev.map((img, idx) => 
-                      idx === currentImageIndex 
-                        ? { ...img, zoom: newZoom }
-                        : img
-                    ));
-                  }}
-                  cropSize={{
-                    width: 800,
-                    height: 600
-                  }}
-                  objectFit="contain"
-                  showGrid={true}
-                  style={{
-                    containerStyle: {
-                      width: '100%',
-                      height: '100%',
-                      backgroundColor: 'black'
-                    },
-                    cropAreaStyle: {
-                      border: '2px solid #fff'
-                    }
-                  }}
-                />
+                <>
+                  {/* Close button for crop menu */}
+                  <div className="absolute top-4 right-4 z-50">
+                    <button
+                      onClick={() => setShowCropper(false)}
+                      className="p-2 rounded-full bg-black/50 hover:bg-black/70"
+                    >
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <Cropper
+                    image={images[currentImageIndex].preview}
+                    crop={images[currentImageIndex].crop}
+                    zoom={images[currentImageIndex].zoom}
+                    aspect={(() => {
+                      const { width, height } = getAspectRatioDimensions(images[0].aspectRatio);
+                      return width / height;
+                    })()}
+                    onCropChange={(newCrop) => {
+                      setImages(prev => prev.map((img, idx) => 
+                        idx === currentImageIndex 
+                          ? { ...img, crop: newCrop }
+                          : img
+                      ));
+                    }}
+                    onZoomChange={(newZoom) => {
+                      setImages(prev => prev.map((img, idx) => 
+                        idx === currentImageIndex 
+                          ? { ...img, zoom: newZoom }
+                          : img
+                      ));
+                    }}
+                    cropSize={{
+                      width: 800,
+                      height: 600
+                    }}
+                    objectFit="contain"
+                    showGrid={true}
+                    style={{
+                      containerStyle: {
+                        width: '100%',
+                        height: '600px',
+                        backgroundColor: 'black',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      },
+                      cropAreaStyle: {
+                        border: '2px solid #fff'
+                      }
+                    }}
+                  />
+                </>
               ) : showImageEditor ? (
-                <div className="relative w-full h-full">
+                <div className="relative w-full h-full flex items-center justify-center">
                   <img
                     src={images[currentImageIndex].preview}
                     alt={`Preview ${currentImageIndex + 1}`}
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      console.error('Error loading image:', e);
-                    }}
+                  className="max-w-full max-h-full object-contain"
+                  onError={(e) => {
+                    console.error('Error loading image:', e);
+                  }}
                     style={{
                       filter: `
                         brightness(${images[currentImageIndex].filters.brightness}%) 
@@ -375,7 +391,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                 <img
                   src={images[currentImageIndex].preview}
                   alt={`Preview ${currentImageIndex + 1}`}
-                  className="w-full h-full object-contain"
+                  className="max-w-full max-h-full object-contain"
                   style={{
                     filter: `
                       brightness(${images[currentImageIndex].filters.brightness}%) 
@@ -591,6 +607,17 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
       {/* Adjustment Controls */}
       {showImageEditor && images.length > 0 && (
         <div className="p-4 border-t border-white/10 space-y-3">
+          {/* Close button */}
+          <div className="flex justify-end">
+            <button
+              onClick={() => setShowImageEditor(false)}
+              className="p-2 rounded-full hover:bg-white/10"
+            >
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
           {/* Brightness */}
           <div className="flex items-center gap-2">
             <BrightnessHighRegular className="w-5 h-5 text-white/70" />
@@ -724,6 +751,17 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
       {/* Filter Controls */}
       {showFilters && images.length > 0 && (
         <div className="p-4 border-t border-white/10">
+          {/* Close button */}
+          <div className="flex justify-end mb-2">
+            <button
+              onClick={() => setShowFilters(false)}
+              className="p-2 rounded-full hover:bg-white/10"
+            >
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
           {/* Selected Filter Name */}
           <div className="text-center mb-4">
             <span className="text-white/70">{selectedFilter}</span>
