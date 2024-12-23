@@ -203,6 +203,73 @@ export const getProfileImageUrl = (user) => {
   return `https://ui-avatars.com/api/?name=${user.username || 'user'}&background=random`;
 };
 
+// Aspect ratio constants
+export const ASPECT_RATIOS = {
+  LANDSCAPE: '16:9',
+  PORTRAIT: '4:5',
+  VERTICAL: '9:16'
+};
+
+// Calculate aspect ratio from dimensions
+const calculateAspectRatio = (width, height) => {
+  return width / height;
+};
+
+// Detect closest aspect ratio
+export const detectAspectRatio = (width, height) => {
+  const ratio = calculateAspectRatio(width, height);
+  
+  // Define target ratios
+  const ratios = {
+    [ASPECT_RATIOS.LANDSCAPE]: 16/9,  // 1.77778
+    [ASPECT_RATIOS.PORTRAIT]: 4/5,    // 0.8
+    [ASPECT_RATIOS.VERTICAL]: 9/16    // 0.5625
+  };
+
+  // Find the closest ratio
+  let closestRatio = ASPECT_RATIOS.PORTRAIT; // default
+  let minDiff = Math.abs(ratio - ratios[ASPECT_RATIOS.PORTRAIT]);
+
+  Object.entries(ratios).forEach(([name, value]) => {
+    const diff = Math.abs(ratio - value);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closestRatio = name;
+    }
+  });
+
+  return closestRatio;
+};
+
+// Get dimensions from image file
+export const getImageDimensions = (file) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({
+        width: img.width,
+        height: img.height,
+        aspectRatio: detectAspectRatio(img.width, img.height)
+      });
+    };
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+// Get aspect ratio dimensions
+export const getAspectRatioDimensions = (aspectRatio) => {
+  switch (aspectRatio) {
+    case ASPECT_RATIOS.LANDSCAPE:
+      return { width: 16, height: 9 };
+    case ASPECT_RATIOS.PORTRAIT:
+      return { width: 4, height: 5 };
+    case ASPECT_RATIOS.VERTICAL:
+      return { width: 9, height: 16 };
+    default:
+      return { width: 4, height: 5 }; // default to 4:5
+  }
+};
+
 // Create optimized image component props
 export const createImageProps = (imageUrls, alt, defaultSize = 'medium') => {
   return {
