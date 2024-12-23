@@ -40,8 +40,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
   const [showCropper, setShowCropper] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showReorderModal, setShowReorderModal] = useState(false);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
+  // Remove global crop/zoom state since each image will have its own
   const [defaultAspectRatio, setDefaultAspectRatio] = useState(null);
   const [userSuggestions, setUserSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -49,22 +48,17 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
   const captionRef = useRef(null);
   // Define Instagram-like filter presets
   const FILTER_PRESETS = {
-    Normal: { brightness: 100, contrast: 100, saturation: 100, blur: 0 },
-    Clarendon: { brightness: 110, contrast: 130, saturation: 120, blur: 0 },
-    Gingham: { brightness: 105, contrast: 90, saturation: 95, blur: 0 },
-    Moon: { brightness: 95, contrast: 95, saturation: 0, blur: 0 },
-    Lark: { brightness: 105, contrast: 95, saturation: 110, blur: 0 },
-    Reyes: { brightness: 110, contrast: 85, saturation: 80, blur: 0 },
-    Juno: { brightness: 105, contrast: 115, saturation: 115, blur: 0 },
-    Slumber: { brightness: 95, contrast: 90, saturation: 80, blur: 0 },
-    Crema: { brightness: 105, contrast: 95, saturation: 90, blur: 0 },
-    Ludwig: { brightness: 105, contrast: 105, saturation: 95, blur: 0 },
-    Aden: { brightness: 95, contrast: 90, saturation: 85, blur: 0 },
-    Perpetua: { brightness: 100, contrast: 110, saturation: 105, blur: 0 }
+    Normal: { brightness: 100, contrast: 100, saturation: 100, vibrance: 100, clarity: 100, exposure: 100, highlights: 100, shadows: 100, blur: 0 },
+    Clarendon: { brightness: 110, contrast: 130, saturation: 120, vibrance: 110, clarity: 110, exposure: 105, highlights: 110, shadows: 90, blur: 0 },
+    Gingham: { brightness: 105, contrast: 90, saturation: 95, vibrance: 95, clarity: 95, exposure: 100, highlights: 95, shadows: 105, blur: 0 },
+    Moon: { brightness: 95, contrast: 95, saturation: 0, vibrance: 0, clarity: 110, exposure: 95, highlights: 90, shadows: 110, blur: 0 },
+    Lark: { brightness: 105, contrast: 95, saturation: 110, vibrance: 110, clarity: 100, exposure: 105, highlights: 105, shadows: 100, blur: 0 },
+    Reyes: { brightness: 110, contrast: 85, saturation: 80, vibrance: 85, clarity: 90, exposure: 95, highlights: 90, shadows: 105, blur: 0 },
+    Juno: { brightness: 105, contrast: 115, saturation: 115, vibrance: 110, clarity: 105, exposure: 100, highlights: 105, shadows: 95, blur: 0 }
   };
 
-  const [imageFilters, setImageFilters] = useState(FILTER_PRESETS.Normal);
   const [selectedFilter, setSelectedFilter] = useState('Normal');
+  const [imageFilters, setImageFilters] = useState(FILTER_PRESETS.Normal);
 
   // Function to fetch user suggestions
   const fetchUserSuggestions = async (query) => {
@@ -101,7 +95,9 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
             preview: URL.createObjectURL(file),
             filters: { ...imageFilters },
             aspectRatio: dimensions.aspectRatio,
-            originalAspectRatio: dimensions.aspectRatio
+            originalAspectRatio: dimensions.aspectRatio,
+            crop: { x: 0, y: 0 },
+            zoom: 1
           };
         })
       );
@@ -167,9 +163,22 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
   };
 
   const handleFilterChange = (type, value, preset = null) => {
-    const newFilters = preset || {
+    if (preset) {
+      setImageFilters(preset);
+      setImages(prev => prev.map((img, idx) => 
+        idx === currentImageIndex 
+          ? { ...img, filters: preset }
+          : img
+      ));
+      return;
+    }
+
+    // Convert the -100 to 100 range to 0 to 200 range
+    const adjustedValue = Number(value) + 100;
+    
+    const newFilters = {
       ...imageFilters,
-      [type]: value
+      [type]: adjustedValue
     };
     
     setImageFilters(newFilters);
@@ -228,6 +237,11 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
         brightness(${img.filters.brightness}%) 
         contrast(${img.filters.contrast}%) 
         saturate(${img.filters.saturation}%)
+        opacity(${img.filters.vibrance}%)
+        sepia(${img.filters.clarity - 100}%)
+        brightness(${img.filters.exposure}%)
+        brightness(${img.filters.highlights}%)
+        brightness(${img.filters.shadows}%)
         blur(${img.filters.blur}px)
       `;
       
@@ -274,8 +288,8 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
           <div className="space-y-4">
             {/* Current Image */}
             <div className="relative rounded-lg overflow-hidden bg-black" style={{ 
-              minHeight: '300px',
-              maxHeight: '600px'
+              minHeight: '400px',
+              maxHeight: '700px'
             }}>
               {/* Overlay to close menus when clicking outside */}
               {(showImageEditor || showCropper || showFilters) && (
@@ -293,14 +307,37 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
               {showCropper ? (
                 <Cropper
                   image={images[currentImageIndex].preview}
-                  crop={crop}
-                  zoom={zoom}
+                  crop={images[currentImageIndex].crop}
+                  zoom={images[currentImageIndex].zoom}
                   aspect={(() => {
                     const { width, height } = getAspectRatioDimensions(images[currentImageIndex].aspectRatio);
                     return width / height;
                   })()}
-                  onCropChange={setCrop}
-                  onZoomChange={setZoom}
+                  onCropChange={(newCrop) => {
+                    setImages(prev => prev.map((img, idx) => 
+                      idx === currentImageIndex 
+                        ? { ...img, crop: newCrop }
+                        : img
+                    ));
+                  }}
+                  onZoomChange={(newZoom) => {
+                    setImages(prev => prev.map((img, idx) => 
+                      idx === currentImageIndex 
+                        ? { ...img, zoom: newZoom }
+                        : img
+                    ));
+                  }}
+                  cropSize={{
+                    width: 800,
+                    height: 600
+                  }}
+                  style={{
+                    containerStyle: {
+                      width: '100%',
+                      height: '100%',
+                      backgroundColor: 'black'
+                    }
+                  }}
                 />
               ) : showImageEditor ? (
                 <div className="relative w-full h-full">
@@ -316,6 +353,11 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                         brightness(${images[currentImageIndex].filters.brightness}%) 
                         contrast(${images[currentImageIndex].filters.contrast}%) 
                         saturate(${images[currentImageIndex].filters.saturation}%)
+                        opacity(${images[currentImageIndex].filters.vibrance}%)
+                        sepia(${images[currentImageIndex].filters.clarity - 100}%)
+                        brightness(${images[currentImageIndex].filters.exposure}%)
+                        brightness(${images[currentImageIndex].filters.highlights}%)
+                        brightness(${images[currentImageIndex].filters.shadows}%)
                         blur(${images[currentImageIndex].filters.blur}px)
                       `
                     }}
@@ -331,13 +373,18 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                       brightness(${images[currentImageIndex].filters.brightness}%) 
                       contrast(${images[currentImageIndex].filters.contrast}%) 
                       saturate(${images[currentImageIndex].filters.saturation}%)
+                      opacity(${images[currentImageIndex].filters.vibrance}%)
+                      sepia(${images[currentImageIndex].filters.clarity - 100}%)
+                      brightness(${images[currentImageIndex].filters.exposure}%)
+                      brightness(${images[currentImageIndex].filters.highlights}%)
+                      brightness(${images[currentImageIndex].filters.shadows}%)
                       blur(${images[currentImageIndex].filters.blur}px)
                     `
                   }}
                 />
               )}
               
-              {/* Swipeable Image Container */}
+              {/* Swipeable Image Container with Animations */}
               {images.length > 1 && (
                 <motion.div
                   drag="x"
@@ -354,22 +401,71 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                     }
                   }}
                   className="absolute inset-0"
+                  initial={false}
+                  animate={{
+                    x: 0,
+                    opacity: 1,
+                    transition: {
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 30
+                    }
+                  }}
+                  exit={{
+                    opacity: 0,
+                    transition: {
+                      duration: 0.2
+                    }
+                  }}
                 />
               )}
 
-              {/* Slide Indicators */}
+              {/* Slide Indicators with connecting lines */}
               {images.length > 1 && (
-                <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-2">
+                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex items-center">
                   {images.map((_, idx) => (
-                    <div
-                      key={idx}
-                      className={`w-2 h-2 rounded-full transition-colors ${
-                        idx === currentImageIndex ? 'bg-white' : 'bg-white/30'
-                      }`}
-                    />
+                    <React.Fragment key={idx}>
+                      {idx > 0 && (
+                        <motion.div 
+                          className={`w-6 h-0.5 ${
+                            idx === currentImageIndex || idx === currentImageIndex + 1
+                              ? 'bg-white'
+                              : 'bg-white/30'
+                          }`}
+                          initial={false}
+                          animate={{
+                            backgroundColor: idx === currentImageIndex || idx === currentImageIndex + 1
+                              ? 'rgb(255, 255, 255)'
+                              : 'rgba(255, 255, 255, 0.3)',
+                          }}
+                          transition={{
+                            duration: 0.3
+                          }}
+                        />
+                      )}
+                      <motion.div
+                        className={`w-2.5 h-2.5 rounded-full ${
+                          idx === currentImageIndex ? 'bg-white' : 'bg-white/30'
+                        }`}
+                        animate={{
+                          scale: idx === currentImageIndex ? 1.25 : 1,
+                          backgroundColor: idx === currentImageIndex
+                            ? 'rgb(255, 255, 255)'
+                            : 'rgba(255, 255, 255, 0.3)',
+                        }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 300,
+                          damping: 20
+                        }}
+                        onClick={() => setCurrentImageIndex(idx)}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </React.Fragment>
                   ))}
                 </div>
               )}
+
 
               {/* Editor Controls */}
               <div className="absolute bottom-4 right-4 flex gap-2 z-10">
@@ -415,8 +511,8 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                 )}
               </div>
 
-              {/* Aspect Ratio Indicator */}
-              <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/50 text-white/70 text-sm">
+              {/* Aspect Ratio Indicator - Moved to bottom left */}
+              <div className="absolute bottom-20 left-4 px-3 py-1 rounded-full bg-black/50 text-white/70 text-sm">
                 {images[currentImageIndex]?.aspectRatio || defaultAspectRatio}
               </div>
 
@@ -487,14 +583,130 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
       {/* Adjustment Controls */}
       {showImageEditor && images.length > 0 && (
         <div className="p-4 border-t border-white/10 space-y-3">
+          {/* Brightness */}
           <div className="flex items-center gap-2">
             <BrightnessHighRegular className="w-5 h-5 text-white/70" />
+            <span className="text-white/70 w-20">Brightness</span>
             <input
               type="range"
-              min="0"
-              max="200"
-              value={images[currentImageIndex].filters.brightness}
+              min="-100"
+              max="100"
+              value={images[currentImageIndex].filters.brightness - 100}
               onChange={(e) => handleFilterChange('brightness', e.target.value)}
+              className="flex-1"
+            />
+          </div>
+
+          {/* Contrast */}
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10" strokeWidth="2"/>
+              <path d="M12 2v20" strokeWidth="2"/>
+            </svg>
+            <span className="text-white/70 w-20">Contrast</span>
+            <input
+              type="range"
+              min="-100"
+              max="100"
+              value={images[currentImageIndex].filters.contrast - 100}
+              onChange={(e) => handleFilterChange('contrast', e.target.value)}
+              className="flex-1"
+            />
+          </div>
+
+          {/* Saturation */}
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 2v20M17 12H7" strokeWidth="2"/>
+            </svg>
+            <span className="text-white/70 w-20">Saturation</span>
+            <input
+              type="range"
+              min="-100"
+              max="100"
+              value={images[currentImageIndex].filters.saturation - 100}
+              onChange={(e) => handleFilterChange('saturation', e.target.value)}
+              className="flex-1"
+            />
+          </div>
+
+          {/* Vibrance */}
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 2v20M17 12H7M12 7v10" strokeWidth="2"/>
+            </svg>
+            <span className="text-white/70 w-20">Vibrance</span>
+            <input
+              type="range"
+              min="-100"
+              max="100"
+              value={images[currentImageIndex].filters.vibrance - 100}
+              onChange={(e) => handleFilterChange('vibrance', e.target.value)}
+              className="flex-1"
+            />
+          </div>
+
+          {/* Clarity */}
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M4 4l16 16M4 20L20 4" strokeWidth="2"/>
+            </svg>
+            <span className="text-white/70 w-20">Clarity</span>
+            <input
+              type="range"
+              min="-100"
+              max="100"
+              value={images[currentImageIndex].filters.clarity - 100}
+              onChange={(e) => handleFilterChange('clarity', e.target.value)}
+              className="flex-1"
+            />
+          </div>
+
+          {/* Exposure */}
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="5" strokeWidth="2"/>
+              <path d="M12 2v4M12 18v4M4 12H2M22 12h-2M6 6l-2-2M18 18l2 2M18 6l2-2M6 18l-2 2" strokeWidth="2"/>
+            </svg>
+            <span className="text-white/70 w-20">Exposure</span>
+            <input
+              type="range"
+              min="-100"
+              max="100"
+              value={images[currentImageIndex].filters.exposure - 100}
+              onChange={(e) => handleFilterChange('exposure', e.target.value)}
+              className="flex-1"
+            />
+          </div>
+
+          {/* Highlights */}
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 2v20M17 12h5M2 12h5" strokeWidth="2"/>
+            </svg>
+            <span className="text-white/70 w-20">Highlights</span>
+            <input
+              type="range"
+              min="-100"
+              max="100"
+              value={images[currentImageIndex].filters.highlights - 100}
+              onChange={(e) => handleFilterChange('highlights', e.target.value)}
+              className="flex-1"
+            />
+          </div>
+
+          {/* Shadows */}
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M12 2v20M7 12H2M22 12h-5" strokeWidth="2"/>
+            </svg>
+            <span className="text-white/70 w-20">Shadows</span>
+            <input
+              type="range"
+              min="-100"
+              max="100"
+              value={images[currentImageIndex].filters.shadows - 100}
+              onChange={(e) => handleFilterChange('shadows', e.target.value)}
               className="flex-1"
             />
           </div>
@@ -535,7 +747,11 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                         brightness(${filters.brightness}%) 
                         contrast(${filters.contrast}%) 
                         saturate(${filters.saturation}%)
-                        blur(${filters.blur}px)
+                        opacity(${filters.vibrance}%)
+                        sepia(${filters.clarity - 100}%)
+                        brightness(${filters.exposure}%)
+                        brightness(${filters.highlights}%)
+                        brightness(${filters.shadows}%)
                       `
                     }}
                   />
@@ -599,6 +815,13 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                   dragElastic={1}
                   className={`relative aspect-square rounded-lg overflow-hidden cursor-move
                     ${currentImageIndex === idx ? 'ring-2 ring-pink-500' : ''}`}
+                  whileDrag={{
+                    scale: 1.1,
+                    zIndex: 50,
+                    transition: {
+                      duration: 0.2
+                    }
+                  }}
                   onDragEnd={(e, { offset, velocity }) => {
                     const moveThreshold = 50;
                     if (Math.abs(offset.x) >= moveThreshold || Math.abs(offset.y) >= moveThreshold) {
