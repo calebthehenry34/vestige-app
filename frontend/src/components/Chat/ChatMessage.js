@@ -1,60 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
-const ChatMessage = ({ message, isOwn }) => {
-  const [decryptedContent, setDecryptedContent] = useState('');
-
-  useEffect(() => {
-    const decryptMessage = async () => {
-      try {
-        // Decryption will be handled here using the shared secret
-        setDecryptedContent(message.content);
-      } catch (error) {
-        console.error('Failed to decrypt message:', error);
-        setDecryptedContent('Unable to decrypt message');
-      }
-    };
-
-    decryptMessage();
-  }, [message]);
-
+const ChatMessage = ({ message, isOwnMessage }) => {
   return (
-    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div
-        className={`max-w-[70%] rounded-lg px-4 py-2 ${
-          isOwn
-            ? 'bg-blue-500 text-white rounded-br-none'
-            : 'bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-bl-none'
-        }`}
-      >
-        <p className="text-sm">{decryptedContent}</p>
-        <div className="text-xs mt-1 opacity-70">
-          {new Date(message.createdAt).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit'
-          })}
+    <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+      <div className="flex flex-col">
+        <div
+          className={`max-w-[70%] p-4 rounded-2xl ${
+            isOwnMessage
+              ? 'bg-blue-500 text-white ml-auto rounded-br-sm'
+              : 'bg-gray-100 dark:bg-gray-700 dark:text-white rounded-bl-sm'
+          }`}
+        >
+          {message.content}
         </div>
+        <span className={`text-xs text-gray-500 mt-1 ${
+          isOwnMessage ? 'text-right' : 'text-left'
+        }`}>
+          {new Date(message.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </span>
       </div>
-    </div>
-  );
-};
-
-export const EncryptionStatus = ({ status }) => {
-  const getStatusMessage = () => {
-    switch (status) {
-      case 'connecting':
-        return 'Establishing secure connection...';
-      case 'connected':
-        return 'Connection made';
-      case 'secured':
-        return 'Your chat is secured with end-to-end encryption';
-      default:
-        return '';
-    }
-  };
-
-  return (
-    <div className="text-center py-3 text-sm text-gray-500 dark:text-zinc-400 bg-gray-50 dark:bg-zinc-900 rounded-lg mb-4">
-      {getStatusMessage()}
     </div>
   );
 };

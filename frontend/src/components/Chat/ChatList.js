@@ -2,14 +2,14 @@ import React from 'react';
 
 const ChatList = ({ chats, activeChat, onSelectChat }) => {
   return (
-    <div className="h-full dark:bg-black">
-      <div className="overflow-y-auto">
+    <div className="h-full">
+      <div className="overflow-y-auto h-full">
         {chats.map((chat) => (
           <button
             key={chat.userId}
             onClick={() => onSelectChat(chat.userId)}
-            className={`w-full p-4 flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-zinc-900 border-b dark:border-zinc-800
-              ${activeChat === chat.userId ? 'bg-blue-50 dark:bg-zinc-800' : ''}`}
+            className={`w-full p-6 flex items-center space-x-4 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700 transition-colors
+              ${activeChat === chat.userId ? 'bg-blue-50 dark:bg-gray-600' : ''}`}
           >
             <img
               src={chat.profilePicture || '/api/placeholder/40/40'}
@@ -17,13 +17,15 @@ const ChatList = ({ chats, activeChat, onSelectChat }) => {
               className="w-12 h-12 rounded-full"
             />
             <div className="flex-1 text-left">
-              <div className="font-medium dark:text-white">{chat.username}</div>
-              <p className="text-sm text-gray-500 dark:text-zinc-400 truncate">
+              <div className="font-semibold dark:text-white flex items-center justify-between">
+                <span>{chat.username}</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">
+                  {new Date(chat.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
                 {chat.lastMessage || 'No messages yet'}
               </p>
-            </div>
-            <div className="text-xs text-gray-400 dark:text-zinc-500">
-              {chat.timestamp || 'Just now'}
             </div>
           </button>
         ))}
