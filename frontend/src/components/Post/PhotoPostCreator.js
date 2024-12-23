@@ -277,6 +277,19 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
               minHeight: '300px',
               maxHeight: '600px'
             }}>
+              {/* Overlay to close menus when clicking outside */}
+              {(showImageEditor || showCropper || showFilters) && (
+                <div 
+                  className="absolute inset-0 bg-transparent"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowImageEditor(false);
+                    setShowCropper(false);
+                    setShowFilters(false);
+                  }}
+                />
+              )}
+
               {showCropper ? (
                 <Cropper
                   image={images[currentImageIndex].preview}
@@ -359,7 +372,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
               )}
 
               {/* Editor Controls */}
-              <div className="absolute bottom-4 right-4 flex gap-2">
+              <div className="absolute bottom-4 right-4 flex gap-2 z-10">
                 <button
                   onClick={() => {
                     setShowCropper(false);
@@ -538,7 +551,15 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
       <div className="p-4 border-t border-white/10">
         <div className="flex gap-2">
           <button
-            onClick={onBack}
+            onClick={() => {
+              if (showImageEditor || showCropper || showFilters) {
+                setShowImageEditor(false);
+                setShowCropper(false);
+                setShowFilters(false);
+              } else {
+                onBack();
+              }
+            }}
             className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10"
           >
             Back
