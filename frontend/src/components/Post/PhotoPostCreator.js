@@ -9,7 +9,7 @@ import {
   FilterRegular,
   LocationRegular,
   TagRegular,
-  HashtagRegular
+  NumberSymbolRegular
 } from '@fluentui/react-icons';
 import { useDropzone } from 'react-dropzone';
 import Cropper from 'react-easy-crop';
@@ -220,7 +220,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                 </button>
                 
                 <button className="p-3 bg-white/5 border border-white/10 rounded-lg">
-                  <HashtagRegular className="w-5 h-5 text-white/70" />
+                  <NumberSymbolRegular className="w-5 h-5 text-white/70" />
                 </button>
               </div>
             </div>
