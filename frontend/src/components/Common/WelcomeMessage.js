@@ -2,13 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { useScroll } from '../../context/ScrollContext';
-import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config';
 
 const WelcomeMessage = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const { unreadCount } = useNotifications();
+  const { unreadCount, setShowMobileNotifications } = useNotifications();
   const { scrollY } = useScroll();
   const [greeting, setGreeting] = useState('');
   const [followRequests, setFollowRequests] = useState(0);
@@ -68,7 +66,7 @@ const WelcomeMessage = () => {
         {greeting}, {user?.username}
       </div>
       <button 
-        onClick={() => navigate('/activity')}
+        onClick={() => setShowMobileNotifications(true)}
         className="text-gray-400 hover:text-gray-200 text-sm transition-colors cursor-pointer"
       >
         You have {unreadCount} {unreadCount === 1 ? 'notification' : 'notifications'}

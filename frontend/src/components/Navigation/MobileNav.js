@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../../App';
 import { useNotifications } from '../../context/NotificationContext';
@@ -14,8 +14,7 @@ import {
 const MobileNav = ({ onPostCreatorClick }) => {
   const navigate = useNavigate();
   const { theme } = useContext(ThemeContext);
-  const { unreadCount } = useNotifications();
-  const [showNotifications, setShowNotifications] = useState(false);
+  const { unreadCount, showMobileNotifications, setShowMobileNotifications } = useNotifications();
 
   return (
     <div className={`fixed inset-x-0 bottom-0 mx-4 mb-4 z-[90] backdrop-blur-xl shadow-lg rounded-2xl ${
@@ -40,7 +39,7 @@ const MobileNav = ({ onPostCreatorClick }) => {
             <AddCircleRegular className="w-6 h-6" />
           </button>
           <button 
-            onClick={() => setShowNotifications(true)}
+            onClick={() => setShowMobileNotifications(true)}
             className={`${theme === 'dark-theme' ? 'text-white' : 'text-gray-700'} hover:text-[#ae52e3] transition-colors relative`}
           >
             <HeartRegular className="w-6 h-6" />
@@ -57,10 +56,10 @@ const MobileNav = ({ onPostCreatorClick }) => {
             <PersonRegular className="w-6 h-6" />
           </button>
         </div>
-      {showNotifications && (
+      {showMobileNotifications && (
         <div 
           className="fixed inset-0 bg-black/50 z-[200] flex items-end justify-center"
-          onClick={() => setShowNotifications(false)}
+          onClick={() => setShowMobileNotifications(false)}
         >
           <div 
             className={`w-full h-[50vh] rounded-t-xl overflow-hidden transform transition-all duration-300 ease-out ${
@@ -69,8 +68,8 @@ const MobileNav = ({ onPostCreatorClick }) => {
             onClick={e => e.stopPropagation()}
           >
             <ActivityFeed 
-              isOpen={showNotifications} 
-              onClose={() => setShowNotifications(false)}
+              isOpen={showMobileNotifications} 
+              onClose={() => setShowMobileNotifications(false)}
             />
           </div>
         </div>

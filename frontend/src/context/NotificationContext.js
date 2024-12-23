@@ -8,6 +8,7 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [currentNotification, setCurrentNotification] = useState(null);
+  const [showMobileNotifications, setShowMobileNotifications] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -96,7 +97,9 @@ export const NotificationProvider = ({ children }) => {
         clearCurrentNotification,
         unreadCount,
         updateUnreadCount,
-        markAllAsRead
+        markAllAsRead,
+        showMobileNotifications,
+        setShowMobileNotifications
       }}
     >
       {children}
