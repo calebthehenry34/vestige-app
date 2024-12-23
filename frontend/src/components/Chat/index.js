@@ -113,7 +113,7 @@ const Chat = () => {
     }
   }, [activeChat, fetchMessages]);
 
-  const encryptMessage = async (message) => {
+  const encryptMessage = React.useCallback(async (message) => {
     const iv = window.crypto.getRandomValues(new Uint8Array(12));
     const encodedMessage = new TextEncoder().encode(message);
 
@@ -130,7 +130,7 @@ const Chat = () => {
       encryptedContent: btoa(String.fromCharCode(...new Uint8Array(encryptedData))),
       iv: btoa(String.fromCharCode(...iv)),
     };
-  };
+  }, [encryptionKey]);
 
   const sendMessage = async (e) => {
     e.preventDefault();
