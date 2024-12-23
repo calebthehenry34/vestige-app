@@ -227,7 +227,7 @@ const ActivityFeed = ({ onClose, isOpen }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="w-full flex flex-col h-full">
       <div className={`flex items-center justify-between px-6 py-4 border-b ${
         theme === 'dark-theme' ? 'border-zinc-800' : 'border-gray-200'
       }`}>
