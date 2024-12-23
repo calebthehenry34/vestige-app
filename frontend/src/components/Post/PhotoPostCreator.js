@@ -291,7 +291,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
           <div className="space-y-4">
             {/* Current Image */}
             <div className="relative rounded-lg overflow-hidden bg-black flex items-center justify-center" style={{ 
-              height: '600px',
+              height: 'min(600px, calc(90vh - 300px))',
               maxWidth: '100%'
             }}>
               {/* Overlay to close menus when clicking outside */}
@@ -351,7 +351,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                     style={{
                       containerStyle: {
                         width: '100%',
-                        height: '600px',
+                        height: 'min(600px, calc(90vh - 300px))',
                         backgroundColor: 'black',
                         display: 'flex',
                         alignItems: 'center',
