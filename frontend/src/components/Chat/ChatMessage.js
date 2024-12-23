@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
 
 const ChatMessage = ({ message, isOwn }) => {
   const [decryptedContent, setDecryptedContent] = useState('');
-  const { currentUser } = useAuth();
 
   useEffect(() => {
     const decryptMessage = async () => {

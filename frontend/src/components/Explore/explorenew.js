@@ -9,7 +9,7 @@ import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
 import { createImageProps, checkWebPSupport } from '../../utils/imageUtils';
 
-const Explore = () => {
+const ExploreNew = () => {
   const { theme } = useContext(ThemeContext);
   const { isScrolled } = useScroll();
   const [posts, setPosts] = useState([]);
@@ -207,4 +207,4 @@ const Explore = () => {
   );
 };
 
-export default Explore;
+export default ExploreNew;

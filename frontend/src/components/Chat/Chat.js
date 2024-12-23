@@ -14,11 +14,34 @@ const Chat = () => {
   const [sharedSecret, setSharedSecret] = useState(null);
   const [keyPair, setKeyPair] = useState(null);
   const messagesEndRef = useRef(null);
-  const { currentUser } = useAuth();
+  const { user, loading } = useAuth();
+  const {
+    sendMessage: socketSendMessage,
+    onReceiveMessage,
+    updateTypingStatus,
+    onTypingStatus,
+    updateEncryptionStatus,
+    onEncryptionStatus,
+  } = useSocket();
+  const [isTyping, setIsTyping] = useState(false);
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
+  const typingTimeoutRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  const fetchMessages = useCallback(async () => {
+    if (!activeChat) return;
+    try {
+      const response = await fetch(`/api/messages/${activeChat}`);
+      const data = await response.json();
+      setMessages(data);
+      scrollToBottom();
+    } catch (error) {
+      console.error('Failed to fetch messages:', error);
+    }
+  }, [activeChat]);
 
   useEffect(() => {
     const fetchChats = async () => {
@@ -37,6 +60,12 @@ const Chat = () => {
   useEffect(() => {
     if (activeChat) {
       setEncryptionStatus('connecting');
+      updateEncryptionStatus({
+        recipientId: activeChat,
+        senderId: user._id,
+        status: 'connecting'
+      });
+      
       const initializeEncryption = async () => {
         try {
           // Generate key pair for the current user if not exists
@@ -56,6 +85,11 @@ const Chat = () => {
 
           const { otherPublicKey } = await response.json();
           setEncryptionStatus('connected');
+          updateEncryptionStatus({
+            recipientId: activeChat,
+            senderId: user._id,
+            status: 'connected'
+          });
 
           const secret = await MessageEncryption.generateSharedSecret(
             keyPair.privateKey,
@@ -63,6 +97,11 @@ const Chat = () => {
           );
           setSharedSecret(secret);
           setEncryptionStatus('secured');
+          updateEncryptionStatus({
+            recipientId: activeChat,
+            senderId: user._id,
+            status: 'secured'
+          });
 
           // Fetch messages after encryption is set up
           fetchMessages();
@@ -74,31 +113,18 @@ const Chat = () => {
 
       initializeEncryption();
     }
-  }, [activeChat, keyPair]);
+  }, [activeChat, keyPair, updateEncryptionStatus, user._id, fetchMessages]);
 
-  const fetchMessages = async () => {
-    try {
-      const response = await fetch(`/api/messages/${activeChat}`);
-      const data = await response.json();
-      setMessages(data);
-      scrollToBottom();
-    } catch (error) {
-      console.error('Failed to fetch messages:', error);
-    }
-  };
+  useEffect(() => {
+    const handleEncryptionStatus = (data) => {
+      if (data.senderId === activeChat) {
+        setEncryptionStatus(data.status);
+      }
+    };
 
-  const {
-    sendMessage: socketSendMessage,
-    onReceiveMessage,
-    updateTypingStatus,
-    onTypingStatus,
-    updateEncryptionStatus,
-    onEncryptionStatus,
-  } = useSocket();
-
-  const [isTyping, setIsTyping] = useState(false);
-  const [otherUserTyping, setOtherUserTyping] = useState(false);
-  const typingTimeoutRef = useRef(null);
+    const cleanup = onEncryptionStatus(handleEncryptionStatus);
+    return () => cleanup();
+  }, [activeChat, onEncryptionStatus]);
 
   useEffect(() => {
     const handleReceiveMessage = async (data) => {
@@ -134,7 +160,7 @@ const Chat = () => {
   const handleTyping = useCallback(() => {
     if (!isTyping) {
       setIsTyping(true);
-      updateTypingStatus({ recipientId: activeChat, senderId: currentUser._id, isTyping: true });
+      updateTypingStatus({ recipientId: activeChat, senderId: user._id, isTyping: true });
     }
 
     if (typingTimeoutRef.current) {
@@ -143,9 +169,18 @@ const Chat = () => {
 
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
-      updateTypingStatus({ recipientId: activeChat, senderId: currentUser._id, isTyping: false });
+      updateTypingStatus({ recipientId: activeChat, senderId: user._id, isTyping: false });
     }, 2000);
-  }, [isTyping, activeChat, currentUser._id, updateTypingStatus]);
+  }, [isTyping, activeChat, user._id, updateTypingStatus]);
+
+  // Prevent access to chat when not authenticated
+  if (loading) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+
+  if (!user) {
+    return <div className="flex h-screen items-center justify-center">Please log in to access chat</div>;
+  }
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -176,7 +211,7 @@ const Chat = () => {
       // Send through socket for real-time updates
       socketSendMessage({
         recipientId: activeChat,
-        senderId: currentUser._id,
+        senderId: user._id,
         message: encrypted,
       });
     } catch (error) {
@@ -208,7 +243,7 @@ const Chat = () => {
                 <ChatMessage
                   key={message._id}
                   message={message}
-                  isOwn={message.sender === currentUser._id}
+                  isOwn={message.sender === user._id}
                 />
               ))}
               <div ref={messagesEndRef} />
