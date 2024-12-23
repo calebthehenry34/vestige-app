@@ -40,6 +40,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
   const [showCropper, setShowCropper] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showReorderModal, setShowReorderModal] = useState(false);
+  const [activeAdjustment, setActiveAdjustment] = useState(null);
   // Remove global crop/zoom state since each image will have its own
   const [defaultAspectRatio, setDefaultAspectRatio] = useState(null);
   const [userSuggestions, setUserSuggestions] = useState([]);
@@ -291,7 +292,13 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
           <div className="space-y-4">
             {/* Current Image */}
             <div className="relative rounded-lg overflow-hidden bg-black flex items-center justify-center" style={{ 
-              height: images[currentImageIndex] ? `min(${Math.round(window.innerWidth * (images[currentImageIndex].aspectRatio || 1))}px, calc(90vh - 300px))` : 'min(600px, calc(90vh - 300px))',
+              height: images[currentImageIndex] ? 
+                // If aspect ratio is greater than 9:16 (0.5625), use normal calculation
+                // Otherwise, scale down the height for portrait images
+                images[currentImageIndex].aspectRatio > 0.5625 ?
+                  `min(${Math.round(window.innerWidth * (images[currentImageIndex].aspectRatio || 1))}px, calc(90vh - 300px))` :
+                  `min(${Math.round(window.innerWidth * 0.5625)}px, calc(70vh - 200px))` 
+                : 'min(600px, calc(90vh - 300px))',
               maxWidth: '100%'
             }}>
               {/* Overlay to close menus when clicking outside */}
@@ -342,25 +349,23 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                           : img
                       ));
                     }}
-                    cropSize={{
-                      width: 400,
-                      height: 300
-                    }}
                     objectFit="contain"
                     showGrid={true}
                     style={{
                       containerStyle: {
+                        position: 'relative',
                         width: '100%',
                         height: '100%',
-                        backgroundColor: 'black',
-                        position: 'absolute',
-                        inset: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        backgroundColor: '#000'
+                      },
+                      mediaStyle: {
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain'
                       },
                       cropAreaStyle: {
-                        border: '2px solid #fff'
+                        border: '2px solid #fff',
+                        color: 'rgba(255, 255, 255, 0.5)'
                       }
                     }}
                   />
@@ -608,7 +613,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
 
       {/* Adjustment Controls */}
       {showImageEditor && images.length > 0 && (
-        <div className="p-4 border-t border-white/10 space-y-3">
+        <div className="p-4 border-t border-white/10">
           {/* Close button */}
           <div className="flex justify-end">
             <button
@@ -620,133 +625,91 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
               </svg>
             </button>
           </div>
-          {/* Brightness */}
-          <div className="flex items-center gap-2">
-            <BrightnessHighRegular className="w-5 h-5 text-white/70" />
-            <span className="text-white/70 w-20">Brightness</span>
-            <input
-              type="range"
-              min="-100"
-              max="100"
-              value={images[currentImageIndex].filters.brightness - 100}
-              onChange={(e) => handleFilterChange('brightness', e.target.value)}
-              className="flex-1"
-            />
+
+          {/* Scrollable Icons */}
+          <div className="flex overflow-x-auto gap-6 py-4 px-2">
+            {[
+              { name: 'brightness', icon: <BrightnessHighRegular className="w-6 h-6" /> },
+              { name: 'contrast', icon: (
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="12" cy="12" r="10" strokeWidth="2"/>
+                  <path d="M12 2v20" strokeWidth="2"/>
+                </svg>
+              )},
+              { name: 'saturation', icon: (
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M12 2v20M17 12H7" strokeWidth="2"/>
+                </svg>
+              )},
+              { name: 'vibrance', icon: (
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M12 2v20M17 12H7M12 7v10" strokeWidth="2"/>
+                </svg>
+              )},
+              { name: 'clarity', icon: (
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M4 4l16 16M4 20L20 4" strokeWidth="2"/>
+                </svg>
+              )},
+              { name: 'exposure', icon: (
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="12" cy="12" r="5" strokeWidth="2"/>
+                  <path d="M12 2v4M12 18v4M4 12H2M22 12h-2M6 6l-2-2M18 18l2 2M18 6l2-2M6 18l-2 2" strokeWidth="2"/>
+                </svg>
+              )},
+              { name: 'highlights', icon: (
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M12 2v20M17 12h5M2 12h5" strokeWidth="2"/>
+                </svg>
+              )},
+              { name: 'shadows', icon: (
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M12 2v20M7 12H2M22 12h-5" strokeWidth="2"/>
+                </svg>
+              )}
+            ].map(({ name, icon }) => (
+              <div key={name} className="flex flex-col items-center gap-2">
+                <button
+                  onClick={() => setActiveAdjustment(activeAdjustment === name ? null : name)}
+                  className={`p-3 rounded-full ${
+                    activeAdjustment === name ? 'bg-white/20' : 'bg-white/5'
+                  } hover:bg-white/10 transition-colors`}
+                >
+                  <div className="text-white/70">{icon}</div>
+                </button>
+                <span className="text-xs text-white/70 capitalize">{name}</span>
+              </div>
+            ))}
           </div>
 
-          {/* Contrast */}
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10" strokeWidth="2"/>
-              <path d="M12 2v20" strokeWidth="2"/>
-            </svg>
-            <span className="text-white/70 w-20">Contrast</span>
-            <input
-              type="range"
-              min="-100"
-              max="100"
-              value={images[currentImageIndex].filters.contrast - 100}
-              onChange={(e) => handleFilterChange('contrast', e.target.value)}
-              className="flex-1"
-            />
-          </div>
-
-          {/* Saturation */}
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M12 2v20M17 12H7" strokeWidth="2"/>
-            </svg>
-            <span className="text-white/70 w-20">Saturation</span>
-            <input
-              type="range"
-              min="-100"
-              max="100"
-              value={images[currentImageIndex].filters.saturation - 100}
-              onChange={(e) => handleFilterChange('saturation', e.target.value)}
-              className="flex-1"
-            />
-          </div>
-
-          {/* Vibrance */}
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M12 2v20M17 12H7M12 7v10" strokeWidth="2"/>
-            </svg>
-            <span className="text-white/70 w-20">Vibrance</span>
-            <input
-              type="range"
-              min="-100"
-              max="100"
-              value={images[currentImageIndex].filters.vibrance - 100}
-              onChange={(e) => handleFilterChange('vibrance', e.target.value)}
-              className="flex-1"
-            />
-          </div>
-
-          {/* Clarity */}
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M4 4l16 16M4 20L20 4" strokeWidth="2"/>
-            </svg>
-            <span className="text-white/70 w-20">Clarity</span>
-            <input
-              type="range"
-              min="-100"
-              max="100"
-              value={images[currentImageIndex].filters.clarity - 100}
-              onChange={(e) => handleFilterChange('clarity', e.target.value)}
-              className="flex-1"
-            />
-          </div>
-
-          {/* Exposure */}
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="5" strokeWidth="2"/>
-              <path d="M12 2v4M12 18v4M4 12H2M22 12h-2M6 6l-2-2M18 18l2 2M18 6l2-2M6 18l-2 2" strokeWidth="2"/>
-            </svg>
-            <span className="text-white/70 w-20">Exposure</span>
-            <input
-              type="range"
-              min="-100"
-              max="100"
-              value={images[currentImageIndex].filters.exposure - 100}
-              onChange={(e) => handleFilterChange('exposure', e.target.value)}
-              className="flex-1"
-            />
-          </div>
-
-          {/* Highlights */}
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M12 2v20M17 12h5M2 12h5" strokeWidth="2"/>
-            </svg>
-            <span className="text-white/70 w-20">Highlights</span>
-            <input
-              type="range"
-              min="-100"
-              max="100"
-              value={images[currentImageIndex].filters.highlights - 100}
-              onChange={(e) => handleFilterChange('highlights', e.target.value)}
-              className="flex-1"
-            />
-          </div>
-
-          {/* Shadows */}
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M12 2v20M7 12H2M22 12h-5" strokeWidth="2"/>
-            </svg>
-            <span className="text-white/70 w-20">Shadows</span>
-            <input
-              type="range"
-              min="-100"
-              max="100"
-              value={images[currentImageIndex].filters.shadows - 100}
-              onChange={(e) => handleFilterChange('shadows', e.target.value)}
-              className="flex-1"
-            />
-          </div>
+          {/* Active Adjustment Slider */}
+          {activeAdjustment && (
+            <div className="mt-4 px-4">
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="-100"
+                  max="100"
+                  value={images[currentImageIndex].filters[activeAdjustment] - 100}
+                  onChange={(e) => handleFilterChange(activeAdjustment, e.target.value)}
+                  className="flex-1"
+                />
+                <button
+                  onClick={() => handleFilterChange(activeAdjustment, 0)}
+                  className="p-2 rounded-full bg-white/5 hover:bg-white/10"
+                >
+                  <svg className="w-4 h-4 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4l16 16m0-16L4 20" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-xs text-white/50">-100</span>
+                <span className="text-xs text-white/50">0</span>
+                <span className="text-xs text-white/50">+100</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
