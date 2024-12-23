@@ -291,7 +291,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
           <div className="space-y-4">
             {/* Current Image */}
             <div className="relative rounded-lg overflow-hidden bg-black flex items-center justify-center" style={{ 
-              height: 'min(600px, calc(90vh - 300px))',
+              height: images[currentImageIndex] ? `min(${Math.round(window.innerWidth * (images[currentImageIndex].aspectRatio || 1))}px, calc(90vh - 300px))` : 'min(600px, calc(90vh - 300px))',
               maxWidth: '100%'
             }}>
               {/* Overlay to close menus when clicking outside */}
@@ -343,16 +343,18 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
                       ));
                     }}
                     cropSize={{
-                      width: 800,
-                      height: 600
+                      width: 400,
+                      height: 300
                     }}
                     objectFit="contain"
                     showGrid={true}
                     style={{
                       containerStyle: {
                         width: '100%',
-                        height: 'min(600px, calc(90vh - 300px))',
+                        height: '100%',
                         backgroundColor: 'black',
+                        position: 'absolute',
+                        inset: 0,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
