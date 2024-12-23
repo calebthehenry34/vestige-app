@@ -180,11 +180,11 @@ const SinglePost = () => {
       try {
         const token = localStorage.getItem('token');
         const response = await fetch(`${API_URL}/api/posts/${id}`, {
+          method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
-          },
-          credentials: 'include'
+          }
         });
 
         if (!response.ok) {
@@ -209,13 +209,12 @@ const SinglePost = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/api/posts/${id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ caption }),
-        credentials: 'include'
+        body: JSON.stringify({ caption })
       });
 
       if (response.ok) {
@@ -237,8 +236,7 @@ const SinglePost = () => {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        credentials: 'include'
+        }
       });
 
       if (response.ok) {
@@ -258,8 +256,7 @@ const SinglePost = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ reason: reportReason }),
-        credentials: 'include'
+        body: JSON.stringify({ reason: reportReason })
       });
 
       if (response.ok) {
@@ -282,8 +279,7 @@ const SinglePost = () => {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        credentials: 'include'
+        }
       });
 
       if (response.ok) {
@@ -305,8 +301,7 @@ const SinglePost = () => {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        credentials: 'include'
+        }
       });
 
       if (response.ok) {
@@ -816,8 +811,14 @@ const SinglePost = () => {
             <PostComments
               post={post}
               isOpen={true}
-              onComment={(updatedPost) => setPost(updatedPost)}
-              onReply={(updatedPost) => setPost(updatedPost)}
+              onComment={(updatedPost) => {
+                console.log('Post updated with new comment:', updatedPost);
+                setPost(updatedPost);
+              }}
+              onReply={(updatedPost) => {
+                console.log('Post updated with new reply:', updatedPost);
+                setPost(updatedPost);
+              }}
             />
           </div>
         </div>

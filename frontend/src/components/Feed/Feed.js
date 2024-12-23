@@ -68,7 +68,13 @@ const Feed = ({ onRefreshNeeded }) => {
   };
 
   if (loading) {
-    return <PostSkeleton />;
+    return (
+      <div className="max-w-xl mx-auto space-y-6">
+        {[...Array(3)].map((_, index) => (
+          <PostSkeleton key={index} />
+        ))}
+      </div>
+    );
   }
 
   if (error) {
