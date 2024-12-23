@@ -41,13 +41,13 @@ export const EncryptionStatus = ({ status }) => {
   );
 };
 
-const ChatMessage = ({ message, isOwn }) => {
+const ChatMessage = ({ message, isOwnMessage }) => {
   return (
-    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
       <div className="flex flex-col">
         <div
-          className={`max-w-[70%] p-4 rounded-2xl ${
-            isOwn
+          className={`max-w-[70%] p-4 rounded-2xl shadow-sm ${
+            isOwnMessage
               ? 'bg-blue-500 text-white ml-auto rounded-br-sm'
               : 'bg-gray-100 dark:bg-gray-700 dark:text-white rounded-bl-sm'
           }`}
@@ -55,7 +55,7 @@ const ChatMessage = ({ message, isOwn }) => {
           {message.content}
         </div>
         <span className={`text-xs text-gray-500 mt-1 ${
-          isOwn ? 'text-right' : 'text-left'
+          isOwnMessage ? 'text-right' : 'text-left'
         }`}>
           {new Date(message.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>

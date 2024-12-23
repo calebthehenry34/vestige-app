@@ -210,11 +210,11 @@ const Chat = () => {
     <div className="max-w-6xl mx-auto px-4 pt-20 pb-8">
       <h1 className="text-4xl font-bold mb-4">Chat</h1>
       <p className="text-gray-600 mb-8">Connect with your friends through private messages</p>
-      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg overflow-hidden" style={{ height: '75vh' }}>
+      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden" style={{ height: '75vh' }}>
         <div className="flex h-full">
           {/* Chat List */}
-          <div className="w-80 border-r border-gray-200 dark:border-gray-700 h-full">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+          <div className="w-80 border-r border-gray-200 dark:border-gray-700 h-full bg-gray-50 dark:bg-gray-900">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800">
               <h2 className="text-xl font-semibold dark:text-white">Messages</h2>
               <button 
                 onClick={() => setShowNewChatModal(true)}
@@ -266,7 +266,7 @@ const Chat = () => {
                     </svg>
                   </button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900">
                   {messages.map((message) => (
                     <ChatMessage
                       key={message._id}
@@ -277,7 +277,7 @@ const Chat = () => {
                   <div ref={messagesEndRef} />
                 </div>
 
-                <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                   <form onSubmit={sendMessage} className="flex items-center space-x-3">
                     <button 
                       type="button" 
@@ -315,7 +315,7 @@ const Chat = () => {
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-500">
+              <div className="flex-1 flex items-center justify-center text-gray-500 bg-gray-50 dark:bg-gray-900">
                 Select a chat to start messaging
               </div>
             )}
@@ -326,7 +326,7 @@ const Chat = () => {
       {/* New Chat Modal */}
       {showNewChatModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white dark:bg-gray-800 rounded-lg w-96 max-h-[80vh] overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl w-96 max-h-[80vh] overflow-hidden shadow-2xl">
             <div className="p-4 border-b flex justify-between items-center">
               <h3 className="text-lg font-semibold dark:text-white">New Chat</h3>
               <button 
