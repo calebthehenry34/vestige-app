@@ -23,7 +23,7 @@ const ChatMessage = ({ message, isOwn }) => {
         className={`max-w-[70%] rounded-lg px-4 py-2 ${
           isOwn
             ? 'bg-blue-500 text-white rounded-br-none'
-            : 'bg-gray-100 text-gray-900 rounded-bl-none'
+            : 'bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-bl-none'
         }`}
       >
         <p className="text-sm">{decryptedContent}</p>
@@ -53,7 +53,7 @@ export const EncryptionStatus = ({ status }) => {
   };
 
   return (
-    <div className="text-center py-3 text-sm text-gray-500 bg-gray-50 rounded-lg mb-4">
+    <div className="text-center py-3 text-sm text-gray-500 dark:text-zinc-400 bg-gray-50 dark:bg-zinc-900 rounded-lg mb-4">
       {getStatusMessage()}
     </div>
   );
