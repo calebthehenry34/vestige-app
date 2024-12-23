@@ -25,14 +25,9 @@ import { useAuth } from '../../context/AuthContext';
 import { ThemeContext } from '../../App';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 import PostCreator from '../Post/PostCreator';
-import ActivityFeed from '../Activity/ActivityFeed';
-import Toast from '../Common/Toast';
-import { useNotifications } from '../../context/NotificationContext';
-
 const Navbar = () => {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const { user, logout } = useAuth();
-  const { currentNotification, clearCurrentNotification, unreadCount } = useNotifications();
   const { scrollY } = useScroll();
   const navigate = useNavigate();
   const [isHeaderHidden, setIsHeaderHidden] = useState(false);
@@ -40,8 +35,6 @@ const Navbar = () => {
   const [showDrawer, setShowDrawer] = useState(false);
   const [showPostCreator, setShowPostCreator] = useState(false);
   const [expandedSection, setExpandedSection] = useState(null);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [activeToast, setActiveToast] = useState(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -56,13 +49,6 @@ const Navbar = () => {
 
     handleScroll();
   }, [scrollY]);
-
-  useEffect(() => {
-    if (currentNotification) {
-      setActiveToast(currentNotification);
-      clearCurrentNotification();
-    }
-  }, [currentNotification, clearCurrentNotification]);
 
   useEffect(() => {
     if (showDrawer) {
@@ -135,37 +121,19 @@ const Navbar = () => {
 
   return (
     <>
-      {activeToast && (
-        <Toast 
-          notification={activeToast} 
-          onClose={() => setActiveToast(null)}
-        />
-      )}
-
       <div className={`fixed top-0 left-0 right-0 header ${
         theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
       } ${isHeaderHidden ? 'header-hidden' : ''}`}>
-        <div className="border-b border-gray-800 relative z-[100] bg-inherit">
+        <div className="border-b border-gray-800 relative z-[80] bg-inherit">
           <div className="flex items-center justify-between h-16 px-4 w-screen">
             <button onClick={() => handleNavigation('/')} className="flex items-center">
               <img src="/logos/logov.png" alt="Logo" className="h-7 w-auto"/>
             </button>
 
-            <div className="flex items-center space-x-4">
-              <button 
-                onClick={() => setShowNotifications(true)} 
-                className="relative"
-              >
-                <HeartRegular className={`w-6 h-6 ${theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`} />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
+            <div className="flex items-center">
               <button 
                 onClick={() => setShowDrawer(true)} 
-                className="flex items-center"
+                className="flex items-center ml-4"
               >
                 {user ? (
                   <img
@@ -341,24 +309,6 @@ const Navbar = () => {
         onPostCreated={() => setShowPostCreator(false)}
       />
 
-      {showNotifications && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-[200] flex items-end justify-center"
-          onClick={() => setShowNotifications(false)}
-        >
-          <div 
-            className={`w-full h-[50vh] rounded-t-xl overflow-hidden transform transition-all duration-300 ease-out ${
-              theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
-            }`}
-            onClick={e => e.stopPropagation()}
-          >
-            <ActivityFeed 
-              isOpen={showNotifications} 
-              onClose={() => setShowNotifications(false)}
-            />
-          </div>
-        </div>
-      )}
     </>
   );
 };

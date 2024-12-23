@@ -13,11 +13,9 @@ const ActivityFeed = ({ onClose, isOpen }) => {
   const { theme } = useContext(ThemeContext);
   const { notifications, setNotifications, updateUnreadCount, markAllAsRead: contextMarkAllAsRead } = useNotifications();
   const [loading, setLoading] = useState(true);
-  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setIsAnimating(true);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -28,10 +26,7 @@ const ActivityFeed = ({ onClose, isOpen }) => {
   }, [isOpen]);
 
   const handleClose = () => {
-    setIsAnimating(false);
-    setTimeout(() => {
-      onClose();
-    }, 300);
+    onClose();
   };
 
   const fetchNotifications = useCallback(async () => {
