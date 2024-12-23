@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useScroll } from '../../context/ScrollContext';
+import { useNotifications } from '../../context/NotificationContext';
 import { 
   HeartRegular, 
   PersonRegular, 
@@ -29,6 +30,7 @@ const Navbar = () => {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const { user, logout } = useAuth();
   const { scrollY } = useScroll();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const [isHeaderHidden, setIsHeaderHidden] = useState(false);
   const lastScrollY = useRef(0);
@@ -133,8 +135,13 @@ const Navbar = () => {
             <div className="flex items-center">
               <button 
                 onClick={() => setShowDrawer(true)} 
-                className="flex items-center ml-4"
+                className="flex items-center ml-4 relative"
               >
+                {unreadCount > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </div>
+                )}
                 {user ? (
                   <img
                     src={getProfileImageUrl(user)}

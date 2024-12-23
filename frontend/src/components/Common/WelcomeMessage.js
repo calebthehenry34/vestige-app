@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { useScroll } from '../../context/ScrollContext';
+import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config';
 
 const WelcomeMessage = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
   const { scrollY } = useScroll();
@@ -65,9 +67,12 @@ const WelcomeMessage = () => {
       <div className="text-xl font-headlines text-white mb-2">
         {greeting}, {user?.username}
       </div>
-      <div className="text-gray-400 text-sm">
-        You have {unreadCount} unread notifications
-      </div>
+      <button 
+        onClick={() => navigate('/activity')}
+        className="text-gray-400 hover:text-gray-200 text-sm transition-colors cursor-pointer"
+      >
+        You have {unreadCount} {unreadCount === 1 ? 'notification' : 'notifications'}
+      </button>
       <div className="text-gray-400 text-sm">
         You have {followRequests} follow requests
       </div>
