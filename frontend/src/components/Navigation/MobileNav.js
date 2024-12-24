@@ -8,7 +8,6 @@ import {
   SearchRegular,
   AddCircleRegular,
   HeartRegular,
-  ChatRegular
 } from '@fluentui/react-icons';
 
 const MobileNav = ({ onPostCreatorClick, isHidden }) => {
@@ -50,12 +49,6 @@ const MobileNav = ({ onPostCreatorClick, isHidden }) => {
                 {unreadCount}
               </span>
             )}
-          </button>
-          <button 
-            onClick={() => navigate('/chat')}
-            className={`${theme === 'dark-theme' ? 'text-white' : 'text-gray-700'} hover:text-[#ae52e3] transition-colors`}
-          >
-            <ChatRegular className="w-6 h-6" />
           </button>
         </div>
       {showMobileNotifications && (

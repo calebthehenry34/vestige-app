@@ -19,7 +19,6 @@ import MobileNav from './components/Navigation/MobileNav';
 import OnboardingFlow from './components/Onboarding/OnboardingFlow';
 import AdminDashboard from './components/Admin/Dashboard';
 import ProfileSettings from './components/Profile/ProfileSettings';
-import Chat from './components/Chat/Chat';
 import SinglePost from './components/Post/SinglePost';
 import VideoFeed from './components/Feed/VideoFeed';
 import Roadmap from './components/Roadmap';
@@ -178,7 +177,6 @@ function AppContent() {
                       { path: "/explore/hashtag/:hashtag", element: <HashtagSearch /> },
                       { path: "/explorenew", element: <ExploreNew /> },
                       { path: "/activity", element: <ActivityFeed /> },
-                      { path: "/chat", element: <Chat /> },
                       { path: "/settings", element: <ProfileSettings /> },
                       { path: "/profile/:username", element: <Profile /> },
                       { path: "/post/:id", element: <SinglePost /> },
