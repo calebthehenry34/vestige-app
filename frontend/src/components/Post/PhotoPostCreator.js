@@ -20,6 +20,7 @@ import { debounce } from 'lodash';
 
 
 const PhotoPostCreator = ({ onBack, onPublish, user }) => {
+  const [isPublishing, setIsPublishing] = useState(false);
   // Add back navigation section
   const renderBackNavigation = () => (
     <div className="flex items-center gap-2 mb-4">
@@ -197,11 +198,17 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
     return text;
   };
 
-  const handlePublish = async () => {
-    // Process images with filters and crops before publishing
-    // Use first image's aspect ratio for consistency
-    const firstImageAspectRatio = images[0].aspectRatio;
-    const processedImages = await Promise.all(images.map(async (img, index) => {
+  const [error, setError] = useState(null);
+
+  const handlePublish = async (retryCount = 0, useHttp1 = false) => {
+    if (isPublishing) return;
+    setIsPublishing(true);
+    setError(null);
+
+    try {
+      // Use first image's aspect ratio for consistency
+      const firstImageAspectRatio = images[0].aspectRatio;
+      const processedImages = await Promise.all(images.map(async (img, index) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const image = new Image();
@@ -258,12 +265,56 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
       });
     }));
 
-    onPublish({
-      type: 'photo',
-      images: processedImages,
-      caption: formatCaption(caption),
-      location
-    });
+      // Create FormData with proper field names
+      const formData = new FormData();
+      processedImages.forEach((img, index) => {
+        formData.append('images', img, `image-${index + 1}.jpg`);
+      });
+      formData.append('caption', formatCaption(caption));
+      if (location) formData.append('location', location);
+      formData.append('type', 'photo');
+
+      try {
+        const headers = {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          ...(useHttp1 ? { 'X-Use-HTTP1': '1' } : {})
+        };
+
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/posts/multi`, {
+          method: 'POST',
+          headers,
+          body: formData,
+          ...(useHttp1 ? { 
+            mode: 'cors',
+            credentials: 'include'
+          } : {})
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Force refresh feed after successful post
+        window.location.reload();
+      } catch (error) {
+        console.error('Error publishing post:', error);
+        
+        // If it's a QUIC protocol error and we haven't exceeded retries
+        if ((error.message?.includes('QUIC_PROTOCOL_ERROR') || error.message?.includes('Failed to fetch')) && retryCount < 2) {
+          // Wait a bit before retrying with HTTP/1.1
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return handlePublish(retryCount + 1, true);
+        }
+        
+        setError('Failed to publish post. Please try again.');
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error processing images:', error);
+      setError('Failed to process images. Please try again.');
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
@@ -289,7 +340,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
             {/* Current Image */}
             <div className={`relative rounded-lg overflow-hidden bg-black flex items-center justify-center`} style={{ 
               height: images[currentImageIndex] && Math.abs(images[currentImageIndex].aspectRatio - 0.5625) < 0.01 
-              ? `min(${Math.round(window.innerWidth * 5)}px, calc(90vh - 100px))` // 50% taller preview for 9:16
+              ? `min(${Math.round(window.innerWidth * 9)}px, calc(180vh - 150px))` // 50% taller preview for 9:16
                 : images[currentImageIndex]?.aspectRatio > 0.5625
                   ? `min(${Math.round(window.innerWidth * (images[currentImageIndex].aspectRatio || 1))}px, calc(90vh - 300px))`
                   : `min(${Math.round(window.innerWidth * 0.5625)}px, calc(180vh - 300px))`,
@@ -780,6 +831,13 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
 
       
 
+      {/* Error Message */}
+      {error && (
+        <div className="px-4 py-2 mb-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <p className="text-red-500 text-sm">{error}</p>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="p-4 border-t border-white/10">
         <div className="flex gap-2">
@@ -791,10 +849,20 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
           </button>
           <button
             onClick={handlePublish}
-            disabled={images.length === 0}
-            className="flex-1 py-2 rounded-lg bg-pink-500 hover:bg-pink-600 disabled:opacity-50 disabled:hover:bg-pink-500"
+            disabled={images.length === 0 || isPublishing}
+            className="flex-1 py-2 rounded-lg bg-pink-500 hover:bg-pink-600 disabled:opacity-50 disabled:hover:bg-pink-500 relative"
           >
-            Next
+            {isPublishing ? (
+              <div className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Sharing...</span>
+              </div>
+            ) : (
+              "Share"
+            )}
           </button>
         </div>
       </div>

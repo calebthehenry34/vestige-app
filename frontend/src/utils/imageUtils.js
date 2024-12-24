@@ -156,46 +156,56 @@ export const clearOldCache = async () => {
 
 // Get media URL (for images and videos)
 export const getMediaUrl = (media) => {
-  if (!media) return '';
+  try {
+    if (!media) {
+      console.warn('getMediaUrl: No media provided');
+      return '';
+    }
 
-  // Handle new media structure with variants
-  if (media.variants) {
-    const variant = media.variants.large || media.variants.original;
-    if (variant) {
-      // Try CDN URL first
-      if (variant.cdnUrl) return variant.cdnUrl;
-      // Then try WebP or JPEG URL
-      if (variant.urls) {
-        const url = variant.urls.webp || variant.urls.jpeg;
-        if (url) {
-          if (url.startsWith('http')) return url;
-          return `${process.env.REACT_APP_API_URL || ''}/uploads/${url}`;
+    // Log media structure for debugging
+    console.debug('getMediaUrl input:', {
+      type: typeof media,
+      structure: media
+    });
+
+    // Handle new media structure with variants
+    if (media.variants) {
+      // Try variants in order: large, medium, small, thumbnail
+      const variantSizes = ['large', 'medium', 'small', 'thumbnail'];
+      for (const size of variantSizes) {
+        const variant = media.variants[size];
+        if (variant) {
+          // Try WebP first, then JPEG
+          if (variant.urls?.webp || variant.urls?.jpeg) {
+            const url = variant.urls.webp || variant.urls.jpeg;
+            if (url.startsWith('http')) return url;
+            return `${process.env.REACT_APP_API_URL || ''}/uploads/${url}`;
+          }
         }
       }
-      // Fallback to direct URL if available
-      if (variant.url) {
-        if (variant.url.startsWith('http')) return variant.url;
-        return `${process.env.REACT_APP_API_URL || ''}/uploads/${variant.url}`;
+    }
+
+    // Handle legacy media structure
+    if (media.legacy) {
+      if (media.legacy.cdnUrl) return media.legacy.cdnUrl;
+      if (media.legacy.url) {
+        if (media.legacy.url.startsWith('http')) return media.legacy.url;
+        return `${process.env.REACT_APP_API_URL || ''}/uploads/${media.legacy.url}`;
       }
     }
-  }
 
-  // Handle legacy media structure
-  if (media.legacy) {
-    if (media.legacy.cdnUrl) return media.legacy.cdnUrl;
-    if (media.legacy.url) {
-      if (media.legacy.url.startsWith('http')) return media.legacy.url;
-      return `${process.env.REACT_APP_API_URL || ''}/uploads/${media.legacy.url}`;
+    // Handle direct URL string
+    if (typeof media === 'string') {
+      if (media.startsWith('http')) return media;
+      return `${process.env.REACT_APP_API_URL || ''}/uploads/${media}`;
     }
-  }
 
-  // Handle direct URL string
-  if (typeof media === 'string') {
-    if (media.startsWith('http')) return media;
-    return `${process.env.REACT_APP_API_URL || ''}/uploads/${media}`;
+    console.warn('getMediaUrl: Could not generate URL from media:', media);
+    return '';
+  } catch (error) {
+    console.error('getMediaUrl error:', error, 'Media:', media);
+    return '';
   }
-
-  return '';
 };
 
 // Get profile image URL

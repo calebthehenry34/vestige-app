@@ -74,13 +74,24 @@ export const createMultiImagePost = async (req, res) => {
         }
       } else {
         const filename = `${crypto.randomUUID()}.jpg`;
+        // Store original and variants locally
         const mediaUrl = await storeFileLocally(file.buffer, filename);
+        const variants = {};
+        
+        // Create variants matching the processed sizes
+        Object.entries(processedImages.processed).forEach(([size, data]) => {
+          variants[size] = {
+            urls: {
+              jpeg: mediaUrl, // Use same URL for both formats when storing locally
+              webp: mediaUrl
+            },
+            dimensions: data.dimensions
+          };
+        });
+
         mediaData = {
           type: 'image',
-          variants: {
-            original: { url: mediaUrl },
-            large: { url: mediaUrl }
-          }
+          variants
         };
       }
 

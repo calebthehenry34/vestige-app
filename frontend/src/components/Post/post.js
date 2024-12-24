@@ -135,7 +135,12 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
   };
 
   const handleImageError = (e) => {
-    console.error('Image load error:', localPost?.media);
+    console.error('Image load error:', {
+      media: localPost?.media,
+      mediaType: typeof localPost?.media,
+      url: e.target.src,
+      generatedUrl: getMediaUrl(localPost?.media)
+    });
     setImageError(true);
     // Attempt to reload the image once
     if (!e.target.dataset.retried) {
