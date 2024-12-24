@@ -41,7 +41,10 @@ export const EncryptionStatus = ({ status }) => {
   );
 };
 
-const ChatMessage = ({ message, isOwnMessage }) => {
+const ChatMessage = ({ message = {}, isOwnMessage }) => {
+  if (!message || !message.content) {
+    return null; // Don't render if message or content is missing
+  }
   return (
     <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
       <div className="flex flex-col">

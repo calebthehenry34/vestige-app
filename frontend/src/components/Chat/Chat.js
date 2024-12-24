@@ -134,11 +134,12 @@ const Chat = () => {
             data.message,
             sharedSecret
           );
+          // Ensure all required fields are present with fallbacks
           const messageData = {
-            _id: data.message?._id || Date.now().toString(),
-            sender: data.senderId,
-            content: decryptedMessage,
-            timestamp: data.message?.timestamp || new Date().toISOString()
+            _id: data?.message?._id || Date.now().toString(),
+            sender: data?.senderId || user?._id, // Fallback to current user if sender is undefined
+            content: decryptedMessage || '',
+            timestamp: data?.message?.timestamp || new Date().toISOString()
           };
           setMessages((prev) => [...prev, messageData]);
           scrollToBottom();
@@ -210,7 +211,10 @@ const Chat = () => {
       });
 
       const message = await response.json();
-      setMessages([...messages, message]);
+      // Ensure message has all required fields before adding to state
+      if (message && message.content) {
+        setMessages([...messages, message]);
+      }
       setNewMessage('');
       scrollToBottom();
 
