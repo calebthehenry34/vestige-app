@@ -1,5 +1,5 @@
 // frontend/src/components/Post/Post.js
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -69,6 +69,11 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
   const [imageError, setImageError] = useState(false);
   const [localPost, setLocalPost] = useState(post);
   const [showDetails, setShowDetails] = useState(false);
+
+  // Keep localPost in sync with post prop
+  useEffect(() => {
+    setLocalPost(post);
+  }, [post]);
   const isOwner = localPost?.user?._id === user?.id;
   const isLiked = localPost?.likes?.includes(user?.id);
 
