@@ -72,23 +72,10 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // Initialize localPost only once
+  // Keep localPost in sync with post
   useEffect(() => {
-    if (!localPost) {
-      setLocalPost(post);
-    }
-  }, []);
-
-  // Only update specific fields from post prop
-  useEffect(() => {
-    if (localPost) {
-      setLocalPost(prev => ({
-        ...prev,
-        caption: post.caption,
-        comments: post.comments
-      }));
-    }
-  }, [post.caption, post.comments]);
+    setLocalPost(post);
+  }, [post]);
 
   const isOwner = localPost?.user?._id === user?.id;
   const isLiked = localPost?.likes?.includes(user?.id);
@@ -96,8 +83,8 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
   const handleLike = async () => {
     try {
       // Optimistically update the like state
-      const currentLikes = [...(localPost.likes || [])];
-      const userIndex = currentLikes.indexOf(user?.id);
+      const currentLikes = [...(localPost?.likes || [])];
+      const userIndex = currentLikes.indexOf(user?.id || '');
       
       if (userIndex === -1) {
         currentLikes.push(user?.id);
@@ -124,17 +111,19 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
 
       const updatedPost = await response.json();
       
-      // Update only the likes array from the response
+      // Update local state and parent
       setLocalPost(prev => ({
         ...prev,
         likes: updatedPost.likes
       }));
+      // Update parent without full refresh
+      onRefresh?.(updatedPost);
     } catch (error) {
       console.error('Error liking post:', error);
       // Revert optimistic update on error
       setLocalPost(prev => ({
         ...prev,
-        likes: post.likes
+        likes: post.likes || []
       }));
     }
   };
@@ -307,8 +296,24 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
       <PostComments 
         post={localPost} 
         isOpen={showDetails}
-        onComment={(updatedPost) => setLocalPost(updatedPost)}
-        onReply={(updatedPost) => setLocalPost(updatedPost)}
+        onComment={(updatedPost) => {
+          try {
+            setLocalPost(updatedPost);
+            onRefresh?.(updatedPost);
+          } catch (error) {
+            console.error('Error updating comment:', error);
+            setLocalPost(post);
+          }
+        }}
+        onReply={(updatedPost) => {
+          try {
+            setLocalPost(updatedPost);
+            onRefresh?.(updatedPost);
+          } catch (error) {
+            console.error('Error updating reply:', error);
+            setLocalPost(post);
+          }
+        }}
       />
 
       {/* Edit Caption Modal */}
@@ -317,8 +322,14 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
           post={localPost}
           onClose={() => setShowEditModal(false)}
           onUpdate={(updatedPost) => {
-            setLocalPost(updatedPost);
-            onRefresh?.();
+            try {
+              setLocalPost(updatedPost);
+              // Update parent without full refresh
+              onRefresh?.(updatedPost);
+            } catch (error) {
+              console.error('Error updating caption:', error);
+              setLocalPost(post);
+            }
           }}
         />
       )}
