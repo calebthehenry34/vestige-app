@@ -1,5 +1,5 @@
 // frontend/src/components/Post/Post.js
-import React, { useState, useContext, useEffect, useRef } from 'react';
+import React, { useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -34,6 +34,24 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
+
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback((e) => {
+    if (!localPost?.mediaItems?.length) return;
+    
+    if (e.key === 'ArrowLeft' && currentMediaIndex > 0) {
+      setCurrentMediaIndex(prev => prev - 1);
+    } else if (e.key === 'ArrowRight' && currentMediaIndex < localPost.mediaItems.length - 1) {
+      setCurrentMediaIndex(prev => prev + 1);
+    }
+  }, [currentMediaIndex, localPost?.mediaItems?.length]);
+
+  useEffect(() => {
+    if (localPost?.mediaItems?.length > 1) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [handleKeyDown, localPost?.mediaItems?.length]);
 
   const onTouchStart = (e) => {
     setTouchEnd(null);
@@ -284,10 +302,11 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
-            {localPost.mediaItems[currentMediaIndex] && localPost.mediaItems[currentMediaIndex].url ? (
+            {localPost.mediaItems[currentMediaIndex] ? (
               <>
                 <img
-                  src={getMediaUrl(localPost.mediaItems[currentMediaIndex]) || ''}
+                  src={getMediaUrl(localPost.mediaItems[currentMediaIndex])}
+                  loading="lazy"
                   alt={`Post content ${currentMediaIndex + 1}`}
                   className={`w-full object-cover ${imageErrors[currentMediaIndex] ? 'opacity-50' : ''}`}
                   onError={(e) => handleImageError(e, currentMediaIndex)}
