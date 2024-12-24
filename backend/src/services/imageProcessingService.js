@@ -23,8 +23,34 @@ class ImageProcessingService {
    */
   async processImage(buffer, options = {}) {
     try {
-      // Get image metadata
-      const metadata = await sharp(buffer).metadata();
+      // Validate buffer
+      if (!Buffer.isBuffer(buffer)) {
+        throw new Error('Invalid input: buffer expected');
+      }
+
+      // Set resource limits for large images
+      sharp.cache(false); // Disable caching for memory optimization
+      sharp.concurrency(1); // Process one image at a time
+
+      // Get image metadata with error handling
+      const image = sharp(buffer);
+      const metadata = await image.metadata().catch(err => {
+        console.error('Metadata extraction error:', err);
+        throw new Error('Failed to extract image metadata');
+      });
+
+      // Validate format
+      const supportedFormats = ['jpeg', 'jpg', 'png', 'webp', 'gif'];
+      if (!supportedFormats.includes(metadata.format?.toLowerCase())) {
+        throw new Error(`Unsupported image format: ${metadata.format}`);
+      }
+
+      // Log processing start
+      console.log('Processing image:', {
+        originalFormat: metadata.format,
+        dimensions: `${metadata.width}x${metadata.height}`,
+        size: `${(buffer.length / 1024 / 1024).toFixed(2)}MB`
+      });
       
       // Initialize results object
       const results = {
@@ -37,19 +63,25 @@ class ImageProcessingService {
         processed: {}
       };
 
-      // Process each size
+      // Process each size with progress tracking
       for (const [sizeName, maxWidth] of Object.entries(IMAGE_SIZES)) {
         // Skip sizes larger than original
-        if (maxWidth > metadata.width) continue;
+        if (maxWidth > metadata.width) {
+          console.log(`Skipping ${sizeName} size - larger than original`);
+          continue;
+        }
 
         // Calculate height maintaining aspect ratio
         const height = Math.round((maxWidth / metadata.width) * metadata.height);
 
-        // Create resized base image
-        const resized = sharp(buffer)
+        console.log(`Processing ${sizeName} size...`);
+        
+        // Create resized base image with optimizations
+        const resized = sharp(buffer, { failOnError: true })
           .resize(maxWidth, height, {
             fit: 'contain',
-            withoutEnlargement: true
+            withoutEnlargement: true,
+            kernel: 'lanczos3' // High-quality resampling
           })
           .rotate() // Auto-rotate based on EXIF
           .withMetadata({ orientation: undefined }) // Strip EXIF but maintain orientation
@@ -75,7 +107,17 @@ class ImageProcessingService {
 
       return results;
     } catch (error) {
-      console.error('Image processing error:', error);
+      // Detailed error logging
+      console.error('Image processing error:', {
+        error: error.message,
+        stack: error.stack,
+        inputSize: buffer?.length ? `${(buffer.length / 1024 / 1024).toFixed(2)}MB` : 'unknown',
+        timestamp: new Date().toISOString()
+      });
+      
+      // Clean up resources
+      sharp.cache(false);
+      
       throw new Error(`Failed to process image: ${error.message}`);
     }
   }
@@ -106,18 +148,59 @@ class ImageProcessingService {
    */
   async validateImage(buffer) {
     try {
-      const metadata = await sharp(buffer).metadata();
+      if (!Buffer.isBuffer(buffer)) {
+        return {
+          isValid: false,
+          error: 'Invalid input: buffer expected'
+        };
+      }
+
+      // Check file size (max 15MB)
+      const maxSize = 15 * 1024 * 1024;
+      if (buffer.length > maxSize) {
+        return {
+          isValid: false,
+          error: 'Image too large (max 15MB)'
+        };
+      }
+
+      const metadata = await sharp(buffer, { failOnError: true }).metadata();
       
+      // Validate dimensions
+      const maxDimension = 5000; // Max 5000px in either dimension
+      if (metadata.width > maxDimension || metadata.height > maxDimension) {
+        return {
+          isValid: false,
+          error: `Image dimensions too large (max ${maxDimension}px)`
+        };
+      }
+
+      // Validate format
+      const supportedFormats = ['jpeg', 'jpg', 'png', 'webp', 'gif'];
+      if (!supportedFormats.includes(metadata.format?.toLowerCase())) {
+        return {
+          isValid: false,
+          error: `Unsupported format: ${metadata.format}`
+        };
+      }
+
       return {
         isValid: true,
         metadata: {
           width: metadata.width,
           height: metadata.height,
           format: metadata.format,
-          size: buffer.length
+          size: buffer.length,
+          aspectRatio: (metadata.width / metadata.height).toFixed(2)
         }
       };
     } catch (error) {
+      console.error('Image validation error:', {
+        error: error.message,
+        stack: error.stack,
+        inputSize: buffer?.length ? `${(buffer.length / 1024 / 1024).toFixed(2)}MB` : 'unknown'
+      });
+      
       return {
         isValid: false,
         error: error.message

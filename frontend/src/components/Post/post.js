@@ -121,12 +121,26 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
   };
 
   const handleImageError = (e) => {
-    console.error('Image load error:', localPost?.media);
-    setImageError(true);
-    // Attempt to reload the image once
-    if (!e.target.dataset.retried) {
-      e.target.dataset.retried = 'true';
-      e.target.src = getMediaUrl(localPost?.media);
+    console.error('Image load error:', {
+      media: localPost?.media,
+      currentSrc: e.target.src,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Only retry a few times with increasing delays
+    const retries = parseInt(e.target.dataset.retries || '0');
+    if (retries < 3) {
+      const delay = Math.pow(2, retries) * 1000; // Exponential backoff: 1s, 2s, 4s
+      e.target.dataset.retries = (retries + 1).toString();
+      
+      setTimeout(() => {
+        console.log(`Retrying image load (attempt ${retries + 1}/3)...`);
+        // Force browser to reload by appending timestamp
+        const url = getMediaUrl(localPost?.media);
+        e.target.src = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      }, delay);
+    } else {
+      setImageError(true);
     }
   };
 
@@ -224,8 +238,9 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
           />
         )}
         {imageError && (
-          <div className={`absolute inset-0 flex items-center justify-center text-red-500 ${theme === 'dark-theme' ? 'bg-zinc-800' : 'bg-gray-100'} bg-opacity-50`}>
-            Error loading image
+          <div className={`absolute inset-0 flex flex-col items-center justify-center ${theme === 'dark-theme' ? 'bg-zinc-800' : 'bg-gray-100'} bg-opacity-50 p-4 text-center`}>
+            <p className="text-red-500 font-medium mb-1">Failed to load image</p>
+            <p className="text-sm text-gray-500">The image might be temporarily unavailable or may have been removed</p>
           </div>
         )}
 

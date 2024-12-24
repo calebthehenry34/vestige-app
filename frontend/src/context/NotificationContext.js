@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import Toast from '../components/Common/Toast';
 
 const NotificationContext = createContext();
 
@@ -9,6 +10,7 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [currentNotification, setCurrentNotification] = useState(null);
   const [showMobileNotifications, setShowMobileNotifications] = useState(false);
+  const [toastNotification, setToastNotification] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -67,6 +69,8 @@ export const NotificationProvider = ({ children }) => {
         setCurrentNotification(notification);
         setNotifications(prev => [notification, ...prev]);
         setUnreadCount(prev => prev + 1);
+        // Show toast notification
+        setToastNotification(notification);
       });
 
       return () => {
@@ -77,6 +81,10 @@ export const NotificationProvider = ({ children }) => {
 
   const clearCurrentNotification = () => {
     setCurrentNotification(null);
+  };
+
+  const clearToastNotification = () => {
+    setToastNotification(null);
   };
 
   const updateUnreadCount = (count) => {
@@ -99,9 +107,17 @@ export const NotificationProvider = ({ children }) => {
         updateUnreadCount,
         markAllAsRead,
         showMobileNotifications,
-        setShowMobileNotifications
+        setShowMobileNotifications,
+        toastNotification,
+        clearToastNotification
       }}
     >
+      {toastNotification && (
+        <Toast 
+          notification={toastNotification} 
+          onClose={clearToastNotification}
+        />
+      )}
       {children}
     </NotificationContext.Provider>
   );
