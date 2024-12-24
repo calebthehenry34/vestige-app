@@ -1,5 +1,5 @@
 // frontend/src/components/Post/Post.js
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -28,6 +28,36 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
     const [showDetails, setShowDetails] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const mediaContainerRef = useRef(null);
+
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.touches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe && currentMediaIndex < (localPost.mediaItems?.length - 1)) {
+      setCurrentMediaIndex(prev => prev + 1);
+    }
+    if (isRightSwipe && currentMediaIndex > 0) {
+      setCurrentMediaIndex(prev => prev - 1);
+    }
+  };
 
   // Keep localPost in sync with post
   useEffect(() => {
@@ -136,18 +166,37 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
   };
 
   const handleImageError = (e, index) => {
+    const media = localPost?.mediaItems?.[index] || localPost?.media;
+    
+    // Log detailed error information
     console.error('Image load error:', {
-      media: localPost?.mediaItems?.[index] || localPost?.media,
-      mediaType: 'object',
+      media,
+      mediaType: media?.type || 'unknown',
+      hasVariants: !!media?.variants,
+      variantKeys: media?.variants ? Object.keys(media.variants) : [],
       url: e.target.src,
-      generatedUrl: ''
+      generatedUrl: getMediaUrl(media)
     });
+
     setImageErrors(prev => ({ ...prev, [index]: true }));
-    // Attempt to reload the image once
-    if (!e.target.dataset.retried) {
+
+    // Attempt to reload with a different variant if available
+    if (!e.target.dataset.retried && media?.variants) {
       e.target.dataset.retried = 'true';
-      const media = localPost?.mediaItems?.[index] || localPost?.media;
-      e.target.src = getMediaUrl(media);
+      const variants = Object.keys(media.variants);
+      if (variants.length > 0) {
+        // Try next available variant
+        const currentVariant = e.target.dataset.currentVariant || variants[0];
+        const nextVariantIndex = (variants.indexOf(currentVariant) + 1) % variants.length;
+        const nextVariant = variants[nextVariantIndex];
+        
+        // Update dataset to track current variant
+        e.target.dataset.currentVariant = nextVariant;
+        e.target.src = getMediaUrl({
+          ...media,
+          preferredVariant: nextVariant
+        });
+      }
     }
   };
 
@@ -227,20 +276,62 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
       {/* Post Content */}
       <div className="relative overflow-hidden">
         {/* Multiple Media Items */}
-        {localPost.mediaItems ? (
-          <div className="relative">
-            <img
-              src={getMediaUrl(localPost.mediaItems[currentMediaIndex])}
-              alt={`Post content ${currentMediaIndex + 1}`}
-              className={`w-full object-cover ${imageErrors[currentMediaIndex] ? 'opacity-50' : ''}`}
-              onError={(e) => handleImageError(e, currentMediaIndex)}
-            />
-            {imageErrors[currentMediaIndex] && (
-              <div className={`absolute inset-0 flex items-center justify-center text-red-500 ${theme === 'dark-theme' ? 'bg-zinc-800' : 'bg-gray-100'} bg-opacity-50`}>
-                Error loading image
+        {localPost.mediaItems?.length > 0 ? (
+          <div 
+            ref={mediaContainerRef}
+            className="relative touch-pan-y"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
+            {localPost.mediaItems[currentMediaIndex] && localPost.mediaItems[currentMediaIndex].url ? (
+              <>
+                <img
+                  src={getMediaUrl(localPost.mediaItems[currentMediaIndex]) || ''}
+                  alt={`Post content ${currentMediaIndex + 1}`}
+                  className={`w-full object-cover ${imageErrors[currentMediaIndex] ? 'opacity-50' : ''}`}
+                  onError={(e) => handleImageError(e, currentMediaIndex)}
+                />
+                {imageErrors[currentMediaIndex] && (
+                  <div className={`absolute inset-0 flex items-center justify-center text-red-500 ${theme === 'dark-theme' ? 'bg-zinc-800' : 'bg-gray-100'} bg-opacity-50`}>
+                    Error loading image
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className={`w-full h-64 flex items-center justify-center ${theme === 'dark-theme' ? 'bg-zinc-800' : 'bg-gray-100'}`}>
+                <span className="text-gray-500">Image not available</span>
               </div>
             )}
             
+            {/* Navigation Arrows */}
+            {localPost.mediaItems.length > 1 && (
+              <>
+                {currentMediaIndex > 0 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentMediaIndex(prev => prev - 1);
+                    }}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full"
+                  >
+                    ←
+                  </button>
+                )}
+                {currentMediaIndex < localPost.mediaItems.length - 1 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentMediaIndex(prev => prev + 1);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full"
+                  >
+                    →
+                  </button>
+                )}
+              </>
+            )}
+
             {/* Navigation Dots */}
             {localPost.mediaItems.length > 1 && (
               <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2">

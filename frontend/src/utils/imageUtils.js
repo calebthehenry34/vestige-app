@@ -155,52 +155,77 @@ export const clearOldCache = async () => {
 };
 
 // Get media URL (for images and videos)
+const isValidUrl = (url) => {
+  if (!url) return false;
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const getValidUrl = (url) => {
+  if (!url) return '';
+  if (isValidUrl(url)) return url;
+  return `${process.env.REACT_APP_API_URL || ''}/uploads/${url}`;
+};
+
 export const getMediaUrl = (media) => {
   try {
     if (!media) {
-      console.warn('getMediaUrl: No media provided');
       return '';
     }
 
-    // Log media structure for debugging
-    console.debug('getMediaUrl input:', {
-      type: typeof media,
-      structure: media
-    });
+    // Handle direct URL string
+    if (typeof media === 'string') {
+      return getValidUrl(media);
+    }
+
+    // Handle URL property
+    if (media.url) {
+      return getValidUrl(media.url);
+    }
 
     // Handle new media structure with variants
     if (media.variants) {
+      // If a preferred variant is specified and exists, use it
+      if (media.preferredVariant && media.variants[media.preferredVariant]) {
+        const variant = media.variants[media.preferredVariant];
+        if (variant.urls?.webp) return getValidUrl(variant.urls.webp);
+        if (variant.urls?.jpeg) return getValidUrl(variant.urls.jpeg);
+        if (variant.url) return getValidUrl(variant.url);
+      }
+
       // Try variants in order: large, medium, small, thumbnail
       const variantSizes = ['large', 'medium', 'small', 'thumbnail'];
       for (const size of variantSizes) {
         const variant = media.variants[size];
         if (variant) {
-          // Try WebP first, then JPEG
-          if (variant.urls?.webp || variant.urls?.jpeg) {
-            const url = variant.urls.webp || variant.urls.jpeg;
-            if (url.startsWith('http')) return url;
-            return `${process.env.REACT_APP_API_URL || ''}/uploads/${url}`;
-          }
+          if (variant.urls?.webp) return getValidUrl(variant.urls.webp);
+          if (variant.urls?.jpeg) return getValidUrl(variant.urls.jpeg);
+          if (variant.url) return getValidUrl(variant.url);
         }
+      }
+
+      // If no preferred variants found, try any available variant
+      const firstVariant = Object.values(media.variants)[0];
+      if (firstVariant) {
+        if (firstVariant.urls?.webp) return getValidUrl(firstVariant.urls.webp);
+        if (firstVariant.urls?.jpeg) return getValidUrl(firstVariant.urls.jpeg);
+        if (firstVariant.url) return getValidUrl(firstVariant.url);
       }
     }
 
     // Handle legacy media structure
     if (media.legacy) {
-      if (media.legacy.cdnUrl) return media.legacy.cdnUrl;
-      if (media.legacy.url) {
-        if (media.legacy.url.startsWith('http')) return media.legacy.url;
-        return `${process.env.REACT_APP_API_URL || ''}/uploads/${media.legacy.url}`;
-      }
+      if (media.legacy.cdnUrl) return getValidUrl(media.legacy.cdnUrl);
+      if (media.legacy.url) return getValidUrl(media.legacy.url);
     }
 
-    // Handle direct URL string
-    if (typeof media === 'string') {
-      if (media.startsWith('http')) return media;
-      return `${process.env.REACT_APP_API_URL || ''}/uploads/${media}`;
-    }
+    // Handle CDN URL
+    if (media.cdnUrl) return getValidUrl(media.cdnUrl);
 
-    console.warn('getMediaUrl: Could not generate URL from media:', media);
     return '';
   } catch (error) {
     console.error('getMediaUrl error:', error, 'Media:', media);
