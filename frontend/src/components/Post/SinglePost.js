@@ -22,15 +22,21 @@ const SinglePost = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch post');
+          const errorData = await response.json();
+          console.error('Server error:', errorData);
+          throw new Error(`Failed to fetch post: ${response.status} ${errorData.error || ''}`);
         }
 
         const data = await response.json();
+        if (!data) {
+          throw new Error('No data received from server');
+        }
+        console.log('Received post data:', data);
         setPost(data);
         setError(null);
       } catch (err) {
-        console.error('Error fetching post:', err);
-        setError('Failed to load post');
+        console.error('Error fetching post:', err.message);
+        setError(`Failed to load post: ${err.message}`);
       } finally {
         setLoading(false);
       }

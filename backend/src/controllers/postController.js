@@ -34,11 +34,15 @@ const processPostsWithPresignedUrls = async (posts) => {
   const isArray = Array.isArray(posts);
   const postsArray = isArray ? posts : [posts];
 
+  console.log('Processing posts:', postsArray);
+
   const processedPosts = await Promise.all(postsArray.map(async (post) => {
     const postObj = post.toObject ? post.toObject() : post;
+    console.log('Processing post:', postObj._id);
     
     // Handle legacy posts (old format)
     if (postObj.mediaKey && !postObj.media?.variants) {
+      console.log('Processing legacy post with mediaKey:', postObj.mediaKey);
       try {
         const command = new GetObjectCommand({
           Bucket: getS3BucketName(),
@@ -75,6 +79,7 @@ const processPostsWithPresignedUrls = async (posts) => {
     }
     // Handle new format posts (with variants)
     else if ((postObj.media?.variants || postObj.mediaItems) && isS3Available()) {
+      console.log('Processing post with variants:', postObj.media?.variants || postObj.mediaItems);
       try {
         // Handle single media
         if (postObj.media?.variants) {
@@ -281,11 +286,15 @@ export const getUserPosts = async (req, res) => {
 export const getSinglePost = async (req, res) => {
   try {
     const { postId } = req.params;
+    console.log('Received request for post ID:', postId);
+    console.log('Request headers:', req.headers);
     
     if (!mongoose.Types.ObjectId.isValid(postId)) {
+      console.log('Invalid post ID format:', postId);
       return res.status(400).json({ error: 'Invalid post ID format' });
     }
     
+    console.log('Looking up post with ID:', postId);
     const post = await Post.findById(postId)
       .populate('user', 'username profilePicture')
       .populate('taggedUsers', 'username profilePicture')
@@ -312,8 +321,11 @@ export const getSinglePost = async (req, res) => {
       });
 
     if (!post) {
+      console.log('No post found with ID:', postId);
       return res.status(404).json({ error: 'Post not found' });
     }
+    
+    console.log('Found post:', post._id);
 
     const processedPost = await processPostsWithPresignedUrls(post);
     res.json(processedPost);
