@@ -79,7 +79,12 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
 
   // Keep localPost in sync with post
   useEffect(() => {
-    setLocalPost(post);
+    if (post) {
+      setLocalPost(post);
+      // Reset error states when post changes
+      setImageErrors({});
+      setCurrentMediaIndex(0);
+    }
   }, [post]);
 
   const isOwner = localPost?.user?._id === user?.id;
@@ -197,8 +202,19 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
       postId: localPost?._id,
       isMediaItems: !!localPost?.mediaItems,
       mediaItemsLength: localPost?.mediaItems?.length,
-      fullPost: localPost
+      fullPost: localPost,
+      error: e.error || 'Unknown error',
+      timestamp: new Date().toISOString()
     });
+
+    // Track failed attempts to prevent infinite retries
+    const retryCount = parseInt(e.target.dataset.retryCount || '0');
+    if (retryCount >= 3) {
+      console.error('Max retry attempts reached for image:', e.target.src);
+      setImageErrors(prev => ({ ...prev, [index]: true }));
+      return;
+    }
+    e.target.dataset.retryCount = (retryCount + 1).toString();
 
     setImageErrors(prev => ({ ...prev, [index]: true }));
 
@@ -229,7 +245,11 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
   };
 
   if (!localPost || !localPost.user) {
-    return null;
+    return (
+      <div className={`${theme === 'dark-theme' ? 'bg-black' : 'bg-white'} rounded-2xl shadow-lg mb-6 relative overflow-hidden min-h-[200px] flex items-center justify-center`}>
+        <span className="text-gray-500">Loading post...</span>
+      </div>
+    );
   }
 
   return (
@@ -389,7 +409,23 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
                   controls 
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    console.error('Video load error:', localPost.media);
+                    console.error('Video load error:', {
+                      media: localPost.media,
+                      error: e.error || 'Unknown error',
+                      timestamp: new Date().toISOString(),
+                      postId: localPost?._id,
+                      url: e.target.src
+                    });
+                    
+                    // Try to fetch from post media endpoint as fallback
+                    if (localPost?._id) {
+                      const mediaUrl = `${API_URL}/api/posts/${localPost._id}/media`;
+                      if (e.target.src !== mediaUrl) {
+                        e.target.src = mediaUrl;
+                        return;
+                      }
+                    }
+                    
                     setImageErrors({ 0: true });
                   }}
                 />

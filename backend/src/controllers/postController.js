@@ -481,10 +481,6 @@ export const updatePost = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
       return res.status(400).json({ error: 'Invalid post ID format' });
     }
-    if (!mongoose.Types.ObjectId.isValid(req.params.commentId)) {
-      return res.status(400).json({ error: 'Invalid comment ID format' });
-    }
-
     const post = await Post.findById(req.params.postId);
 
     if (!post) {
