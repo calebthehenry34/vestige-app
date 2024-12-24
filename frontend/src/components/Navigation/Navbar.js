@@ -151,15 +151,6 @@ const Navbar = () => {
                         e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
                       }}
                     />
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleNavigation('/settings');
-                      }}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-                    >
-                      <SettingsRegular className="w-4 h-4" />
-                    </button>
                   </div>
                 ) : (
                   <div className="w-8 h-8 rounded-md bg-gray-200 flex items-center justify-center">
@@ -186,12 +177,27 @@ const Navbar = () => {
           showDrawer ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className={`flex justify-end p-4 border-b ${
-          theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
-        }`}>
+        <div className="p-6 border-b border-gray-800 flex flex-col items-center relative">
+          <img
+            src={getProfileImageUrl(user)}
+            alt={user?.username || 'User'}
+            className="w-24 h-24 rounded-lg object-cover mb-4"
+            onError={(e) => {
+              e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
+            }}
+          />
+          <button
+            onClick={() => {
+              handleNavigation('/settings/profile');
+              setShowDrawer(false);
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Edit Profile
+          </button>
           <button
             onClick={() => setShowDrawer(false)}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`absolute top-4 right-4 p-2 rounded-lg transition-colors ${
               theme === 'dark-theme' 
                 ? 'text-gray-400 hover:text-white hover:bg-gray-800' 
                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
