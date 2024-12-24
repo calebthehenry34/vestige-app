@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -28,7 +28,7 @@ import { ScrollProvider } from './context/ScrollContext';
 import { ErrorCircleRegular } from '@fluentui/react-icons';
 import PostCreator from './components/Post/PostCreator';
 
-export const ThemeContext = createContext();
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -88,22 +88,11 @@ const LoadingSpinner = ({ theme }) => (
 );
 
 function App() {
-  const [theme, setTheme] = useState(() => {
-    const savedTheme = localStorage.getItem('theme');
-    return savedTheme || 'dark-theme';
-  });
-  const [isThemeLoaded, setIsThemeLoaded] = useState(false);
+  const { theme, isThemeLoaded } = useTheme();
 
   useEffect(() => {
     document.documentElement.className = theme;
-    localStorage.setItem('theme', theme);
-    if (!isThemeLoaded) setIsThemeLoaded(true);
-  }, [theme, isThemeLoaded]);
-
-  const toggleTheme = (selectedTheme) => {
-    if (selectedTheme === theme) return;
-    setTheme(selectedTheme);
-  };
+  }, [theme]);
 
   const ProtectedRouteWrapper = ({ children, requiresNav = true, requiresAdmin = false }) => {
     const location = useLocation();
@@ -158,7 +147,7 @@ function App() {
     <Router>
       <AuthProvider>
         <NotificationProvider>
-          <ThemeContext.Provider value={{ theme, toggleTheme }}>
+          <ThemeProvider>
             <StripeProvider>
               <ScrollProvider>
               <ErrorBoundary theme={theme}>
@@ -258,7 +247,7 @@ function App() {
               </ErrorBoundary>
               </ScrollProvider>
             </StripeProvider>
-          </ThemeContext.Provider>
+          </ThemeProvider>
         </NotificationProvider>
       </AuthProvider>
     </Router>

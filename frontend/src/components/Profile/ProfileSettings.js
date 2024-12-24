@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import {
   PersonRegular,
   DeleteRegular,
@@ -15,7 +15,7 @@ import {
   DocumentRegular,
   ShareRegular,
 } from '@fluentui/react-icons';
-import { ThemeContext } from '../../App';
+import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
@@ -32,7 +32,7 @@ const ProfileSettings = () => {
     isAdmin: user?.isAdmin || false
   });
   
-  const { theme, toggleTheme } = useContext(ThemeContext);
+  const { theme, toggleTheme } = useTheme();
 
   const navigationItems = [
     { id: 'profile', icon: <PersonRegular />, label: 'Profile Details' },
