@@ -11,7 +11,6 @@ const Feed = ({ onRefreshNeeded }) => {
   const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
-      setPosts([]); // Clear old posts immediately when loading starts
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/api/posts`, {
         headers: {

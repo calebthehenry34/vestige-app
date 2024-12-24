@@ -95,6 +95,10 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
 
       const updatedPost = await response.json();
       setLocalPost(updatedPost);
+      // Only refresh feed for significant changes, not likes
+      if (updatedPost.caption !== localPost.caption) {
+        onRefresh?.();
+      }
     } catch (error) {
       console.error('Error liking post:', error);
     }
