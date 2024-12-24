@@ -19,13 +19,12 @@ const FollowButton = ({ userId, initialIsFollowing, onFollowChange }) => {
         }
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Failed to update follow status');
+        throw new Error(data.error || 'Failed to update follow status');
       }
 
-      // Wait for the response to complete before updating state
-      await response.json();
-      
       const newFollowState = !isFollowing;
       setIsFollowing(newFollowState);
       

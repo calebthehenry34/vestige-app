@@ -67,14 +67,13 @@ const UserSuggestions = () => {
         }
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to update follow status');
-      }
-
-      // Wait for the response to complete
-      await response.json();
+      const data = await response.json();
       
-      // Update local state
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update follow status');
+      }
+      
+      // Only update local state if the API call was successful
       setUsers(prevUsers => 
         prevUsers.map(user => 
           user._id === userId 

@@ -61,30 +61,29 @@ const FollowersModal = ({ isOpen, onClose, userId, type, theme, onFollowChange }
 
   const handleFollowChangeLocal = async (newFollowState, userId) => {
     try {
-      setLoading(true);
-      const response = await fetch(
-        `${API_URL}/api/users/${userId}/${type}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }
+      // Update local state immediately for better UX
+      setUsers(prevUsers =>
+        prevUsers.map(user =>
+          user._id === userId
+            ? { ...user, isFollowing: newFollowState }
+            : user
+        )
       );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
-
-      const data = await response.json();
-      setUsers(data);
       
+      // Notify parent component if callback exists
       if (onFollowChange) {
         onFollowChange(newFollowState);
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error updating follow status:', error);
+      // Revert local state on error
+      setUsers(prevUsers =>
+        prevUsers.map(user =>
+          user._id === userId
+            ? { ...user, isFollowing: !newFollowState }
+            : user
+        )
+      );
     }
   };
 
