@@ -371,24 +371,32 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
           </div>
         ) : (
           // Single Media Item
-          localPost.mediaType === 'video' ? (
-            <video 
-              src={getMediaUrl(localPost.media)} 
-              controls 
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                console.error('Video load error:', localPost.media);
-                setImageErrors({ 0: true });
-              }}
-            />
-          ) : (
-            <img
-              src={getMediaUrl(localPost.media)}
-              alt="Post content"
-              className={`w-full object-cover ${imageErrors[0] ? 'opacity-50' : ''}`}
-              onError={(e) => handleImageError(e, 0)}
-            />
-          )
+          <>
+            {localPost.media ? (
+              localPost.mediaType === 'video' ? (
+                <video 
+                  src={getMediaUrl(localPost.media)} 
+                  controls 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error('Video load error:', localPost.media);
+                    setImageErrors({ 0: true });
+                  }}
+                />
+              ) : (
+                <img
+                  src={getMediaUrl(localPost.media)}
+                  alt="Post content"
+                  className={`w-full object-cover ${imageErrors[0] ? 'opacity-50' : ''}`}
+                  onError={(e) => handleImageError(e, 0)}
+                />
+              )
+            ) : (
+              <div className={`w-full h-64 flex items-center justify-center ${theme === 'dark-theme' ? 'bg-zinc-800' : 'bg-gray-100'}`}>
+                <span className="text-gray-500">Media not available</span>
+              </div>
+            )}
+          </>
         )}
 
         {/* Bottom gradient overlay with actions */}

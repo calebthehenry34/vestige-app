@@ -4,6 +4,7 @@ import Notification from '../models/notification.js';
 import imageProcessingService from '../services/imageProcessingService.js';
 import s3UploadService from '../utils/s3Upload.js';
 import { isS3Available } from '../config/s3.js';
+import { processPostsWithPresignedUrls } from './postController.js';
 import crypto from 'crypto';
 import path from 'path';
 import fs from 'fs';
@@ -116,7 +117,8 @@ export const createMultiImagePost = async (req, res) => {
     
     await post.populate([
       { path: 'user', select: 'username profilePicture' },
-      { path: 'taggedUsers', select: 'username profilePicture' }
+      { path: 'taggedUsers', select: 'username profilePicture' },
+      { path: 'likes', select: 'username profilePicture' }
     ]);
 
     // Create notifications for tagged users
@@ -131,7 +133,8 @@ export const createMultiImagePost = async (req, res) => {
       }
     }
 
-    res.status(201).json(post);
+    const processedPost = await processPostsWithPresignedUrls(post);
+    res.status(201).json(processedPost);
   } catch (error) {
     console.error('Create multi-image post error:', error);
     res.status(500).json({ error: 'Error creating post with multiple images' });

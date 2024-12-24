@@ -30,7 +30,7 @@ const storeFileLocally = async (buffer, filename) => {
 };
 
 // Helper function to process posts with image variants
-const processPostsWithPresignedUrls = async (posts) => {
+export const processPostsWithPresignedUrls = async (posts) => {
   const isArray = Array.isArray(posts);
   const postsArray = isArray ? posts : [posts];
 

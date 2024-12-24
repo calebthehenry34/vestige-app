@@ -174,8 +174,12 @@ const getValidUrl = (url) => {
 export const getMediaUrl = (media) => {
   try {
     if (!media) {
+      console.debug('getMediaUrl: No media provided');
       return '';
     }
+
+    // Log media object for debugging
+    console.debug('getMediaUrl input:', JSON.stringify(media, null, 2));
 
     // Handle direct URL string
     if (typeof media === 'string') {
@@ -189,6 +193,7 @@ export const getMediaUrl = (media) => {
 
     // Handle new media structure with variants
     if (media.variants) {
+      console.debug('getMediaUrl variants:', Object.keys(media.variants));
       // If a preferred variant is specified and exists, use it
       if (media.preferredVariant && media.variants[media.preferredVariant]) {
         const variant = media.variants[media.preferredVariant];
@@ -202,6 +207,7 @@ export const getMediaUrl = (media) => {
       for (const size of variantSizes) {
         const variant = media.variants[size];
         if (variant) {
+          console.debug(`getMediaUrl checking ${size} variant:`, variant);
           if (variant.urls?.webp) return getValidUrl(variant.urls.webp);
           if (variant.urls?.jpeg) return getValidUrl(variant.urls.jpeg);
           if (variant.url) return getValidUrl(variant.url);
@@ -211,14 +217,18 @@ export const getMediaUrl = (media) => {
       // If no preferred variants found, try any available variant
       const firstVariant = Object.values(media.variants)[0];
       if (firstVariant) {
+        console.debug('getMediaUrl using first available variant:', firstVariant);
         if (firstVariant.urls?.webp) return getValidUrl(firstVariant.urls.webp);
         if (firstVariant.urls?.jpeg) return getValidUrl(firstVariant.urls.jpeg);
         if (firstVariant.url) return getValidUrl(firstVariant.url);
       }
+
+      console.debug('getMediaUrl: No valid URLs found in variants');
     }
 
     // Handle legacy media structure
     if (media.legacy) {
+      console.debug('getMediaUrl checking legacy structure:', media.legacy);
       if (media.legacy.cdnUrl) return getValidUrl(media.legacy.cdnUrl);
       if (media.legacy.url) return getValidUrl(media.legacy.url);
     }
@@ -226,6 +236,7 @@ export const getMediaUrl = (media) => {
     // Handle CDN URL
     if (media.cdnUrl) return getValidUrl(media.cdnUrl);
 
+    console.debug('getMediaUrl: No valid URL found in media object');
     return '';
   } catch (error) {
     console.error('getMediaUrl error:', error, 'Media:', media);
