@@ -134,7 +134,13 @@ const Chat = () => {
             data.message,
             sharedSecret
           );
-          setMessages((prev) => [...prev, { ...data.message, content: decryptedMessage }]);
+          const messageData = {
+            _id: data.message?._id || Date.now().toString(),
+            sender: data.senderId,
+            content: decryptedMessage,
+            timestamp: data.message?.timestamp || new Date().toISOString()
+          };
+          setMessages((prev) => [...prev, messageData]);
           scrollToBottom();
         } catch (error) {
           console.error('Failed to decrypt received message:', error);
@@ -243,7 +249,7 @@ const Chat = () => {
               <ChatMessage
                 key={message._id}
                 message={message}
-                isOwn={message.sender === user._id}
+                isOwnMessage={message?.sender === user?._id}
               />
             ))}
             <div ref={messagesEndRef} />

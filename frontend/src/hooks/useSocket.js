@@ -6,17 +6,17 @@ const SOCKET_SERVER_URL = process.env.REACT_APP_API_URL || 'http://localhost:300
 
 export const useSocket = () => {
   const socket = useRef();
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
-    if (currentUser?._id) {
+    if (user?._id) {
       // Connect to socket server
       socket.current = io(SOCKET_SERVER_URL, {
         withCredentials: true,
       });
 
       // Join user's chat room
-      socket.current.emit('join_chat', currentUser._id);
+      socket.current.emit('join_chat', user._id);
 
       return () => {
         if (socket.current) {
@@ -24,7 +24,7 @@ export const useSocket = () => {
         }
       };
     }
-  }, [currentUser]);
+  }, [user]);
 
   const sendMessage = useCallback((data) => {
     if (socket.current) {
