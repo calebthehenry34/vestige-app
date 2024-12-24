@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { SearchRegular, ChatRegular, HeartRegular, ArrowLeftRegular } from '@fluentui/react-icons';
-import { ThemeContext } from '../../context/ThemeContext';
+import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
 
 const HashtagSearch = () => {

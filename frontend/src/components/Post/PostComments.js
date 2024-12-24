@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './PostComments.module.css';
-import { ThemeContext } from '../../context/ThemeContext';
+import { ThemeContext } from '../../App';  
 import { 
   HeartRegular, 
   HeartFilled,
@@ -145,6 +145,12 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
   };
 
   const [isLikingComment, setIsLikingComment] = useState({});
+  const [previousComments, setPreviousComments] = useState(post?.comments || []);
+
+  // Keep previousComments in sync with post updates
+  useEffect(() => {
+    setPreviousComments(post?.comments || []);
+  }, [post?.comments]);
 
   const handleLikeComment = async (commentId, isReply = false, parentCommentId = null) => {
     // Prevent multiple simultaneous likes on the same comment
@@ -153,6 +159,39 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
     
     try {
       setIsLikingComment(prev => ({ ...prev, [likeKey]: true }));
+
+      // Optimistic update
+      const updatedComments = previousComments.map(comment => {
+        if (isReply && comment._id === parentCommentId) {
+          return {
+            ...comment,
+            replies: comment.replies.map(reply => {
+              if (reply._id === commentId) {
+                const isLiked = reply.likes?.includes(user?.id);
+                return {
+                  ...reply,
+                  likes: isLiked
+                    ? reply.likes.filter(id => id !== user?.id)
+                    : [...(reply.likes || []), user?.id]
+                };
+              }
+              return reply;
+            })
+          };
+        } else if (!isReply && comment._id === commentId) {
+          const isLiked = comment.likes?.includes(user?.id);
+          return {
+            ...comment,
+            likes: isLiked
+              ? comment.likes.filter(id => id !== user?.id)
+              : [...(comment.likes || []), user?.id]
+          };
+        }
+        return comment;
+      });
+
+      // Update UI optimistically
+      onComment?.({ ...post, comments: updatedComments });
 
       const endpoint = isReply 
         ? `${API_URL}/api/posts/${post._id}/comments/${parentCommentId}/replies/${commentId}/like`
@@ -170,15 +209,17 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
       if (!response.ok) throw new Error('Failed to like comment');
       const updatedPost = await response.json();
       
-      // Update with server response
-      onComment?.(updatedPost);
+      // Only update if server response is different to avoid unnecessary re-renders
+      if (JSON.stringify(updatedPost.comments) !== JSON.stringify(post.comments)) {
+        onComment?.(updatedPost);
+        setPreviousComments(updatedPost.comments || []);
+      }
     } catch (error) {
       console.error('Error liking comment:', error);
+      // Revert to previous state on error
+      onComment?.({ ...post, comments: previousComments });
     } finally {
-      // Reset likeInProgress after a short delay to prevent rapid clicking
-      setTimeout(() => {
-        setIsLikingComment(prev => ({ ...prev, [likeKey]: false }));
-      }, 300);
+      setIsLikingComment(prev => ({ ...prev, [likeKey]: false }));
     }
   };
 
@@ -332,7 +373,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
                           className="text-gray-500 hover:text-red-500 transition-colors"
                         >
                           {comment.likes?.includes(user?.id) ? (
-                            <HeartFilled className="w-4 h-4 text-red-500 fill-red-500" />
+                            <HeartFilled className="w-4 h-4 text-red-500" />
                           ) : (
                             <HeartRegular className="w-4 h-4" />
                           )}
@@ -400,7 +441,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
                             className="text-gray-500 hover:text-red-500 transition-colors"
                           >
                             {reply.likes?.includes(user?.id) ? (
-                              <HeartFilled className="w-4 h-4 text-red-500 fill-red-500" />
+                              <HeartFilled className="w-4 h-4 text-red-500" />
                             ) : (
                               <HeartRegular className="w-4 h-4" />
                             )}

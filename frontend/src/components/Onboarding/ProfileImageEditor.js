@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useContext } from 'react';
 import Cropper from 'react-easy-crop';
-import { ThemeContext } from '../../context/ThemeContext';
+import { ThemeContext } from '../../App';
 import { ErrorCircleRegular } from '@fluentui/react-icons';
 
 const createImage = (url) =>

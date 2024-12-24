@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { ThemeContext } from '../../context/ThemeContext';
+import { ThemeContext } from '../../App';
 import UserSuggestions from './UserSuggestions';
 
 const UsersPage = () => {

@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { useScroll } from '../../context/ScrollContext';
-import { ThemeContext } from '../../context/ThemeContext';
+import { ThemeContext } from '../../App';
 
 const ExploreMessage = () => {
   const { scrollY } = useScroll();

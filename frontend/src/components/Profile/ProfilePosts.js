@@ -2,7 +2,7 @@
 import React, { useState, useContext } from 'react';
 import { GridRegular, ListRegular, HeartRegular, ChatRegular } from '@fluentui/react-icons';
 import { Link } from 'react-router-dom';
-import { ThemeContext } from '../../context/ThemeContext';
+import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
 
 const getMediaUrl = (mediaPath) => {

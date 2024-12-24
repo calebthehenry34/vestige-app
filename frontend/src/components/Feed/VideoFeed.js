@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useContext, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
+import { ThemeContext } from '../../App';
 import { useNavigate } from 'react-router-dom';
 import { 
   HeartRegular,
@@ -18,7 +18,7 @@ import { API_URL } from '../../config';
 
 const VideoFeed = () => {
   const navigate = useNavigate();
-  const { theme } = useTheme();
+  const { theme } = useContext(ThemeContext);
   const { user } = useAuth();
   const [videos, setVideos] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);

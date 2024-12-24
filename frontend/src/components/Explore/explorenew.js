@@ -5,7 +5,7 @@ import Navbar from '../Navigation/Navbar';
 import ExploreMessage from './ExploreMessage';
 import { useScroll } from '../../context/ScrollContext';
 import { PostSkeleton } from '../Common/Skeleton';
-import { ThemeContext } from '../../context/ThemeContext';
+import { ThemeContext } from '../../App';
 import { API_URL } from '../../config';
 import { createImageProps, checkWebPSupport } from '../../utils/imageUtils';
 

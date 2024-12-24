@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../config';
 import FollowButton from '../Common/FollowButton';
-import { ThemeContext } from '../../context/ThemeContext';
+import { ThemeContext } from '../../App';
 import { useNotifications } from '../../context/NotificationContext';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 import { DismissRegular, HeartRegular } from '@fluentui/react-icons';

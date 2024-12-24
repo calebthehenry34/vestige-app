@@ -28,7 +28,7 @@ const PostCreator = ({ isOpen, onClose, onPostCreated, user }) => {
       formData.append('type', 'photo');
 
       const result = await axios.post(
-        `${API_URL}/api/posts/multi`,
+        `${API_URL}/api/posts`,
         formData,
         {
           headers: {

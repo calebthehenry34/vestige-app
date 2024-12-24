@@ -16,7 +16,7 @@ import {
 import { API_URL } from '../../config';
 import { getProfileImageUrl, getMediaUrl } from '../../utils/imageUtils';
 import PostComments from './PostComments';
-import { ThemeContext } from '../../context/ThemeContext';
+import { ThemeContext } from '../../App';
 import EditCaptionModal from './EditCaptionModal';
 
 const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
@@ -36,16 +36,31 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
   const isOwner = localPost?.user?._id === user?.id;
   const isLiked = localPost?.likes?.includes(user?.id);
 
-  const [likeInProgress, setLikeInProgress] = useState(false);
-  const likeTimeoutRef = React.useRef(null);
+  const [isLiking, setIsLiking] = useState(false);
+  const [previousLikes, setPreviousLikes] = useState(post?.likes || []);
 
-  const handleLike = async (e) => {
-    e.stopPropagation(); // Prevent post click event
-    if (!localPost?._id || likeInProgress) return;
+  // Keep previousLikes in sync with post updates
+  useEffect(() => {
+    setPreviousLikes(post?.likes || []);
+  }, [post?.likes]);
 
-    setLikeInProgress(true);
+  const handleLike = async () => {
+    if (isLiking || !localPost?._id) return;
     
     try {
+      setIsLiking(true);
+      
+      // Optimistically update UI
+      const wasLiked = previousLikes.includes(user?.id);
+      const newLikes = wasLiked
+        ? previousLikes.filter(id => id !== user?.id)
+        : [...previousLikes, user?.id];
+        
+      setLocalPost(prev => ({
+        ...prev,
+        likes: newLikes
+      }));
+
       const response = await fetch(`${API_URL}/api/posts/${localPost._id}/like`, {
         method: 'POST',
         headers: {
@@ -60,22 +75,21 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
 
       const updatedPost = await response.json();
       
-      // Update the local post with the server response
-      setLocalPost(prev => ({
-        ...prev,
-        ...updatedPost,
-        user: prev.user // Preserve the user object from previous state
-      }));
+      // Update with server response
+      setLocalPost(updatedPost);
+      setPreviousLikes(updatedPost.likes || []);
       
-      // Notify parent of server-confirmed update
+      // Notify parent component
       onRefresh?.(updatedPost);
     } catch (error) {
       console.error('Error liking post:', error);
+      // Revert to previous state on error
+      setLocalPost(prev => ({
+        ...prev,
+        likes: previousLikes
+      }));
     } finally {
-      // Reset likeInProgress after a short delay to prevent rapid clicking
-      setTimeout(() => {
-        setLikeInProgress(false);
-      }, 300);
+      setIsLiking(false);
     }
   };
 
@@ -121,26 +135,12 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
   };
 
   const handleImageError = (e) => {
-    console.error('Image load error:', {
-      media: localPost?.media,
-      currentSrc: e.target.src,
-      timestamp: new Date().toISOString()
-    });
-    
-    // Only retry a few times with increasing delays
-    const retries = parseInt(e.target.dataset.retries || '0');
-    if (retries < 3) {
-      const delay = Math.pow(2, retries) * 1000; // Exponential backoff: 1s, 2s, 4s
-      e.target.dataset.retries = (retries + 1).toString();
-      
-      setTimeout(() => {
-        console.log(`Retrying image load (attempt ${retries + 1}/3)...`);
-        // Force browser to reload by appending timestamp
-        const url = getMediaUrl(localPost?.media);
-        e.target.src = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
-      }, delay);
-    } else {
-      setImageError(true);
+    console.error('Image load error:', localPost?.media);
+    setImageError(true);
+    // Attempt to reload the image once
+    if (!e.target.dataset.retried) {
+      e.target.dataset.retried = 'true';
+      e.target.src = getMediaUrl(localPost?.media);
     }
   };
 
@@ -238,9 +238,8 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
           />
         )}
         {imageError && (
-          <div className={`absolute inset-0 flex flex-col items-center justify-center ${theme === 'dark-theme' ? 'bg-zinc-800' : 'bg-gray-100'} bg-opacity-50 p-4 text-center`}>
-            <p className="text-red-500 font-medium mb-1">Failed to load image</p>
-            <p className="text-sm text-gray-500">The image might be temporarily unavailable or may have been removed</p>
+          <div className={`absolute inset-0 flex items-center justify-center text-red-500 ${theme === 'dark-theme' ? 'bg-zinc-800' : 'bg-gray-100'} bg-opacity-50`}>
+            Error loading image
           </div>
         )}
 
@@ -249,7 +248,7 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
           <div className="flex items-center gap-4 text-white">
             <button onClick={handleLike} className="transform hover:scale-110 transition-transform">
               {isLiked ? (
-                <HeartFilled className="w-6 h-6 text-red-600 fill-red-600" />
+                <HeartFilled className="w-6 h-6 text-red-600" style={{ fill: '#dc2626' }} />
               ) : (
                 <HeartRegular className="w-6 h-6" />
               )}

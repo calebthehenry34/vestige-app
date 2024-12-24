@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, createContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -19,6 +19,7 @@ import MobileNav from './components/Navigation/MobileNav';
 import OnboardingFlow from './components/Onboarding/OnboardingFlow';
 import AdminDashboard from './components/Admin/Dashboard';
 import ProfileSettings from './components/Profile/ProfileSettings';
+import Chat from './components/Chat/Chat';
 import SinglePost from './components/Post/SinglePost';
 import VideoFeed from './components/Feed/VideoFeed';
 import Roadmap from './components/Roadmap';
@@ -27,7 +28,7 @@ import { ScrollProvider } from './context/ScrollContext';
 import { ErrorCircleRegular } from '@fluentui/react-icons';
 import PostCreator from './components/Post/PostCreator';
 
-import { ThemeProvider, useTheme } from './context/ThemeContext';
+export const ThemeContext = createContext();
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -86,12 +87,23 @@ const LoadingSpinner = ({ theme }) => (
   </div>
 );
 
-function AppContent() {
-  const { theme, isThemeLoaded } = useTheme();
+function App() {
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme || 'dark-theme';
+  });
+  const [isThemeLoaded, setIsThemeLoaded] = useState(false);
 
   useEffect(() => {
     document.documentElement.className = theme;
-  }, [theme]);
+    localStorage.setItem('theme', theme);
+    if (!isThemeLoaded) setIsThemeLoaded(true);
+  }, [theme, isThemeLoaded]);
+
+  const toggleTheme = (selectedTheme) => {
+    if (selectedTheme === theme) return;
+    setTheme(selectedTheme);
+  };
 
   const ProtectedRouteWrapper = ({ children, requiresNav = true, requiresAdmin = false }) => {
     const location = useLocation();
@@ -146,8 +158,9 @@ function AppContent() {
     <Router>
       <AuthProvider>
         <NotificationProvider>
-          <StripeProvider>
-            <ScrollProvider>
+          <ThemeContext.Provider value={{ theme, toggleTheme }}>
+            <StripeProvider>
+              <ScrollProvider>
               <ErrorBoundary theme={theme}>
                 <div className={`${
                   theme === 'dark-theme' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-black'
@@ -177,6 +190,7 @@ function AppContent() {
                       { path: "/explore/hashtag/:hashtag", element: <HashtagSearch /> },
                       { path: "/explorenew", element: <ExploreNew /> },
                       { path: "/activity", element: <ActivityFeed /> },
+                      { path: "/chat", element: <Chat /> },
                       { path: "/settings", element: <ProfileSettings /> },
                       { path: "/profile/:username", element: <Profile /> },
                       { path: "/post/:id", element: <SinglePost /> },
@@ -242,19 +256,12 @@ function AppContent() {
                   </Routes>
                 </div>
               </ErrorBoundary>
-            </ScrollProvider>
-          </StripeProvider>
+              </ScrollProvider>
+            </StripeProvider>
+          </ThemeContext.Provider>
         </NotificationProvider>
       </AuthProvider>
     </Router>
-  );
-}
-
-function App() {
-  return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
   );
 }
 

@@ -34,20 +34,11 @@ const processPostsWithPresignedUrls = async (posts) => {
   const isArray = Array.isArray(posts);
   const postsArray = isArray ? posts : [posts];
 
-    console.log('Processing posts:', {
-      count: postsArray.length,
-      ids: postsArray.map(p => p._id?.toString()).filter(Boolean)
-    });
+  console.log('Processing posts:', postsArray);
 
-    const processedPosts = await Promise.all(postsArray.map(async (post) => {
-      const postObj = post.toObject ? post.toObject() : post;
-      console.log('Processing post:', {
-        id: postObj._id?.toString(),
-        mediaType: postObj.media?.type || 'unknown',
-        hasVariants: !!postObj.media?.variants,
-        isLegacy: !!postObj.mediaKey,
-        timestamp: new Date().toISOString()
-      });
+  const processedPosts = await Promise.all(postsArray.map(async (post) => {
+    const postObj = post.toObject ? post.toObject() : post;
+    console.log('Processing post:', postObj._id);
     
     // Handle legacy posts (old format)
     if (postObj.mediaKey && !postObj.media?.variants) {
