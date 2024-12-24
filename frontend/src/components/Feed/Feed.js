@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PostSkeleton } from '../Common/Skeleton';
 import Post from '../Post/post';
 import { API_URL } from '../../config';
 import PostCreator from '../Post/PostCreator';
 const Feed = ({ onRefreshNeeded }) => {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -113,6 +115,7 @@ const Feed = ({ onRefreshNeeded }) => {
                   key={post._id}
                   post={post}
                   onDelete={handleDelete}
+                  onClick={(post) => navigate(`/post/${post._id}`)}
                   onRefresh={(updatedPost) => {
                     if (!updatedPost?._id) return;
                     

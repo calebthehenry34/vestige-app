@@ -63,7 +63,7 @@ const getMediaUrl = (media) => {
   return '';
 };
 
-const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
+const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
   const { user } = useAuth();
   const { theme } = useContext(ThemeContext);
   const [showMenu, setShowMenu] = useState(false);
@@ -193,7 +193,20 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
   }
 
   return (
-    <div className={`${theme === 'dark-theme' ? 'bg-black' : 'bg-white'} rounded-2xl shadow-lg mb-6 relative overflow-hidden`}>
+    <div 
+      className={`${theme === 'dark-theme' ? 'bg-black' : 'bg-white'} rounded-2xl shadow-lg mb-6 relative overflow-hidden cursor-pointer`}
+      onClick={(e) => {
+        // Don't trigger navigation if clicking on interactive elements
+        if (
+          e.target.closest('button') || 
+          e.target.closest('a') ||
+          e.target.closest('video')
+        ) {
+          return;
+        }
+        onClick?.(post);
+      }}
+    >
       {/* User Profile and Menu */}
       <div className="absolute top-0 left-0 right-0 z-10 p-3 flex items-center justify-between bg-gradient-to-b from-black/50 via-black/25 to-transparent">
         <div className="flex items-center gap-2">
