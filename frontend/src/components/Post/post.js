@@ -23,10 +23,11 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
   const { user } = useAuth();
   const { theme } = useContext(ThemeContext);
   const [showMenu, setShowMenu] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const [localPost, setLocalPost] = useState(post);
-  const [showDetails, setShowDetails] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+    const [imageErrors, setImageErrors] = useState({});
+    const [localPost, setLocalPost] = useState(post);
+    const [showDetails, setShowDetails] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 
   // Keep localPost in sync with post
   useEffect(() => {
@@ -134,18 +135,19 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
     setShowMenu(false);
   };
 
-  const handleImageError = (e) => {
+  const handleImageError = (e, index) => {
     console.error('Image load error:', {
-      media: localPost?.media,
-      mediaType: typeof localPost?.media,
+      media: localPost?.mediaItems?.[index] || localPost?.media,
+      mediaType: 'object',
       url: e.target.src,
-      generatedUrl: getMediaUrl(localPost?.media)
+      generatedUrl: ''
     });
-    setImageError(true);
+    setImageErrors(prev => ({ ...prev, [index]: true }));
     // Attempt to reload the image once
     if (!e.target.dataset.retried) {
       e.target.dataset.retried = 'true';
-      e.target.src = getMediaUrl(localPost?.media);
+      const media = localPost?.mediaItems?.[index] || localPost?.media;
+      e.target.src = getMediaUrl(media);
     }
   };
 
@@ -224,28 +226,59 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
 
       {/* Post Content */}
       <div className="relative overflow-hidden">
-        {localPost.mediaType === 'video' ? (
-          <video 
-            src={getMediaUrl(localPost.media)} 
-            controls 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              console.error('Video load error:', localPost.media);
-              setImageError(true);
-            }}
-          />
-        ) : (
-          <img
-            src={getMediaUrl(localPost.media)}
-            alt="Post content"
-            className={`w-full object-cover ${imageError ? 'opacity-50' : ''}`}
-            onError={handleImageError}
-          />
-        )}
-        {imageError && (
-          <div className={`absolute inset-0 flex items-center justify-center text-red-500 ${theme === 'dark-theme' ? 'bg-zinc-800' : 'bg-gray-100'} bg-opacity-50`}>
-            Error loading image
+        {/* Multiple Media Items */}
+        {localPost.mediaItems ? (
+          <div className="relative">
+            <img
+              src={getMediaUrl(localPost.mediaItems[currentMediaIndex])}
+              alt={`Post content ${currentMediaIndex + 1}`}
+              className={`w-full object-cover ${imageErrors[currentMediaIndex] ? 'opacity-50' : ''}`}
+              onError={(e) => handleImageError(e, currentMediaIndex)}
+            />
+            {imageErrors[currentMediaIndex] && (
+              <div className={`absolute inset-0 flex items-center justify-center text-red-500 ${theme === 'dark-theme' ? 'bg-zinc-800' : 'bg-gray-100'} bg-opacity-50`}>
+                Error loading image
+              </div>
+            )}
+            
+            {/* Navigation Dots */}
+            {localPost.mediaItems.length > 1 && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                {localPost.mediaItems.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentMediaIndex(idx);
+                    }}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      idx === currentMediaIndex ? 'bg-white' : 'bg-white/30'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
+        ) : (
+          // Single Media Item
+          localPost.mediaType === 'video' ? (
+            <video 
+              src={getMediaUrl(localPost.media)} 
+              controls 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                console.error('Video load error:', localPost.media);
+                setImageErrors({ 0: true });
+              }}
+            />
+          ) : (
+            <img
+              src={getMediaUrl(localPost.media)}
+              alt="Post content"
+              className={`w-full object-cover ${imageErrors[0] ? 'opacity-50' : ''}`}
+              onError={(e) => handleImageError(e, 0)}
+            />
+          )
         )}
 
         {/* Bottom gradient overlay with actions */}
