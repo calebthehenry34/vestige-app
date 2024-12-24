@@ -43,32 +43,8 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
     e.stopPropagation(); // Prevent post click event
     if (!localPost?._id || likeInProgress) return;
 
-    // Clear any pending timeout
-    if (likeTimeoutRef.current) {
-      clearTimeout(likeTimeoutRef.current);
-    }
-
     setLikeInProgress(true);
     
-    // Get current likes state
-    const currentLikes = localPost.likes || [];
-    const wasLiked = currentLikes.includes(user?.id);
-    
-    // Calculate new likes
-    const newLikes = wasLiked
-      ? currentLikes.filter(id => id !== user?.id)
-      : [...currentLikes, user?.id];
-
-    // Update local state immediately
-    const optimisticUpdate = {
-      ...localPost,
-      likes: newLikes
-    };
-    
-    setLocalPost(optimisticUpdate);
-    // Notify parent immediately of optimistic update
-    onRefresh?.(optimisticUpdate);
-
     try {
       const response = await fetch(`${API_URL}/api/posts/${localPost._id}/like`, {
         method: 'POST',
@@ -84,22 +60,22 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
 
       const updatedPost = await response.json();
       
-      // Set a timeout before allowing next like action
-      likeTimeoutRef.current = setTimeout(() => {
-        setLikeInProgress(false);
-      }, 500); // 500ms debounce
+      // Update the local post with the server response
+      setLocalPost(prev => ({
+        ...prev,
+        ...updatedPost,
+        user: prev.user // Preserve the user object from previous state
+      }));
       
-      // Update with server response
-      setLocalPost(updatedPost);
       // Notify parent of server-confirmed update
       onRefresh?.(updatedPost);
     } catch (error) {
       console.error('Error liking post:', error);
-      // Revert to previous state on error
-      setLocalPost(post);
-      onRefresh?.(post);
-      // Allow immediate retry on error
-      setLikeInProgress(false);
+    } finally {
+      // Reset likeInProgress after a short delay to prevent rapid clicking
+      setTimeout(() => {
+        setLikeInProgress(false);
+      }, 300);
     }
   };
 

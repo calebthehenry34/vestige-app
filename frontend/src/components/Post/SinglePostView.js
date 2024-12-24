@@ -32,30 +32,8 @@ const SinglePostView = ({ post, className }) => {
     e?.stopPropagation(); // Prevent any parent click events
     if (!localPost?._id || likeInProgress) return;
 
-    // Clear any pending timeout
-    if (likeTimeoutRef.current) {
-      clearTimeout(likeTimeoutRef.current);
-    }
-
     setLikeInProgress(true);
     
-    // Get current likes state
-    const currentLikes = localPost.likes || [];
-    const wasLiked = currentLikes.includes(user?.id);
-    
-    // Calculate new likes
-    const newLikes = wasLiked
-      ? currentLikes.filter(id => id !== user?.id)
-      : [...currentLikes, user?.id];
-
-    // Update local state immediately
-    const optimisticUpdate = {
-      ...localPost,
-      likes: newLikes
-    };
-    
-    setLocalPost(optimisticUpdate);
-
     try {
       const response = await fetch(`${API_URL}/api/posts/${localPost._id}/like`, {
         method: 'POST',
@@ -71,27 +49,19 @@ const SinglePostView = ({ post, className }) => {
 
       const updatedPost = await response.json();
       
-      // Set a timeout before allowing next like action
-      likeTimeoutRef.current = setTimeout(() => {
-        setLikeInProgress(false);
-      }, 500); // 500ms debounce
-      
-      // Update with server response and ensure all relations are populated
-      if (updatedPost.user && updatedPost.likes) {
-        setLocalPost(updatedPost);
-      } else {
-        // If the response isn't populated, keep current post data but update likes
-        setLocalPost(prev => ({
-          ...prev,
-          likes: updatedPost.likes || prev.likes
-        }));
-      }
+      // Update the local post with the server response
+      setLocalPost(prev => ({
+        ...prev,
+        ...updatedPost,
+        user: prev.user // Preserve the user object from previous state
+      }));
     } catch (error) {
       console.error('Error liking post:', error);
-      // Revert to previous state on error
-      setLocalPost(post);
-      // Allow immediate retry on error
-      setLikeInProgress(false);
+    } finally {
+      // Reset likeInProgress after a short delay to prevent rapid clicking
+      setTimeout(() => {
+        setLikeInProgress(false);
+      }, 300);
     }
   };
 
