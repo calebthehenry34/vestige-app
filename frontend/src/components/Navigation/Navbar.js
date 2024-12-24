@@ -19,7 +19,7 @@ import {
   VirtualNetworkFilled,
   PresenceBlockedRegular,
   DocumentRegular,
-  MoonRegular,
+  WeatherMoonRegular,
   WeatherSunnyRegular,
 } from '@fluentui/react-icons';
 import { useAuth } from '../../context/AuthContext';
@@ -86,7 +86,7 @@ const Navbar = () => {
         { icon: <SettingsRegular />, label: 'Settings', action: () => handleNavigation('/settings') },
         { icon: <DocumentRegular />, label: 'Roadmap', action: () => handleNavigation('/roadmap') },
         { 
-          icon: theme === 'dark-theme' ? <WeatherSunnyRegular /> : <MoonRegular />, 
+          icon: theme === 'dark-theme' ? <WeatherSunnyRegular /> : <WeatherMoonRegular />, 
           label: `${theme === 'dark-theme' ? 'Light' : 'Dark'} Mode`, 
           action: toggleTheme 
         },
