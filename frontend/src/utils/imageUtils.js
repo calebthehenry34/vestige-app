@@ -154,6 +154,50 @@ export const clearOldCache = async () => {
   }
 };
 
+// Get media URL (for images and videos)
+export const getMediaUrl = (media) => {
+  if (!media) return '';
+
+  // Handle new media structure with variants
+  if (media.variants) {
+    const variant = media.variants.large || media.variants.original;
+    if (variant) {
+      // Try CDN URL first
+      if (variant.cdnUrl) return variant.cdnUrl;
+      // Then try WebP or JPEG URL
+      if (variant.urls) {
+        const url = variant.urls.webp || variant.urls.jpeg;
+        if (url) {
+          if (url.startsWith('http')) return url;
+          return `${process.env.REACT_APP_API_URL || ''}/uploads/${url}`;
+        }
+      }
+      // Fallback to direct URL if available
+      if (variant.url) {
+        if (variant.url.startsWith('http')) return variant.url;
+        return `${process.env.REACT_APP_API_URL || ''}/uploads/${variant.url}`;
+      }
+    }
+  }
+
+  // Handle legacy media structure
+  if (media.legacy) {
+    if (media.legacy.cdnUrl) return media.legacy.cdnUrl;
+    if (media.legacy.url) {
+      if (media.legacy.url.startsWith('http')) return media.legacy.url;
+      return `${process.env.REACT_APP_API_URL || ''}/uploads/${media.legacy.url}`;
+    }
+  }
+
+  // Handle direct URL string
+  if (typeof media === 'string') {
+    if (media.startsWith('http')) return media;
+    return `${process.env.REACT_APP_API_URL || ''}/uploads/${media}`;
+  }
+
+  return '';
+};
+
 // Get profile image URL
 export const getProfileImageUrl = (user) => {
   if (!user) return `https://ui-avatars.com/api/?name=user&background=random`;

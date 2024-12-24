@@ -14,54 +14,10 @@ import {
   FlagRegular
 } from '@fluentui/react-icons';
 import { API_URL } from '../../config';
-import { getProfileImageUrl } from '../../utils/imageUtils';
+import { getProfileImageUrl, getMediaUrl } from '../../utils/imageUtils';
 import PostComments from './PostComments';
 import { ThemeContext } from '../../App';
 import EditCaptionModal from './EditCaptionModal';
-
-// Helper function to handle media URLs
-const getMediaUrl = (media) => {
-  if (!media) return '';
-  
-  // Handle new media structure with variants
-  if (media.variants) {
-    const variant = media.variants.large || media.variants.original;
-    if (variant) {
-      // Try CDN URL first
-      if (variant.cdnUrl) return variant.cdnUrl;
-      // Then try WebP or JPEG URL
-      if (variant.urls) {
-        const url = variant.urls.webp || variant.urls.jpeg;
-        if (url) {
-          if (url.startsWith('http')) return url;
-          return `${API_URL}/uploads/${url}`;
-        }
-      }
-      // Fallback to direct URL if available
-      if (variant.url) {
-        if (variant.url.startsWith('http')) return variant.url;
-        return `${API_URL}/uploads/${variant.url}`;
-      }
-    }
-  }
-
-  // Handle legacy media structure
-  if (media.legacy) {
-    if (media.legacy.cdnUrl) return media.legacy.cdnUrl;
-    if (media.legacy.url) {
-      if (media.legacy.url.startsWith('http')) return media.legacy.url;
-      return `${API_URL}/uploads/${media.legacy.url}`;
-    }
-  }
-
-  // Handle direct media string
-  if (typeof media === 'string') {
-    if (media.startsWith('http')) return media;
-    return `${API_URL}/uploads/${media}`;
-  }
-
-  return '';
-};
 
 const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
   const { user } = useAuth();
