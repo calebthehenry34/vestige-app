@@ -434,6 +434,13 @@ export const createPost = async (req, res) => {
 export const updatePost = async (req, res) => {
   try {
     const { caption, location, hashtags, taggedUsers } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
+      return res.status(400).json({ error: 'Invalid post ID format' });
+    }
+    if (!mongoose.Types.ObjectId.isValid(req.params.commentId)) {
+      return res.status(400).json({ error: 'Invalid comment ID format' });
+    }
+
     const post = await Post.findById(req.params.postId);
 
     if (!post) {
@@ -1030,7 +1037,8 @@ export const deleteReply = async (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    reply.remove();
+    // Use $pull operator to remove the reply
+    comment.replies.pull({ _id: req.params.replyId });
     await post.save();
 
     await Notification.deleteMany({
@@ -1128,8 +1136,16 @@ export const deleteComment = async (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    comment.remove();
-    await post.save();
+    // Use findOneAndUpdate to atomically remove the comment
+    const updatedPost = await Post.findOneAndUpdate(
+      { _id: req.params.postId },
+      { $pull: { comments: { _id: req.params.commentId } } },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedPost) {
+      return res.status(404).json({ error: 'Post not found after update' });
+    }
 
     await Notification.deleteMany({
       post: post._id,
