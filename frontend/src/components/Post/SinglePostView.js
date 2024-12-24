@@ -85,7 +85,7 @@ const SinglePostView = ({ post }) => {
 
   if (!localPost || !localPost.user) {
     return (
-      <div className="flex flex-col h-screen bg-black">
+      <div className="flex flex-col h-screen bg-black fixed inset-0 z-[200]">
         <div className="p-4">
           <button 
             onClick={() => navigate(-1)} 
@@ -114,9 +114,9 @@ const SinglePostView = ({ post }) => {
   };
 
   return (
-      <div className="flex flex-col h-screen bg-black">
+      <div className="flex flex-col h-screen bg-black fixed inset-0 z-[200]">
       {/* Main content */}
-      <div className="flex-1 flex flex-col bg-black">
+      <div className="flex-1 flex flex-col bg-black overflow-y-auto">
         {/* User info with back button */}
         <div className="p-4 mt-50">
           <div className="flex items-center mb-4">

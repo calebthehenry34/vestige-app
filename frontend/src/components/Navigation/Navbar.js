@@ -146,7 +146,7 @@ const Navbar = () => {
                     <img
                       src={getProfileImageUrl(user)}
                       alt={user?.username || 'User'}
-                      className="w-10 h-10 rounded-md object-cover mb-3"
+                      className="w-8 h-8 rounded-md object-cover mb-3"
                       onError={(e) => {
                         e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
                       }}
@@ -181,7 +181,7 @@ const Navbar = () => {
           <img
             src={getProfileImageUrl(user)}
             alt={user?.username || 'User'}
-            className="w-24 h-24 rounded-lg object-cover mb-4"
+            className="w-24 h-24 rounded-lg object-cover mt-25 mb-4"
             onError={(e) => {
               e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
             }}

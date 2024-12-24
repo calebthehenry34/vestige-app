@@ -59,7 +59,7 @@ const SinglePost = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col h-screen bg-[#C5B358]">
+      <div className="fixed inset-0 z-[200] flex flex-col h-screen bg-[#C5B358]">
         <div className="p-4">
           <button 
             onClick={() => window.history.back()} 
@@ -77,7 +77,7 @@ const SinglePost = () => {
 
   if (error) {
     return (
-      <div className="flex flex-col h-screen bg-[#C5B358]">
+      <div className="fixed inset-0 z-[200] flex flex-col h-screen bg-[#C5B358]">
         <div className="p-4">
           <button 
             onClick={() => window.history.back()} 
@@ -101,7 +101,11 @@ const SinglePost = () => {
     );
   }
 
-  return <SinglePostView post={post} />;
+  return (
+    <div className="fixed inset-0 z-[200] bg-black">
+      <SinglePostView post={post} />
+    </div>
+  );
 };
 
 export default SinglePost;
