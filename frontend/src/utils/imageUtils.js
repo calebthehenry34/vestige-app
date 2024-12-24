@@ -191,6 +191,12 @@ export const getMediaUrl = (media) => {
       return getValidUrl(media.url);
     }
 
+    // Handle case where media only has type property
+    if (Object.keys(media).length === 1 && media.type) {
+      console.debug('getMediaUrl: Media object only has type property');
+      return '';
+    }
+
     // Handle new media structure with variants
     if (media.variants) {
       console.debug('getMediaUrl variants:', Object.keys(media.variants));

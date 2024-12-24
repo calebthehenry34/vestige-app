@@ -3,6 +3,13 @@ import User from '../models/User.js';
 import Report from '../models/Report.js';
 import Notification from '../models/notification.js';
 import s3, { isS3Available, getCredentials, getS3BucketName } from '../config/s3.js';
+
+// Helper function to validate and format URLs
+const getValidUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `${process.env.API_URL}/uploads/${url}`;
+};
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import crypto from 'crypto';
@@ -1000,6 +1007,10 @@ export const getPostMedia = async (req, res) => {
     // Handle multiple media items
     if (post.mediaItems && post.mediaItems[index]) {
       const mediaItem = post.mediaItems[index];
+      
+      // Log media item structure for debugging
+      console.log('Media item structure:', JSON.stringify(mediaItem, null, 2));
+
       if (mediaItem.variants?.large) {
         // If CDN URL is available, redirect to it
         if (mediaItem.variants.large.cdnUrl) {
@@ -1012,6 +1023,18 @@ export const getPostMedia = async (req, res) => {
             return res.redirect(url);
           }
           return res.redirect(`${process.env.API_URL}/uploads/${url}`);
+        }
+      }
+
+      // Try other variant sizes if large is not available
+      const variantSizes = ['medium', 'small', 'thumbnail'];
+      for (const size of variantSizes) {
+        const variant = mediaItem.variants?.[size];
+        if (variant) {
+          if (variant.cdnUrl) return res.redirect(variant.cdnUrl);
+          if (variant.urls?.webp) return res.redirect(getValidUrl(variant.urls.webp));
+          if (variant.urls?.jpeg) return res.redirect(getValidUrl(variant.urls.jpeg));
+          if (variant.url) return res.redirect(getValidUrl(variant.url));
         }
       }
     }

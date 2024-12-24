@@ -193,7 +193,11 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
       hasVariants: !!media?.variants,
       variantKeys: media?.variants ? Object.keys(media.variants) : [],
       url: e.target.src,
-      generatedUrl: getMediaUrl(media)
+      generatedUrl: getMediaUrl(media),
+      postId: localPost?._id,
+      isMediaItems: !!localPost?.mediaItems,
+      mediaItemsLength: localPost?.mediaItems?.length,
+      fullPost: localPost
     });
 
     setImageErrors(prev => ({ ...prev, [index]: true }));
@@ -215,6 +219,12 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
           preferredVariant: nextVariant
         });
       }
+    }
+
+    // If no variants available and media has only type, try to fetch from post media endpoint
+    if (!media?.variants && media?.type === 'image' && localPost?._id) {
+      const mediaUrl = `${API_URL}/api/posts/${localPost._id}/media${index ? `?index=${index}` : ''}`;
+      e.target.src = mediaUrl;
     }
   };
 
