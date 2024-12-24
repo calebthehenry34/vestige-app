@@ -19,33 +19,44 @@ const SinglePostView = ({ post, className }) => {
   const [imageError, setImageError] = useState(false);
   const [localPost, setLocalPost] = useState(post);
   const [showComments, setShowComments] = useState(false);
-  const [isLiking, setIsLiking] = useState(false);
-  const [previousLikes, setPreviousLikes] = useState(post?.likes || []);
+  const [likeInProgress, setLikeInProgress] = useState(false);
+  const likeTimeoutRef = React.useRef(null);
 
   useEffect(() => {
     setLocalPost(post);
-    setPreviousLikes(post?.likes || []);
   }, [post]);
 
   const isLiked = localPost?.likes?.includes(user?.id);
 
-  const handleLike = async () => {
-    if (isLiking || !localPost?._id) return;
-    
-    try {
-      setIsLiking(true);
-      
-      // Optimistically update UI
-      const wasLiked = previousLikes.includes(user?.id);
-      const newLikes = wasLiked
-        ? previousLikes.filter(id => id !== user?.id)
-        : [...previousLikes, user?.id];
-        
-      setLocalPost(prev => ({
-        ...prev,
-        likes: newLikes
-      }));
+  const handleLike = async (e) => {
+    e?.stopPropagation(); // Prevent any parent click events
+    if (!localPost?._id || likeInProgress) return;
 
+    // Clear any pending timeout
+    if (likeTimeoutRef.current) {
+      clearTimeout(likeTimeoutRef.current);
+    }
+
+    setLikeInProgress(true);
+    
+    // Get current likes state
+    const currentLikes = localPost.likes || [];
+    const wasLiked = currentLikes.includes(user?.id);
+    
+    // Calculate new likes
+    const newLikes = wasLiked
+      ? currentLikes.filter(id => id !== user?.id)
+      : [...currentLikes, user?.id];
+
+    // Update local state immediately
+    const optimisticUpdate = {
+      ...localPost,
+      likes: newLikes
+    };
+    
+    setLocalPost(optimisticUpdate);
+
+    try {
       const response = await fetch(`${API_URL}/api/posts/${localPost._id}/like`, {
         method: 'POST',
         headers: {
@@ -59,17 +70,28 @@ const SinglePostView = ({ post, className }) => {
       }
 
       const updatedPost = await response.json();
-      setLocalPost(updatedPost);
-      setPreviousLikes(updatedPost.likes || []);
+      
+      // Set a timeout before allowing next like action
+      likeTimeoutRef.current = setTimeout(() => {
+        setLikeInProgress(false);
+      }, 500); // 500ms debounce
+      
+      // Update with server response and ensure all relations are populated
+      if (updatedPost.user && updatedPost.likes) {
+        setLocalPost(updatedPost);
+      } else {
+        // If the response isn't populated, keep current post data but update likes
+        setLocalPost(prev => ({
+          ...prev,
+          likes: updatedPost.likes || prev.likes
+        }));
+      }
     } catch (error) {
       console.error('Error liking post:', error);
       // Revert to previous state on error
-      setLocalPost(prev => ({
-        ...prev,
-        likes: previousLikes
-      }));
-    } finally {
-      setIsLiking(false);
+      setLocalPost(post);
+      // Allow immediate retry on error
+      setLikeInProgress(false);
     }
   };
 
