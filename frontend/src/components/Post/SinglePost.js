@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { ChevronLeftRegular } from '@fluentui/react-icons';
 import { API_URL } from '../../config';
+import { getMediaUrl } from '../../utils/imageUtils';
 import SinglePostView from './SinglePostView';
 
 const SinglePost = () => {
@@ -37,25 +39,55 @@ const SinglePost = () => {
     fetchPost();
   }, [id]);
 
+  useEffect(() => {
+    if (post) {
+      // Log post data for debugging
+      console.log('Post data:', post);
+      if (post.media) {
+        console.log('Media URL:', getMediaUrl(post.media));
+      }
+    }
+  }, [post]);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#C5B358]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      <div className="flex flex-col h-screen bg-[#C5B358]">
+        <div className="p-4">
+          <button 
+            onClick={() => window.history.back()} 
+            className="text-white hover:opacity-80"
+          >
+            <ChevronLeftRegular className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#C5B358]">
-        <div className="text-white text-center">
-          <p className="mb-4">{error}</p>
+      <div className="flex flex-col h-screen bg-[#C5B358]">
+        <div className="p-4">
           <button 
-            onClick={() => window.history.back()}
-            className="px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+            onClick={() => window.history.back()} 
+            className="text-white hover:opacity-80"
           >
-            Go Back
+            <ChevronLeftRegular className="w-6 h-6" />
           </button>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-white text-center">
+            <p className="mb-4">{error}</p>
+            <button 
+              onClick={() => window.history.back()}
+              className="px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+            >
+              Go Back
+            </button>
+          </div>
         </div>
       </div>
     );

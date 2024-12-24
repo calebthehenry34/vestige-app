@@ -1,13 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeftRegular } from '@fluentui/react-icons';
 import { getMediaUrl, getProfileImageUrl } from '../../utils/imageUtils';
 
 const SinglePostView = ({ post }) => {
   const navigate = useNavigate();
+  const [imageError, setImageError] = useState(false);
 
   if (!post || !post.user) {
-    return null;
+    return (
+      <div className="flex flex-col h-screen bg-[#C5B358]">
+        <div className="p-4">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="text-white hover:opacity-80"
+          >
+            <ChevronLeftRegular className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-white text-center">
+            <p>Unable to load post</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const formatTimestamp = (timestamp) => {
@@ -41,13 +58,33 @@ const SinglePostView = ({ post }) => {
               src={getMediaUrl(post.media)} 
               controls 
               className="w-full h-full object-cover"
+              onError={(e) => {
+                console.error('Video load error:', post.media);
+                setImageError(true);
+              }}
             />
           ) : (
-            <img
-              src={getMediaUrl(post.media)}
-              alt="Post content"
-              className="w-full h-full object-cover"
-            />
+            <>
+              <img
+                src={getMediaUrl(post.media)}
+                alt="Post content"
+                className={`w-full h-full object-cover ${imageError ? 'opacity-50' : ''}`}
+                onError={(e) => {
+                  console.error('Image load error:', post.media);
+                  setImageError(true);
+                  // Attempt to reload the image once
+                  if (!e.target.dataset.retried) {
+                    e.target.dataset.retried = 'true';
+                    e.target.src = getMediaUrl(post.media);
+                  }
+                }}
+              />
+              {imageError && (
+                <div className="absolute inset-0 flex items-center justify-center text-red-500 bg-black bg-opacity-50">
+                  Error loading image
+                </div>
+              )}
+            </>
           )}
         </div>
 
