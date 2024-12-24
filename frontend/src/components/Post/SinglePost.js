@@ -32,7 +32,9 @@ const SinglePost = () => {
           throw new Error('No data received from server');
         }
         console.log('Received post data:', data);
-        setPost(data);
+        // Extract the first post from the array if data is an array
+        const postData = Array.isArray(data) ? data[0] : data;
+        setPost(postData);
         setError(null);
       } catch (err) {
         console.error('Error fetching post:', err.message);

@@ -108,6 +108,7 @@ const processPostsWithPresignedUrls = async (posts) => {
     return postObj;
   }));
 
+  // Always return the processed posts in their original form (array or single object)
   return isArray ? processedPosts : processedPosts[0];
 };
 
