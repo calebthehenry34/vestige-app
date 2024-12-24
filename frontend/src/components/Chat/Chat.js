@@ -142,32 +142,41 @@ const Chat = () => {
 
   useEffect(() => {
     const handleReceiveMessage = async (data) => {
-      if (data.senderId === activeChat) {
-        try {
-          const decryptedMessage = await MessageEncryption.decryptMessage(
-            data.message,
-            sharedSecret
-          );
-          // Ensure all required fields are present with fallbacks
-          // Ensure message data matches the backend model structure
-          const messageData = {
-            _id: data?.message?._id || Date.now().toString(),
-            sender: data?.message?.sender || data?.senderId || user?._id,
-            recipient: activeChat,
-            encryptedContent: data?.message?.encryptedContent,
-            content: decryptedMessage, // Decrypted content for display
-            iv: data?.message?.iv,
-            createdAt: data?.message?.createdAt || new Date().toISOString()
-          };
-
-          // Only add valid messages to state
-          if (messageData.sender && messageData.content) {
-            setMessages((prev) => [...prev, messageData]);
-            scrollToBottom();
-          }
-        } catch (error) {
-          console.error('Failed to decrypt received message:', error);
+      if (!data || !data.senderId || data.senderId !== activeChat) return;
+      
+      try {
+        // Ensure we have the necessary data before proceeding
+        if (!data.message || !sharedSecret) {
+          console.error('Missing required message data or shared secret');
+          return;
         }
+
+        // Decrypt the message content
+        const decryptedMessage = await MessageEncryption.decryptMessage(
+          data.message,
+          sharedSecret
+        );
+
+        // Construct message data with strict null checks
+        const messageData = {
+          _id: data.message?._id || Date.now().toString(),
+          sender: data.senderId, // Use senderId directly instead of nested sender
+          recipient: activeChat,
+          encryptedContent: data.message?.encryptedContent || '',
+          content: decryptedMessage,
+          iv: data.message?.iv || '',
+          createdAt: data.message?.createdAt || new Date().toISOString()
+        };
+
+        // Validate the constructed message
+        if (messageData.sender && messageData.content) {
+          setMessages(prev => [...prev, messageData]);
+          scrollToBottom();
+        } else {
+          console.error('Invalid message data structure:', messageData);
+        }
+      } catch (error) {
+        console.error('Failed to decrypt received message:', error);
       }
     };
 
@@ -235,11 +244,11 @@ const Chat = () => {
       const message = await response.json();
       // Ensure message has all required fields before adding to state
       if (message && message.sender && message.encryptedContent) {
-        const newMessage = {
+        const messageWithContent = {
           ...message,
           content: newMessage.trim() // Add decrypted content for display
         };
-        setMessages([...messages, newMessage]);
+        setMessages([...messages, messageWithContent]);
       }
       setNewMessage('');
       scrollToBottom();
