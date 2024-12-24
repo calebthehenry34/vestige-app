@@ -49,7 +49,13 @@ const Feed = ({ onRefreshNeeded }) => {
   };
 
   const handleDelete = async (postId) => {
+    // Store current posts for recovery
+    const previousPosts = [...posts];
+    
     try {
+      // Optimistically remove the post
+      setPosts(prevPosts => prevPosts.filter(post => post._id !== postId));
+
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/api/posts/${postId}`, {
         method: 'DELETE',
@@ -59,11 +65,16 @@ const Feed = ({ onRefreshNeeded }) => {
         }
       });
 
-      if (response.ok) {
-        setPosts(posts.filter(post => post._id !== postId));
+      if (!response.ok) {
+        throw new Error('Failed to delete post');
       }
     } catch (error) {
       console.error('Error deleting post:', error);
+      // Recover previous state on error
+      setPosts(previousPosts);
+      setError('Failed to delete post. Please try again.');
+      // Clear error after 3 seconds
+      setTimeout(() => setError(null), 3000);
     }
   };
 
@@ -103,12 +114,26 @@ const Feed = ({ onRefreshNeeded }) => {
                   post={post}
                   onDelete={handleDelete}
                   onRefresh={(updatedPost) => {
-                    // Only update the specific post in the posts array
-                    setPosts(prevPosts => 
-                      prevPosts.map(p => 
-                        p._id === updatedPost._id ? updatedPost : p
-                      )
-                    );
+                    if (!updatedPost?._id) return;
+                    
+                    setPosts(prevPosts => {
+                      // Find the post index
+                      const postIndex = prevPosts.findIndex(p => p._id === updatedPost._id);
+                      
+                      // If post doesn't exist, don't update
+                      if (postIndex === -1) return prevPosts;
+                      
+                      // Create new array with updated post
+                      const newPosts = [...prevPosts];
+                      newPosts[postIndex] = {
+                        ...newPosts[postIndex],
+                        ...updatedPost,
+                        // Preserve any local state that shouldn't be overwritten
+                        user: updatedPost.user || newPosts[postIndex].user
+                      };
+                      
+                      return newPosts;
+                    });
                   }}
                 />
               ))}

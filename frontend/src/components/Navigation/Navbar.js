@@ -18,9 +18,9 @@ import {
   ShareRegular,
   VirtualNetworkFilled,
   PresenceBlockedRegular,
-  WeatherMoonRegular,
-  WeatherSunnyRegular,
   DocumentRegular,
+  MoonRegular,
+  SunRegular,
 } from '@fluentui/react-icons';
 import { useAuth } from '../../context/AuthContext';
 import { ThemeContext } from '../../App';
@@ -85,6 +85,11 @@ const Navbar = () => {
         { icon: <HeartRegular />, label: 'Notifications', action: () => handleNavigation('/activity') },
         { icon: <SettingsRegular />, label: 'Settings', action: () => handleNavigation('/settings') },
         { icon: <DocumentRegular />, label: 'Roadmap', action: () => handleNavigation('/roadmap') },
+        { 
+          icon: theme === 'dark-theme' ? <SunRegular /> : <MoonRegular />, 
+          label: `${theme === 'dark-theme' ? 'Light' : 'Dark'} Mode`, 
+          action: toggleTheme 
+        },
       ]
     },
     {
@@ -206,33 +211,7 @@ const Navbar = () => {
           </button>
         </div>
 
-        <div className="p-6 flex flex-col items-center border-b border-gray-800">
-          {user ? (
-            <img
-              src={getProfileImageUrl(user)}
-              alt={user?.username || 'User'}
-              className="w-20 h-20 rounded-lg object-cover mb-3"
-              onError={(e) => {
-                e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
-              }}
-            />
-          ) : (
-            <div className="w-20 h-20 rounded-lg bg-gray-200 flex items-center justify-center mb-3">
-              <PersonRegular className="w-12 h-12 text-gray-400" />
-            </div>
-          )}
-          <div className={`text-lg font-medium ${theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`}>
-            {user?.username || 'Guest'}
-          </div>
-          <button
-            onClick={() => handleNavigation('/settings')}
-            className={`mt-2 text-sm ${theme === 'dark-theme' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
-          >
-            Edit Profile Settings
-          </button>
-        </div>
-
-        <div className="overflow-y-auto h-[calc(100%-180px)] hide-scrollbar">
+        <div className="overflow-y-auto h-[calc(100%-120px)] hide-scrollbar">
           {settingsSections.map((section) => (
             <div 
               key={section.id} 

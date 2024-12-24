@@ -80,21 +80,29 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
   const isOwner = localPost?.user?._id === user?.id;
   const isLiked = localPost?.likes?.includes(user?.id);
 
-  const handleLike = async () => {
-    try {
-      // Optimistically update the like state
-      const currentLikes = [...(localPost?.likes || [])];
-      const userIndex = currentLikes.indexOf(user?.id || '');
-      
-      if (userIndex === -1) {
-        currentLikes.push(user?.id);
-      } else {
-        currentLikes.splice(userIndex, 1);
-      }
+  const [isLiking, setIsLiking] = useState(false);
+  const [previousLikes, setPreviousLikes] = useState(post?.likes || []);
 
+  // Keep previousLikes in sync with post updates
+  useEffect(() => {
+    setPreviousLikes(post?.likes || []);
+  }, [post?.likes]);
+
+  const handleLike = async () => {
+    if (isLiking || !localPost?._id) return;
+    
+    try {
+      setIsLiking(true);
+      
+      // Optimistically update UI
+      const wasLiked = previousLikes.includes(user?.id);
+      const newLikes = wasLiked
+        ? previousLikes.filter(id => id !== user?.id)
+        : [...previousLikes, user?.id];
+        
       setLocalPost(prev => ({
         ...prev,
-        likes: currentLikes
+        likes: newLikes
       }));
 
       const response = await fetch(`${API_URL}/api/posts/${localPost._id}/like`, {
@@ -111,20 +119,21 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
 
       const updatedPost = await response.json();
       
-      // Update local state and parent
-      setLocalPost(prev => ({
-        ...prev,
-        likes: updatedPost.likes
-      }));
-      // Update parent without full refresh
+      // Update with server response
+      setLocalPost(updatedPost);
+      setPreviousLikes(updatedPost.likes || []);
+      
+      // Notify parent component
       onRefresh?.(updatedPost);
     } catch (error) {
       console.error('Error liking post:', error);
-      // Revert optimistic update on error
+      // Revert to previous state on error
       setLocalPost(prev => ({
         ...prev,
-        likes: post.likes || []
+        likes: previousLikes
       }));
+    } finally {
+      setIsLiking(false);
     }
   };
 

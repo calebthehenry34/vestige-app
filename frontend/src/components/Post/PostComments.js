@@ -144,43 +144,55 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
     setReplyTo(comment);
   };
 
+  const [isLikingComment, setIsLikingComment] = useState({});
+  const [previousComments, setPreviousComments] = useState(post?.comments || []);
+
+  // Keep previousComments in sync with post updates
+  useEffect(() => {
+    setPreviousComments(post?.comments || []);
+  }, [post?.comments]);
+
   const handleLikeComment = async (commentId, isReply = false, parentCommentId = null) => {
-    // Store current post state for potential revert
-    const previousPost = post;
-
-    // Optimistic update
-    const updatedComments = post.comments.map(comment => {
-      if (isReply && comment._id === parentCommentId) {
-        return {
-          ...comment,
-          replies: comment.replies.map(reply => {
-            if (reply._id === commentId) {
-              const isLiked = reply.likes?.includes(user?.id);
-              return {
-                ...reply,
-                likes: isLiked
-                  ? reply.likes.filter(id => id !== user?.id)
-                  : [...(reply.likes || []), user?.id]
-              };
-            }
-            return reply;
-          })
-        };
-      } else if (!isReply && comment._id === commentId) {
-        const isLiked = comment.likes?.includes(user?.id);
-        return {
-          ...comment,
-          likes: isLiked
-            ? comment.likes.filter(id => id !== user?.id)
-            : [...(comment.likes || []), user?.id]
-        };
-      }
-      return comment;
-    });
-
-    onComment?.({ ...post, comments: updatedComments });
-
+    // Prevent multiple simultaneous likes on the same comment
+    const likeKey = isReply ? `${parentCommentId}-${commentId}` : commentId;
+    if (isLikingComment[likeKey]) return;
+    
     try {
+      setIsLikingComment(prev => ({ ...prev, [likeKey]: true }));
+
+      // Optimistic update
+      const updatedComments = previousComments.map(comment => {
+        if (isReply && comment._id === parentCommentId) {
+          return {
+            ...comment,
+            replies: comment.replies.map(reply => {
+              if (reply._id === commentId) {
+                const isLiked = reply.likes?.includes(user?.id);
+                return {
+                  ...reply,
+                  likes: isLiked
+                    ? reply.likes.filter(id => id !== user?.id)
+                    : [...(reply.likes || []), user?.id]
+                };
+              }
+              return reply;
+            })
+          };
+        } else if (!isReply && comment._id === commentId) {
+          const isLiked = comment.likes?.includes(user?.id);
+          return {
+            ...comment,
+            likes: isLiked
+              ? comment.likes.filter(id => id !== user?.id)
+              : [...(comment.likes || []), user?.id]
+          };
+        }
+        return comment;
+      });
+
+      // Update UI optimistically
+      onComment?.({ ...post, comments: updatedComments });
+
       const endpoint = isReply 
         ? `${API_URL}/api/posts/${post._id}/comments/${parentCommentId}/replies/${commentId}/like`
         : `${API_URL}/api/posts/${post._id}/comments/${commentId}/like`;
@@ -197,16 +209,17 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
       if (!response.ok) throw new Error('Failed to like comment');
       const updatedPost = await response.json();
       
-      // Only update if server response is different
-      const serverComments = updatedPost.comments || [];
-      const currentComments = post.comments || [];
-      if (JSON.stringify(serverComments) !== JSON.stringify(currentComments)) {
+      // Only update if server response is different to avoid unnecessary re-renders
+      if (JSON.stringify(updatedPost.comments) !== JSON.stringify(post.comments)) {
         onComment?.(updatedPost);
+        setPreviousComments(updatedPost.comments || []);
       }
     } catch (error) {
       console.error('Error liking comment:', error);
       // Revert to previous state on error
-      onComment?.(previousPost);
+      onComment?.({ ...post, comments: previousComments });
+    } finally {
+      setIsLikingComment(prev => ({ ...prev, [likeKey]: false }));
     }
   };
 

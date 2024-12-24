@@ -601,35 +601,43 @@ export const deletePost = async (req, res) => {
 
 export const likePost = async (req, res) => {
   try {
+    // Use findOne to get the current state and check if post exists
     const post = await Post.findById(req.params.postId);
-    
     if (!post) {
       return res.status(404).json({ error: 'Post not found' });
     }
 
     const liked = post.likes.includes(req.user.userId);
     
+    // Use atomic operations to update the likes array
+    const updatedPost = await Post.findOneAndUpdate(
+      { _id: req.params.postId },
+      liked
+        ? { $pull: { likes: req.user.userId } }
+        : { $addToSet: { likes: req.user.userId } },
+      { new: true }
+    );
+
+    if (!updatedPost) {
+      return res.status(404).json({ error: 'Post not found after update' });
+    }
+
+    // Handle notifications atomically
     if (liked) {
-      post.likes = post.likes.filter(id => id.toString() !== req.user.userId);
       await Notification.deleteOne({
         recipient: post.user,
         sender: req.user.userId,
         type: 'like',
         post: post._id
       });
-    } else {
-      post.likes.push(req.user.userId);
-      if (post.user.toString() !== req.user.userId) {
-        await Notification.create({
-          recipient: post.user,
-          sender: req.user.userId,
-          type: 'like',
-          post: post._id
-        });
-      }
+    } else if (post.user.toString() !== req.user.userId) {
+      await Notification.create({
+        recipient: post.user,
+        sender: req.user.userId,
+        type: 'like',
+        post: post._id
+      });
     }
-
-    await post.save();
     
     await post.populate([
       { path: 'user', select: 'username profilePicture' },
@@ -867,41 +875,56 @@ export const addReply = async (req, res) => {
 
 export const likeComment = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.postId);
+    const { postId, commentId } = req.params;
+    const userId = req.user.userId;
+
+    // Use findOne to get current state and check if post exists
+    const post = await Post.findById(postId);
     if (!post) {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    const comment = post.comments.id(req.params.commentId);
+    const comment = post.comments.id(commentId);
     if (!comment) {
       return res.status(404).json({ error: 'Comment not found' });
     }
 
-    const liked = comment.likes.includes(req.user.userId);
-    
-    if (liked) {
-      comment.likes = comment.likes.filter(id => id.toString() !== req.user.userId);
-      await Notification.deleteOne({
-        recipient: comment.user,
-        sender: req.user.userId,
-        type: 'commentLike',
-        post: post._id,
-        comment: comment._id
-      });
-    } else {
-      comment.likes.push(req.user.userId);
-      if (comment.user.toString() !== req.user.userId) {
-        await Notification.create({
-          recipient: comment.user,
-          sender: req.user.userId,
-          type: 'commentLike',
-          post: post._id,
-          comment: comment._id
-        });
-      }
+    const liked = comment.likes.includes(userId);
+
+    // Use atomic operations to update the comment likes
+    const updatedPost = await Post.findOneAndUpdate(
+      { 
+        _id: postId,
+        'comments._id': commentId
+      },
+      liked
+        ? { $pull: { 'comments.$.likes': userId } }
+        : { $addToSet: { 'comments.$.likes': userId } },
+      { new: true }
+    );
+
+    if (!updatedPost) {
+      return res.status(404).json({ error: 'Post not found after update' });
     }
 
-    await post.save();
+    // Handle notifications atomically
+    if (liked) {
+      await Notification.deleteOne({
+        recipient: comment.user,
+        sender: userId,
+        type: 'commentLike',
+        post: postId,
+        comment: commentId
+      });
+    } else if (comment.user.toString() !== userId) {
+      await Notification.create({
+        recipient: comment.user,
+        sender: userId,
+        type: 'commentLike',
+        post: postId,
+        comment: commentId
+      });
+    }
 
     await post.populate([
       { path: 'user', select: 'username profilePicture' },
