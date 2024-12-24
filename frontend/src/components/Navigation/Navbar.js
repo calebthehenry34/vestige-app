@@ -26,6 +26,7 @@ import { useAuth } from '../../context/AuthContext';
 import { ThemeContext } from '../../App';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 import PostCreator from '../Post/PostCreator';
+import MobileNav from './MobileNav';
 const Navbar = () => {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const { user, logout } = useAuth();
@@ -83,6 +84,7 @@ const Navbar = () => {
         { icon: <PersonRegular />, label: 'Profile', action: () => user?.username && handleNavigation(`/profile/${user.username}`) },
         { icon: <HeartRegular />, label: 'Notifications', action: () => handleNavigation('/activity') },
         { icon: <SettingsRegular />, label: 'Settings', action: () => handleNavigation('/settings') },
+        { icon: <DocumentRegular />, label: 'Roadmap', action: () => handleNavigation('/roadmap') },
       ]
     },
     {
@@ -109,14 +111,6 @@ const Navbar = () => {
       items: [
         { icon: <ChartMultipleRegular />, label: 'Analytics', action: () => handleNavigation('/settings/analytics') },
         { icon: <VirtualNetworkFilled />, label: 'Sessions', action: () => handleNavigation('/settings/sessions') },
-      ]
-    },
-    {
-      id: 'other',
-      label: 'Other',
-      items: [
-        { icon: <DocumentRegular />, label: 'Roadmap', action: () => handleNavigation('/roadmap') },
-        ...(user?.isAdmin ? [{ icon: <ShieldRegular />, label: 'Admin Dashboard', action: () => handleNavigation('/admin') }] : []),
       ]
     }
   ];
@@ -212,41 +206,30 @@ const Navbar = () => {
           </button>
         </div>
 
-        <div className={`p-4 border-b ${
-          theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
-        }`}>
-          <div className="flex items-center justify-between space-x-2">
-            <button
-              onClick={() => toggleTheme('light-theme')}
-              className={`flex-1 flex items-center justify-center px-4 py-2 rounded-lg transition-colors ${
-                theme !== 'dark-theme'
-                  ? theme === 'dark-theme'
-                    ? 'bg-gray-800 text-blue-400'
-                    : 'bg-blue-50 text-blue-600'
-                  : theme === 'dark-theme'
-                    ? 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <WeatherSunnyRegular className="w-5 h-5 mr-2" />
-              Light
-            </button>
-            <button
-              onClick={() => toggleTheme('dark-theme')}
-              className={`flex-1 flex items-center justify-center px-4 py-2 rounded-lg transition-colors ${
-                theme === 'dark-theme'
-                  ? theme === 'dark-theme'
-                    ? 'bg-gray-800 text-blue-400'
-                    : 'bg-blue-50 text-blue-600'
-                  : theme === 'dark-theme'
-                    ? 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <WeatherMoonRegular className="w-5 h-5 mr-2" />
-              Dark
-            </button>
+        <div className="p-6 flex flex-col items-center border-b border-gray-800">
+          {user ? (
+            <img
+              src={getProfileImageUrl(user)}
+              alt={user?.username || 'User'}
+              className="w-20 h-20 rounded-lg object-cover mb-3"
+              onError={(e) => {
+                e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
+              }}
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-lg bg-gray-200 flex items-center justify-center mb-3">
+              <PersonRegular className="w-12 h-12 text-gray-400" />
+            </div>
+          )}
+          <div className={`text-lg font-medium ${theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`}>
+            {user?.username || 'Guest'}
           </div>
+          <button
+            onClick={() => handleNavigation('/settings')}
+            className={`mt-2 text-sm ${theme === 'dark-theme' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
+          >
+            Edit Profile Settings
+          </button>
         </div>
 
         <div className="overflow-y-auto h-[calc(100%-180px)] hide-scrollbar">
@@ -297,13 +280,27 @@ const Navbar = () => {
           ))}
         </div>
 
+        {user?.isAdmin && (
+          <button
+            onClick={() => handleNavigation('/admin')}
+            className={`absolute bottom-[60px] left-0 right-0 flex items-center justify-center w-full p-4 transition-colors border-t ${
+              theme === 'dark-theme'
+                ? 'text-gray-300 hover:bg-gray-800 border-gray-800'
+                : 'text-gray-700 hover:bg-gray-50 border-gray-200'
+            }`}
+          >
+            <ShieldRegular className="w-5 h-5 mr-3" />
+            <span>Admin Dashboard</span>
+          </button>
+        )}
         <button
           onClick={handleLogout}
-          className={`absolute bottom-0 left-0 right-0 flex items-center justify-center w-full p-4 transition-colors ${
+          className={`absolute bottom-0 left-0 right-0 flex items-center justify-center w-full p-4 transition-colors border-t ${
             theme === 'dark-theme'
-              ? 'text-red-400 hover:bg-gray-800 border-t border-gray-800'
-              : 'text-red-600 hover:bg-gray-50 border-t border-gray-200'
+              ? 'text-red-400 hover:bg-gray-800 border-gray-800'
+              : 'text-red-600 hover:bg-gray-50 border-gray-200'
           }`}
+          style={{ height: '60px' }}
         >
           <SignOutRegular className="w-5 h-5 mr-3" />
           <span>Log Out</span>
@@ -316,6 +313,10 @@ const Navbar = () => {
         onPostCreated={() => setShowPostCreator(false)}
       />
 
+      <MobileNav 
+        onPostCreatorClick={() => setShowPostCreator(true)}
+        isHidden={showDrawer}
+      />
     </>
   );
 };
