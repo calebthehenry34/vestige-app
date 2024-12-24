@@ -87,7 +87,7 @@ const LoadingSpinner = ({ theme }) => (
   </div>
 );
 
-function App() {
+function AppContent() {
   const { theme, isThemeLoaded } = useTheme();
 
   useEffect(() => {
@@ -147,9 +147,8 @@ function App() {
     <Router>
       <AuthProvider>
         <NotificationProvider>
-          <ThemeProvider>
-            <StripeProvider>
-              <ScrollProvider>
+          <StripeProvider>
+            <ScrollProvider>
               <ErrorBoundary theme={theme}>
                 <div className={`${
                   theme === 'dark-theme' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-black'
@@ -245,12 +244,19 @@ function App() {
                   </Routes>
                 </div>
               </ErrorBoundary>
-              </ScrollProvider>
-            </StripeProvider>
-          </ThemeProvider>
+            </ScrollProvider>
+          </StripeProvider>
         </NotificationProvider>
       </AuthProvider>
     </Router>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 
