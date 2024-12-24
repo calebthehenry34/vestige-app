@@ -92,8 +92,15 @@ export const processPostsWithPresignedUrls = async (posts) => {
       }
     }
     // Handle new format posts (with variants)
-    else if ((postObj.media?.variants || postObj.mediaItems) && isS3Available()) {
-      console.log('Processing post with variants:', postObj.media?.variants || postObj.mediaItems);
+    else if (postObj.media?.variants || postObj.mediaItems) {
+      console.log('Processing post:', {
+        hasMedia: !!postObj.media,
+        mediaType: postObj.media?.type,
+        hasVariants: !!postObj.media?.variants,
+        hasMediaItems: !!postObj.mediaItems,
+        mediaItems: postObj.mediaItems,
+        mediaVariants: postObj.media?.variants
+      });
       try {
         // Handle single media
         if (postObj.media?.variants) {
