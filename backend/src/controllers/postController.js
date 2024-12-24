@@ -31,11 +31,10 @@ const storeFileLocally = async (buffer, filename) => {
 
 // Helper function to process posts with image variants
 const processPostsWithPresignedUrls = async (posts) => {
-  if (!Array.isArray(posts)) {
-    posts = [posts];
-  }
+  const isArray = Array.isArray(posts);
+  const postsArray = isArray ? posts : [posts];
 
-  const processedPosts = await Promise.all(posts.map(async (post) => {
+  const processedPosts = await Promise.all(postsArray.map(async (post) => {
     const postObj = post.toObject ? post.toObject() : post;
     
     // Handle legacy posts (old format)
@@ -104,7 +103,7 @@ const processPostsWithPresignedUrls = async (posts) => {
     return postObj;
   }));
 
-  return Array.isArray(posts) ? processedPosts : processedPosts[0];
+  return isArray ? processedPosts : processedPosts[0];
 };
 
 // Generate a pre-signed URL for an S3 object
