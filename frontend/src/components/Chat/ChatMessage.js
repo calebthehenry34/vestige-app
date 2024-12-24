@@ -42,13 +42,19 @@ export const EncryptionStatus = ({ status }) => {
 };
 
 const ChatMessage = ({ message = {}, isOwnMessage }) => {
-  // Comprehensive validation of message object
-  if (!message || 
-      !message.content || 
-      typeof message.content !== 'string' || 
-      !message.sender) {
-    return null; // Don't render if any required field is missing or invalid
-  }
+  // Strict validation of message object structure
+  if (!message || typeof message !== 'object') return null;
+  
+  // Ensure required fields exist and are of correct type
+  const isValidMessage = 
+    message.sender && 
+    (message.content || message.encryptedContent) &&
+    typeof (message.content || message.encryptedContent) === 'string';
+  
+  if (!isValidMessage) return null;
+
+  // Use content for display, falling back to encryptedContent if needed
+  const displayContent = message.content || message.encryptedContent;
   return (
     <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
       <div className="flex flex-col">
@@ -59,12 +65,12 @@ const ChatMessage = ({ message = {}, isOwnMessage }) => {
               : 'bg-gray-100 dark:bg-gray-700 dark:text-white rounded-bl-sm'
           }`}
         >
-          {message.content}
+          {displayContent}
         </div>
         <span className={`text-xs text-gray-500 mt-1 ${
           isOwnMessage ? 'text-right' : 'text-left'
         }`}>
-          {new Date(message.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          {new Date(message.createdAt || message.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>
     </div>

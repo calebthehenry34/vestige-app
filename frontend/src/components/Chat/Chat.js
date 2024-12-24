@@ -149,14 +149,22 @@ const Chat = () => {
             sharedSecret
           );
           // Ensure all required fields are present with fallbacks
+          // Ensure message data matches the backend model structure
           const messageData = {
             _id: data?.message?._id || Date.now().toString(),
-            sender: data?.senderId || user?._id, // Fallback to current user if sender is undefined
-            content: decryptedMessage || '',
-            timestamp: data?.message?.timestamp || new Date().toISOString()
+            sender: data?.message?.sender || data?.senderId || user?._id,
+            recipient: activeChat,
+            encryptedContent: data?.message?.encryptedContent,
+            content: decryptedMessage, // Decrypted content for display
+            iv: data?.message?.iv,
+            createdAt: data?.message?.createdAt || new Date().toISOString()
           };
-          setMessages((prev) => [...prev, messageData]);
-          scrollToBottom();
+
+          // Only add valid messages to state
+          if (messageData.sender && messageData.content) {
+            setMessages((prev) => [...prev, messageData]);
+            scrollToBottom();
+          }
         } catch (error) {
           console.error('Failed to decrypt received message:', error);
         }
@@ -226,25 +234,32 @@ const Chat = () => {
 
       const message = await response.json();
       // Ensure message has all required fields before adding to state
-      if (message && message.content) {
-        setMessages([...messages, message]);
+      if (message && message.sender && message.encryptedContent) {
+        const newMessage = {
+          ...message,
+          content: newMessage.trim() // Add decrypted content for display
+        };
+        setMessages([...messages, newMessage]);
       }
       setNewMessage('');
       scrollToBottom();
 
-      // Send through socket for real-time updates
-      // Ensure all required fields are present before sending socket message
+      // Send through socket for real-time updates with proper message structure
       if (activeChat && user?._id && encrypted) {
-        socketSendMessage({
+        const socketMessage = {
           recipientId: activeChat,
           senderId: user._id,
           message: {
-            ...encrypted,
-            _id: message?._id,
+            _id: message?._id || Date.now().toString(),
             sender: user._id,
+            recipient: activeChat,
+            content: newMessage,
+            encryptedContent: encrypted.encryptedContent,
+            iv: encrypted.iv,
             timestamp: new Date().toISOString()
           }
-        });
+        };
+        socketSendMessage(socketMessage);
       }
     } catch (error) {
       console.error('Failed to send message:', error);
