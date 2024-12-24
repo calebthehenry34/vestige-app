@@ -4,14 +4,12 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import { createServer } from 'http';
-import { initializeSocket } from './services/socketService.js';
 import authRoutes from './routes/authRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import emailRoutes from './routes/emailRoutes.js';
-import chatRoutes from './routes/messageRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import videoRoutes from './routes/videoRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
@@ -42,8 +40,6 @@ const uploadsDir = path.join(rootDir, 'uploads');
 
 const app = express();
 const httpServer = createServer(app);
-const io = initializeSocket(httpServer);
-app.set('io', io);
 
 app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
@@ -146,7 +142,6 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/email', emailRoutes);
-app.use('/api/messages', chatRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts/videos', videoRoutes);
 app.use('/api/notifications', notificationRoutes);

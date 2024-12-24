@@ -1,4 +1,3 @@
-// backend/src/models/Message.js
 import mongoose from 'mongoose';
 
 const messageSchema = new mongoose.Schema({
@@ -12,15 +11,7 @@ const messageSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  encryptedContent: {
-    type: String,
-    required: true
-  },
-  iv: {
-    type: String,
-    required: true
-  },
-  salt: {
+  content: {
     type: String,
     required: true
   },
@@ -32,4 +23,6 @@ const messageSchema = new mongoose.Schema({
   timestamps: true
 });
 
-export default mongoose.model('Message', messageSchema);
+const Message = mongoose.model('Message', messageSchema);
+
+export default Message;

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { ChatRegular, HeartRegular } from '@fluentui/react-icons';
 import { Box } from '@mui/material';
-import { ThemeContext } from '../../App';
+import { ThemeContext } from '../../context/ThemeContext';
 import { API_URL } from '../../config';
 import usersBg from '../../assets/backgrounds/users-bg.svg';
 import hashtagsBg from '../../assets/backgrounds/hashtags-bg.svg';

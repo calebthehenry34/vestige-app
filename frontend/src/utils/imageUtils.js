@@ -1,5 +1,6 @@
 import imageCompression from 'browser-image-compression';
 import localforage from 'localforage';
+import { API_URL } from '../config';
 
 // Initialize localforage instance for image cache
 const imageCache = localforage.createInstance({
@@ -169,13 +170,13 @@ export const getMediaUrl = (media) => {
         const url = variant.urls.webp || variant.urls.jpeg;
         if (url) {
           if (url.startsWith('http')) return url;
-          return `${process.env.REACT_APP_API_URL || ''}/uploads/${url}`;
+          return `${API_URL}/uploads/${url}`;
         }
       }
       // Fallback to direct URL if available
       if (variant.url) {
         if (variant.url.startsWith('http')) return variant.url;
-        return `${process.env.REACT_APP_API_URL || ''}/uploads/${variant.url}`;
+        return `${API_URL}/uploads/${variant.url}`;
       }
     }
   }
@@ -185,14 +186,14 @@ export const getMediaUrl = (media) => {
     if (media.legacy.cdnUrl) return media.legacy.cdnUrl;
     if (media.legacy.url) {
       if (media.legacy.url.startsWith('http')) return media.legacy.url;
-      return `${process.env.REACT_APP_API_URL || ''}/uploads/${media.legacy.url}`;
+      return `${API_URL}/uploads/${media.legacy.url}`;
     }
   }
 
   // Handle direct URL string
   if (typeof media === 'string') {
     if (media.startsWith('http')) return media;
-    return `${process.env.REACT_APP_API_URL || ''}/uploads/${media}`;
+    return `${API_URL}/uploads/${media}`;
   }
 
   return '';
@@ -218,13 +219,13 @@ export const getProfileImageUrl = (user) => {
         const url = variant.urls.webp || variant.urls.jpeg;
         if (url) {
           if (url.startsWith('http')) return url;
-          return `${process.env.REACT_APP_API_URL || ''}/uploads/${url}`;
+          return `${API_URL}/uploads/${url}`;
         }
       }
       // Fallback to direct URL if available
       if (variant.url) {
         if (variant.url.startsWith('http')) return variant.url;
-        return `${process.env.REACT_APP_API_URL || ''}/uploads/${variant.url}`;
+        return `${API_URL}/uploads/${variant.url}`;
       }
     }
   }
@@ -234,14 +235,14 @@ export const getProfileImageUrl = (user) => {
     if (profilePicture.legacy.cdnUrl) return profilePicture.legacy.cdnUrl;
     if (profilePicture.legacy.url) {
       if (profilePicture.legacy.url.startsWith('http')) return profilePicture.legacy.url;
-      return `${process.env.REACT_APP_API_URL || ''}/uploads/${profilePicture.legacy.url}`;
+      return `${API_URL}/uploads/${profilePicture.legacy.url}`;
     }
   }
 
   // Handle direct URL string
   if (typeof profilePicture === 'string') {
     if (profilePicture.startsWith('http')) return profilePicture;
-    return `${process.env.REACT_APP_API_URL || ''}/uploads/${profilePicture}`;
+    return `${API_URL}/uploads/${profilePicture}`;
   }
 
   return `https://ui-avatars.com/api/?name=${user.username || 'user'}&background=random`;

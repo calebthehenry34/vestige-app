@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeftRegular } from '@fluentui/react-icons';
-import { ThemeContext } from '../../App';
+import { ThemeContext } from '../../context/ThemeContext';
 import { UserSuggestionSkeleton } from '../Common/Skeleton';
 import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';

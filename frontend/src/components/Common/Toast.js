@@ -1,80 +1,61 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect } from 'react';
+import { useTheme } from '../../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
-import { ThemeContext } from '../../App';
-import { useNotifications } from '../../context/NotificationContext';
 
-const Toast = () => {
-  const { theme } = useContext(ThemeContext);
+const Toast = ({ notification, onClose }) => {
+  const { theme } = useTheme();
   const navigate = useNavigate();
-  const [isVisible, setIsVisible] = useState(false);
-  const { currentNotification, clearCurrentNotification } = useNotifications();
 
   useEffect(() => {
-    if (currentNotification) {
-      setIsVisible(true);
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        setTimeout(clearCurrentNotification, 300); // Wait for fade out animation
-      }, 3000);
+    const timer = setTimeout(() => {
+      onClose();
+    }, 5000); // Auto close after 5 seconds
 
-      return () => clearTimeout(timer);
-    }
-  }, [currentNotification, clearCurrentNotification]);
-
-  if (!currentNotification) return null;
+    return () => clearTimeout(timer);
+  }, [onClose]);
 
   const handleClick = () => {
-    if (currentNotification.post) {
-      navigate(`/post/${currentNotification.post._id}`);
-    } else if (currentNotification.type === 'follow' && currentNotification.sender) {
-      navigate(`/profile/${currentNotification.sender.username}`);
-    }
-    setIsVisible(false);
-    setTimeout(clearCurrentNotification, 300);
-  };
-
-  const getNotificationText = () => {
-    const username = currentNotification.sender?.username || 'Someone';
-    switch (currentNotification.type) {
-      case 'follow':
-        return `${username} started following you`;
-      case 'like':
-        return `${username} liked your post`;
-      case 'comment':
-        return `${username} commented on your post`;
-      case 'reply':
-        return `${username} replied to your comment`;
-      case 'commentLike':
-        return `${username} liked your comment`;
-      case 'tag':
-        return `${username} tagged you in a post`;
-      default:
-        return '';
+    onClose();
+    if (notification.post) {
+      navigate(`/post/${notification.post._id}`);
     }
   };
 
   return (
     <div
-      className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-[200] transition-all duration-300 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+      className={`fixed top-4 right-4 z-[1000] max-w-sm w-full shadow-lg rounded-lg pointer-events-auto overflow-hidden transition-all transform animate-slide-in ${
+        theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
       }`}
+      onClick={handleClick}
     >
-      <div
-        onClick={handleClick}
-        className={`cursor-pointer rounded-lg shadow-lg px-4 py-3 flex items-center space-x-3 max-w-sm ${
-          theme === 'dark-theme' ? 'bg-gray-900' : 'bg-white'
-        }`}
-      >
-        {currentNotification.sender?.profilePicture && (
-          <img
-            src={currentNotification.sender.profilePicture}
-            alt={currentNotification.sender.username}
-            className="w-8 h-8 rounded-full object-cover"
-          />
-        )}
-        <span className={theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}>
-          {getNotificationText()}
-        </span>
+      <div className="p-4">
+        <div className="flex items-start">
+          {notification.sender?.profilePicture && (
+            <img
+              className="h-10 w-10 rounded-full object-cover mr-3"
+              src={notification.sender.profilePicture}
+              alt={notification.sender.username}
+            />
+          )}
+          <div className="flex-1">
+            <p className={`text-sm font-medium ${
+              theme === 'dark-theme' ? 'text-white' : 'text-gray-900'
+            }`}>
+              <span className="font-bold">{notification.sender?.username}</span>
+              {' '}
+              {notification.type === 'like' && 'liked your post'}
+              {notification.type === 'comment' && 'commented on your post'}
+              {notification.type === 'follow' && 'started following you'}
+            </p>
+            {notification.commentData?.text && (
+              <p className={`mt-1 text-sm ${
+                theme === 'dark-theme' ? 'text-gray-300' : 'text-gray-500'
+              }`}>
+                {notification.commentData.text}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

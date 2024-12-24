@@ -8,7 +8,7 @@ import {
   ChatRegular,
 } from '@fluentui/react-icons';
 import { Link } from 'react-router-dom';
-import { ThemeContext } from '../../App';
+import { ThemeContext } from '../../context/ThemeContext';
 import { API_URL } from '../../config';
 import { getProfileImageUrl, createImageProps, checkWebPSupport } from '../../utils/imageUtils';
 import FollowButton from '../Common/FollowButton';
