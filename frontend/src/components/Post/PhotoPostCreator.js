@@ -20,18 +20,15 @@ import { debounce } from 'lodash';
 
 
 const PhotoPostCreator = ({ onBack, onPublish, user }) => {
-  // Add profile section above the upload area
-  const renderProfileSection = () => (
-    <div className="flex items-center gap-3 mb-4">
-      <img 
-        src={getProfileImageUrl(user)} 
-        alt="Profile" 
-        className="w-8 h-8 rounded-md"
-        onError={(e) => {
-          e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
-        }}
-      />
-      <span className="text-white/70">{user?.username || 'user'}</span>
+  // Add back navigation section
+  const renderBackNavigation = () => (
+    <div className="flex items-center gap-2 mb-4">
+      <button onClick={onBack} className="flex items-center gap-2 text-white/70 hover:text-white">
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        <span>Back</span>
+      </button>
     </div>
   );
   
@@ -273,7 +270,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
     <div className="flex flex-col h-full">
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto p-4">
-        {renderProfileSection()}
+        {renderBackNavigation()}
         {images.length === 0 ? (
           // Upload Area
           <div
@@ -292,7 +289,7 @@ const PhotoPostCreator = ({ onBack, onPublish, user }) => {
             {/* Current Image */}
             <div className={`relative rounded-lg overflow-hidden bg-black flex items-center justify-center`} style={{ 
               height: images[currentImageIndex] && Math.abs(images[currentImageIndex].aspectRatio - 0.5625) < 0.01 
-              ? `min(${Math.round(window.innerWidth * 3.334)}px, calc(90vh - 100px))` // 9:16 ratio (increased by 25%
+              ? `min(${Math.round(window.innerWidth * 5)}px, calc(90vh - 100px))` // 50% taller preview for 9:16
                 : images[currentImageIndex]?.aspectRatio > 0.5625
                   ? `min(${Math.round(window.innerWidth * (images[currentImageIndex].aspectRatio || 1))}px, calc(90vh - 300px))`
                   : `min(${Math.round(window.innerWidth * 0.5625)}px, calc(180vh - 300px))`,

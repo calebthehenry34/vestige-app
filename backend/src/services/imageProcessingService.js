@@ -10,8 +10,8 @@ const IMAGE_SIZES = {
 
 // Quality settings for different formats
 const QUALITY_SETTINGS = {
-  jpeg: 80,
-  webp: 75
+  jpeg: 90,
+  webp: 85
 };
 
 class ImageProcessingService {
