@@ -49,21 +49,17 @@ const SinglePostView = ({ post }) => {
 
   return (
       <div className="flex flex-col h-screen bg-black">
-      {/* Header with back button */}
-      <div className="p-4">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="text-white hover:opacity-80"
-        >
-          <ChevronLeftRegular className="w-6 h-6" />
-        </button>
-      </div>
-
       {/* Main content */}
-      <div className="flex-1 flex flex-col">
-        {/* User info */}
+      <div className="flex-1 flex flex-col bg-black">
+        {/* User info with back button */}
         <div className="p-4 mt-50">
           <div className="flex items-center mb-4">
+            <button 
+              onClick={() => navigate(-1)} 
+              className="text-white hover:opacity-80 mr-4"
+            >
+              <ChevronLeftRegular className="w-6 h-6" />
+            </button>
             <img
               src={getProfileImageUrl(post.user)}
               alt={post.user.username}
@@ -84,7 +80,7 @@ const SinglePostView = ({ post }) => {
         </div>
 
         {/* Post media */}
-        <div className="flex-1 bg-white rounded-2xl mx-4 mb-4 overflow-hidden">
+        <div className="flex-1 bg-white rounded-2xl mx-4 mb-4 overflow-hidden" style={{ maxHeight: '60vh' }}>
           {post.mediaType === 'video' ? (
             <video 
               src={getMediaUrl(post.media)} 
@@ -121,7 +117,7 @@ const SinglePostView = ({ post }) => {
         </div>
 
         {/* Post content */}
-        <div className="p-4">
+        <div className="p-4 bg-black">
           {/* Post text content */}
           <div className="text-white">
             {post.caption && (
