@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 import Navbar from '../Navigation/Navbar';
-import { ThemeContext } from '../../App';
+import { ThemeContext } from '../../context/ThemeContext';
 
 const MainLayout = ({ children }) => {
   const { theme } = useContext(ThemeContext);

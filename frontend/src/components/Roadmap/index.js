@@ -8,7 +8,7 @@ import {
   CalendarRegular,
   Video16Regular,
 } from '@fluentui/react-icons';
-import { ThemeContext } from '../../App';
+import { ThemeContext } from '../../context/ThemeContext';
 
 
   const RoadmapEntry = ({ title, date, description, details }) => {

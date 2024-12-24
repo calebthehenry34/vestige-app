@@ -16,7 +16,7 @@ import {
 import { API_URL } from '../../config';
 import { getProfileImageUrl, getMediaUrl } from '../../utils/imageUtils';
 import PostComments from './PostComments';
-import { ThemeContext } from '../../App';
+import { ThemeContext } from '../../context/ThemeContext';
 import EditCaptionModal from './EditCaptionModal';
 
 const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {

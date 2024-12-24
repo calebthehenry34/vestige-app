@@ -3,7 +3,6 @@ import {
   DismissRegular,
   ChevronLeftRegular,
   ChevronRightRegular,
-  ArrowLeftFilled
 } from '@fluentui/react-icons';
 
 const StoryViewer = ({ stories, currentIndex = 0, onClose }) => {

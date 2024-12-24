@@ -23,7 +23,7 @@ import {
   WeatherSunnyRegular,
 } from '@fluentui/react-icons';
 import { useAuth } from '../../context/AuthContext';
-import { ThemeContext } from '../../App';
+import { ThemeContext } from '../../context/ThemeContext';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 import PostCreator from '../Post/PostCreator';
 import MobileNav from './MobileNav';

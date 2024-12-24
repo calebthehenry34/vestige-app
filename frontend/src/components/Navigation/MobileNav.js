@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ThemeContext } from '../../App';
+import { ThemeContext } from '../../context/ThemeContext';
 import { useNotifications } from '../../context/NotificationContext';
 import ActivityFeed from '../Activity/ActivityFeed';
 import { 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './PostComments.module.css';
-import { ThemeContext } from '../../App';  
+import { ThemeContext } from '../../context/ThemeContext';
 import { 
   HeartRegular, 
   HeartFilled,
