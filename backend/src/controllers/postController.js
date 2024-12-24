@@ -474,8 +474,13 @@ export const updatePost = async (req, res) => {
 
 export const deletePost = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.postId);
-    
+    const { postId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ error: 'Invalid post ID format' });
+    }
+
+    const post = await Post.findById(postId);
     if (!post) {
       return res.status(404).json({ error: 'Post not found' });
     }
@@ -579,7 +584,7 @@ export const deletePost = async (req, res) => {
       console.error('Error deleting media:', deleteError);
     }
 
-    await post.deleteOne();
+    await Post.findByIdAndDelete(postId);
     res.json({ message: 'Post deleted' });
   } catch (error) {
     console.error('Delete post error:', error);

@@ -11,6 +11,7 @@ const Feed = ({ onRefreshNeeded }) => {
   const fetchPosts = useCallback(async () => {
     try {
       setLoading(true);
+      setPosts([]); // Clear old posts immediately when loading starts
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/api/posts`, {
         headers: {
@@ -67,45 +68,47 @@ const Feed = ({ onRefreshNeeded }) => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="max-w-xl mx-auto space-y-6">
-        {[...Array(3)].map((_, index) => (
-          <PostSkeleton key={index} />
-        ))}
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center text-red-500 p-4">
-        {error}
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="max-w-xl mx-auto relative mb-28">
-        {/* Post Creator Modal */}
-        <PostCreator
-          isOpen={showPostCreator}
-          onClose={() => setShowPostCreator(false)}
-          onPostCreated={handlePostCreated}
-        />
+        {/* Loading State */}
+        {loading && (
+          <div className="space-y-6">
+            {[...Array(3)].map((_, index) => (
+              <PostSkeleton key={index} />
+            ))}
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center text-red-500 p-4">
+            {error}
+          </div>
+        )}
 
         {/* Posts */}
-        <div className="space-y-6">
-          {posts.map((post) => (
-            <Post
-              key={post._id}
-              post={post}
-              onDelete={handleDelete}
-              onRefresh={fetchPosts}
+        {!loading && !error && (
+          <>
+            {/* Post Creator Modal */}
+            <PostCreator
+              isOpen={showPostCreator}
+              onClose={() => setShowPostCreator(false)}
+              onPostCreated={handlePostCreated}
             />
-          ))}
-        </div>
+
+            <div className="space-y-6">
+              {posts.map((post) => (
+                <Post
+                  key={post._id}
+                  post={post}
+                  onDelete={handleDelete}
+                  onRefresh={fetchPosts}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </>
   );

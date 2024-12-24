@@ -17,6 +17,7 @@ import { API_URL } from '../../config';
 import { getProfileImageUrl } from '../../utils/imageUtils';
 import PostComments from './PostComments';
 import { ThemeContext } from '../../App';
+import EditCaptionModal from './EditCaptionModal';
 
 // Helper function to handle media URLs
 const getMediaUrl = (media) => {
@@ -69,6 +70,7 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
   const [imageError, setImageError] = useState(false);
   const [localPost, setLocalPost] = useState(post);
   const [showDetails, setShowDetails] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Keep localPost in sync with post prop
   useEffect(() => {
@@ -124,15 +126,21 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
     if (!localPost?._id) return;
     
     try {
-      await fetch(`${API_URL}/api/posts/${localPost._id}`, {
+      const response = await fetch(`${API_URL}/api/posts/${localPost._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete post: ${response.status}`);
+      }
+
       onDelete?.(localPost._id);
     } catch (error) {
       console.error('Error deleting post:', error);
+      // You might want to show an error message to the user here
     }
     setShowMenu(false);
   };
@@ -205,7 +213,13 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
                 <DeleteRegular className="mr-2" />
                 Delete Post
               </button>
-              <button onClick={() => { onEdit?.(localPost); setShowMenu(false); }} className={`flex items-center w-full px-4 py-2 ${theme === 'dark-theme' ? 'text-white hover:bg-zinc-700' : 'text-black hover:bg-gray-100'}`}>
+              <button 
+                onClick={() => { 
+                  setShowEditModal(true); 
+                  setShowMenu(false); 
+                }} 
+                className={`flex items-center w-full px-4 py-2 ${theme === 'dark-theme' ? 'text-white hover:bg-zinc-700' : 'text-black hover:bg-gray-100'}`}
+              >
                 <EditRegular className="mr-2" />
                 Edit Caption
               </button>
@@ -279,6 +293,18 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
         onComment={(updatedPost) => setLocalPost(updatedPost)}
         onReply={(updatedPost) => setLocalPost(updatedPost)}
       />
+
+      {/* Edit Caption Modal */}
+      {showEditModal && (
+        <EditCaptionModal
+          post={localPost}
+          onClose={() => setShowEditModal(false)}
+          onUpdate={(updatedPost) => {
+            setLocalPost(updatedPost);
+            onRefresh?.();
+          }}
+        />
+      )}
     </div>
   );
 };
