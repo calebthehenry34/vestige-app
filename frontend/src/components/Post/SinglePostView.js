@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeftRegular } from '@fluentui/react-icons';
 import { getMediaUrl, getProfileImageUrl } from '../../utils/imageUtils';
@@ -7,9 +7,19 @@ const SinglePostView = ({ post }) => {
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
 
+  useEffect(() => {
+    // Add class to hide navbars
+    document.body.classList.add('hide-navigation');
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('hide-navigation');
+    };
+  }, []);
+
   if (!post || !post.user) {
     return (
-      <div className="flex flex-col h-screen bg-[#C5B358]">
+      <div className="flex flex-col h-screen bg-black">
         <div className="p-4">
           <button 
             onClick={() => navigate(-1)} 
@@ -38,7 +48,7 @@ const SinglePostView = ({ post }) => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#C5B358]">
+      <div className="flex flex-col h-screen bg-black">
       {/* Header with back button */}
       <div className="p-4">
         <button 
@@ -51,6 +61,28 @@ const SinglePostView = ({ post }) => {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col">
+        {/* User info */}
+        <div className="p-4 mt-50">
+          <div className="flex items-center mb-4">
+            <img
+              src={getProfileImageUrl(post.user)}
+              alt={post.user.username}
+              className="w-12 h-12 rounded-lg object-cover border border-white/20"
+              onError={(e) => {
+                e.target.src = `https://ui-avatars.com/api/?name=${post.user.username}&background=random`;
+              }}
+            />
+            <div className="ml-3">
+              <h2 className="text-white font-medium">{post.user.username}</h2>
+              <div className="flex items-center text-white/80 text-sm">
+                <span>{post.user.location || 'Los Angeles, USA'}</span>
+                <span className="mx-2">•</span>
+                <span>{formatTimestamp(post.createdAt)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Post media */}
         <div className="flex-1 bg-white rounded-2xl mx-4 mb-4 overflow-hidden">
           {post.mediaType === 'video' ? (
@@ -88,27 +120,8 @@ const SinglePostView = ({ post }) => {
           )}
         </div>
 
-        {/* User info and post content */}
+        {/* Post content */}
         <div className="p-4">
-          <div className="flex items-center mb-4">
-            <img
-              src={getProfileImageUrl(post.user)}
-              alt={post.user.username}
-              className="w-12 h-12 rounded-lg object-cover border border-white/20"
-              onError={(e) => {
-                e.target.src = `https://ui-avatars.com/api/?name=${post.user.username}&background=random`;
-              }}
-            />
-            <div className="ml-3">
-              <h2 className="text-white font-medium">{post.user.username}</h2>
-              <div className="flex items-center text-white/80 text-sm">
-                <span>{post.user.location || 'Los Angeles, USA'}</span>
-                <span className="mx-2">•</span>
-                <span>{formatTimestamp(post.createdAt)}</span>
-              </div>
-            </div>
-          </div>
-
           {/* Post text content */}
           <div className="text-white">
             {post.caption && (

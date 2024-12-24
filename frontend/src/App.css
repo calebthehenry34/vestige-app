@@ -37,3 +37,8 @@
   }
 }
 
+/* Hide navigation when in single post view */
+body.hide-navigation .header,
+body.hide-navigation .mobile-nav {
+  display: none !important;
+}
