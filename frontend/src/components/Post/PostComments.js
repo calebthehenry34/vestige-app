@@ -145,6 +145,41 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
   };
 
   const handleLikeComment = async (commentId, isReply = false, parentCommentId = null) => {
+    // Store current post state for potential revert
+    const previousPost = post;
+
+    // Optimistic update
+    const updatedComments = post.comments.map(comment => {
+      if (isReply && comment._id === parentCommentId) {
+        return {
+          ...comment,
+          replies: comment.replies.map(reply => {
+            if (reply._id === commentId) {
+              const isLiked = reply.likes?.includes(user?.id);
+              return {
+                ...reply,
+                likes: isLiked
+                  ? reply.likes.filter(id => id !== user?.id)
+                  : [...(reply.likes || []), user?.id]
+              };
+            }
+            return reply;
+          })
+        };
+      } else if (!isReply && comment._id === commentId) {
+        const isLiked = comment.likes?.includes(user?.id);
+        return {
+          ...comment,
+          likes: isLiked
+            ? comment.likes.filter(id => id !== user?.id)
+            : [...(comment.likes || []), user?.id]
+        };
+      }
+      return comment;
+    });
+
+    onComment?.({ ...post, comments: updatedComments });
+
     try {
       const endpoint = isReply 
         ? `${API_URL}/api/posts/${post._id}/comments/${parentCommentId}/replies/${commentId}/like`
@@ -161,9 +196,17 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
 
       if (!response.ok) throw new Error('Failed to like comment');
       const updatedPost = await response.json();
-      onComment?.(updatedPost);
+      
+      // Only update if server response is different
+      const serverComments = updatedPost.comments || [];
+      const currentComments = post.comments || [];
+      if (JSON.stringify(serverComments) !== JSON.stringify(currentComments)) {
+        onComment?.(updatedPost);
+      }
     } catch (error) {
       console.error('Error liking comment:', error);
+      // Revert to previous state on error
+      onComment?.(previousPost);
     }
   };
 
@@ -251,7 +294,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
           <div className={`font-medium text-sm ${
             theme === 'dark-theme' ? 'text-white' : 'text-black'
           }`}>
-            {post.likes?.length || 0} likes
+            {post?.likes?.length || 0} likes
           </div>
           <div className={`text-xs flex items-center space-x-2 ${
             theme === 'dark-theme' ? 'text-gray-400' : 'text-gray-500'

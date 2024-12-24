@@ -73,6 +73,20 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
   const isLiked = localPost?.likes?.includes(user?.id);
 
   const handleLike = async () => {
+    // Store the previous state in case we need to revert
+    const previousPost = localPost;
+    
+    // Optimistic update using callback to ensure we have latest state
+    setLocalPost(prevPost => {
+      const isCurrentlyLiked = prevPost.likes?.includes(user?.id);
+      return {
+        ...prevPost,
+        likes: isCurrentlyLiked
+          ? prevPost.likes.filter(id => id !== user?.id)
+          : [...(prevPost.likes || []), user?.id]
+      };
+    });
+
     try {
       const response = await fetch(`${API_URL}/api/posts/${localPost._id}/like`, {
         method: 'POST',
@@ -87,21 +101,17 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
       }
 
       const updatedPost = await response.json();
-      // Update local state immediately for better UX
-      setLocalPost(prevPost => ({
-        ...prevPost,
-        likes: isLiked 
-          ? prevPost.likes.filter(id => id !== user?.id)
-          : [...prevPost.likes, user?.id]
-      }));
       
-      // Then update with server response
-      setLocalPost(updatedPost);
-      if (onRefresh) {
-        onRefresh();
+      // Only update from server if likes array is different
+      const serverLikes = updatedPost.likes || [];
+      const currentLikes = localPost.likes || [];
+      if (JSON.stringify(serverLikes.sort()) !== JSON.stringify(currentLikes.sort())) {
+        setLocalPost(updatedPost);
       }
     } catch (error) {
       console.error('Error liking post:', error);
+      // Revert to previous state if the API call fails
+      setLocalPost(previousPost);
     }
   };
 
