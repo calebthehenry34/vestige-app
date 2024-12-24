@@ -42,8 +42,12 @@ export const EncryptionStatus = ({ status }) => {
 };
 
 const ChatMessage = ({ message = {}, isOwnMessage }) => {
-  if (!message || !message.content) {
-    return null; // Don't render if message or content is missing
+  // Comprehensive validation of message object
+  if (!message || 
+      !message.content || 
+      typeof message.content !== 'string' || 
+      !message.sender) {
+    return null; // Don't render if any required field is missing or invalid
   }
   return (
     <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>

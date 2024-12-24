@@ -36,7 +36,14 @@ const Chat = () => {
     try {
       const response = await fetch(`/api/messages/${activeChat}`);
       const data = await response.json();
-      setMessages(data);
+      // Validate messages before setting state
+      const validMessages = Array.isArray(data) ? data.filter(msg => 
+        msg && 
+        typeof msg === 'object' && 
+        msg.content && 
+        (msg.sender || msg.senderId)
+      ) : [];
+      setMessages(validMessages);
       scrollToBottom();
     } catch (error) {
       console.error('Failed to fetch messages:', error);
@@ -48,7 +55,14 @@ const Chat = () => {
       try {
         const response = await fetch('/api/messages/chats');
         const data = await response.json();
-        setChats(data);
+        // Validate chat data before setting state
+        const validChats = Array.isArray(data) ? data.filter(chat => 
+          chat && 
+          typeof chat === 'object' && 
+          chat.userId && 
+          chat.username
+        ) : [];
+        setChats(validChats);
       } catch (error) {
         console.error('Failed to fetch chats:', error);
       }
@@ -151,7 +165,7 @@ const Chat = () => {
 
     const cleanup = onReceiveMessage(handleReceiveMessage);
     return () => cleanup();
-  }, [activeChat, sharedSecret, onReceiveMessage]);
+  }, [activeChat, sharedSecret, onReceiveMessage, user]);
 
   useEffect(() => {
     const handleTypingStatus = (data) => {
@@ -219,11 +233,19 @@ const Chat = () => {
       scrollToBottom();
 
       // Send through socket for real-time updates
-      socketSendMessage({
-        recipientId: activeChat,
-        senderId: user._id,
-        message: encrypted,
-      });
+      // Ensure all required fields are present before sending socket message
+      if (activeChat && user?._id && encrypted) {
+        socketSendMessage({
+          recipientId: activeChat,
+          senderId: user._id,
+          message: {
+            ...encrypted,
+            _id: message?._id,
+            sender: user._id,
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
     }
@@ -242,7 +264,7 @@ const Chat = () => {
         <div className="flex-1 flex flex-col">
           <div className="p-4 border-b dark:border-zinc-800 dark:bg-black">
             <h3 className="font-semibold dark:text-white">
-              {chats.find((chat) => chat.userId === activeChat)?.username}
+              {chats.find((chat) => chat?.userId === activeChat)?.username || 'Chat'}
             </h3>
           </div>
 
@@ -262,7 +284,7 @@ const Chat = () => {
           <div className="p-4 border-t dark:border-zinc-800 dark:bg-black">
             {otherUserTyping && (
               <div className="text-sm text-gray-500 dark:text-zinc-400 mb-2">
-                {chats.find((chat) => chat.userId === activeChat)?.username} is typing...
+                {chats.find((chat) => chat?.userId === activeChat)?.username || 'User'} is typing...
               </div>
             )}
             <form onSubmit={sendMessage} className="flex space-x-4">
