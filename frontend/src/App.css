@@ -41,6 +41,9 @@
 body.hide-navigation .header,
 body.hide-navigation .mobile-nav,
 body.hide-navigation nav,
-body.hide-navigation [class*="fixed top-0"] {
+body.hide-navigation [class*="fixed top-0"],
+body.hide-navigation [class*="fixed bottom-0"] {
   display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }

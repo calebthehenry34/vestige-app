@@ -1,11 +1,77 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeftRegular } from '@fluentui/react-icons';
+import { useAuth } from '../../context/AuthContext';
+import {
+  ChevronLeftRegular,
+  HeartRegular,
+  HeartFilled,
+  CommentRegular,
+  ShareRegular,
+  BookmarkRegular
+} from '@fluentui/react-icons';
 import { getMediaUrl, getProfileImageUrl } from '../../utils/imageUtils';
+import PostComments from './PostComments';
+import { API_URL } from '../../config';
 
 const SinglePostView = ({ post }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [imageError, setImageError] = useState(false);
+  const [localPost, setLocalPost] = useState(post);
+  const [showComments, setShowComments] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
+  const [previousLikes, setPreviousLikes] = useState(post?.likes || []);
+
+  useEffect(() => {
+    setLocalPost(post);
+    setPreviousLikes(post?.likes || []);
+  }, [post]);
+
+  const isLiked = localPost?.likes?.includes(user?.id);
+
+  const handleLike = async () => {
+    if (isLiking || !localPost?._id) return;
+    
+    try {
+      setIsLiking(true);
+      
+      // Optimistically update UI
+      const wasLiked = previousLikes.includes(user?.id);
+      const newLikes = wasLiked
+        ? previousLikes.filter(id => id !== user?.id)
+        : [...previousLikes, user?.id];
+        
+      setLocalPost(prev => ({
+        ...prev,
+        likes: newLikes
+      }));
+
+      const response = await fetch(`${API_URL}/api/posts/${localPost._id}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to like post');
+      }
+
+      const updatedPost = await response.json();
+      setLocalPost(updatedPost);
+      setPreviousLikes(updatedPost.likes || []);
+    } catch (error) {
+      console.error('Error liking post:', error);
+      // Revert to previous state on error
+      setLocalPost(prev => ({
+        ...prev,
+        likes: previousLikes
+      }));
+    } finally {
+      setIsLiking(false);
+    }
+  };
 
   useEffect(() => {
     // Add class to hide navbars
@@ -17,7 +83,7 @@ const SinglePostView = ({ post }) => {
     };
   }, []);
 
-  if (!post || !post.user) {
+  if (!localPost || !localPost.user) {
     return (
       <div className="flex flex-col h-screen bg-black">
         <div className="p-4">
@@ -71,8 +137,12 @@ const SinglePostView = ({ post }) => {
             <div className="ml-3">
               <h2 className="text-white font-medium">{post.user.username}</h2>
               <div className="flex items-center text-white/80 text-sm">
-                <span>{post.user.location || 'Los Angeles, USA'}</span>
-                <span className="mx-2">•</span>
+                {post.location && (
+                  <>
+                    <span>{post.location}</span>
+                    <span className="mx-2">•</span>
+                  </>
+                )}
                 <span>{formatTimestamp(post.createdAt)}</span>
               </div>
             </div>
@@ -116,18 +186,53 @@ const SinglePostView = ({ post }) => {
           )}
         </div>
 
-        {/* Post content */}
+        {/* Interaction buttons */}
         <div className="p-4 bg-black">
+          <div className="flex items-center gap-4 text-white mb-4">
+            <button onClick={handleLike} className="transform hover:scale-110 transition-transform">
+              {isLiked ? (
+                <HeartFilled className="w-6 h-6 text-red-600" style={{ fill: '#dc2626' }} />
+              ) : (
+                <HeartRegular className="w-6 h-6" />
+              )}
+            </button>
+            <button 
+              onClick={() => setShowComments(!showComments)} 
+              className="transform hover:scale-110 transition-transform"
+            >
+              <CommentRegular className="w-6 h-6" />
+            </button>
+            <button className="transform hover:scale-110 transition-transform">
+              <ShareRegular className="w-6 h-6" />
+            </button>
+            <div className="flex-grow"></div>
+            <button className="transform hover:scale-110 transition-transform">
+              <BookmarkRegular className="w-6 h-6" />
+            </button>
+          </div>
+
           {/* Post text content */}
           <div className="text-white">
-            {post.caption && (
-              <p className="mb-4 whitespace-pre-wrap">{post.caption}</p>
+            {localPost.caption && (
+              <p className="mb-4 whitespace-pre-wrap">{localPost.caption}</p>
             )}
-            {post.text && (
-              <p className="whitespace-pre-wrap">{post.text}</p>
+            {localPost.text && (
+              <p className="whitespace-pre-wrap">{localPost.text}</p>
             )}
           </div>
         </div>
+
+        {/* Comments section */}
+        <PostComments 
+          post={localPost} 
+          isOpen={showComments}
+          onComment={(updatedPost) => {
+            setLocalPost(updatedPost);
+          }}
+          onReply={(updatedPost) => {
+            setLocalPost(updatedPost);
+          }}
+        />
       </div>
     </div>
   );
