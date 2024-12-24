@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 import Toast from '../components/Common/Toast';
+import { io } from 'socket.io-client';
 
 const NotificationContext = createContext();
 
@@ -65,11 +66,23 @@ export const NotificationProvider = ({ children }) => {
       });
 
       socket.on('notification', (notification) => {
-        setCurrentNotification(notification);
-        setNotifications(prev => [notification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        // Show toast notification
-        setToastNotification(notification);
+        try {
+          // Validate and normalize notification object
+          const normalizedNotification = {
+            ...notification,
+            sender: notification?.sender || {},
+            type: notification?.type || 'unknown',
+            createdAt: notification?.createdAt || new Date().toISOString()
+          };
+
+          setCurrentNotification(normalizedNotification);
+          setNotifications(prev => [normalizedNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          // Show toast notification
+          setToastNotification(normalizedNotification);
+        } catch (error) {
+          console.error('Error processing notification:', error);
+        }
       });
 
       return () => {
