@@ -1,7 +1,6 @@
 import User from '../models/User.js';
 import Post from '../models/Post.js';
 import Follow from '../models/Follow.js';
-import Message from '../models/message.js';
 import Notification from '../models/notification.js';
 import mongoose from 'mongoose';
 import { deleteS3Object } from '../config/s3.js';
