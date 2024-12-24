@@ -1,8 +1,23 @@
+// Model imports
 import Post from '../models/Post.js';
 import User from '../models/User.js';
 import Report from '../models/Report.js';
 import Notification from '../models/notification.js';
+
+// AWS imports
 import s3, { isS3Available, getCredentials, getS3BucketName } from '../config/s3.js';
+import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+// Node.js built-in imports
+import crypto from 'crypto';
+import path from 'path';
+import fs from 'fs';
+import mongoose from 'mongoose';
+
+// Service imports
+import imageProcessingService from '../services/imageProcessingService.js';
+import s3UploadService from '../utils/s3Upload.js';
 
 // Helper function to validate and format URLs
 const getValidUrl = (url) => {
@@ -10,14 +25,6 @@ const getValidUrl = (url) => {
   if (url.startsWith('http')) return url;
   return `${process.env.API_URL}/uploads/${url}`;
 };
-import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import crypto from 'crypto';
-import path from 'path';
-import fs from 'fs';
-import mongoose from 'mongoose';
-import imageProcessingService from '../services/imageProcessingService.js';
-import s3UploadService from '../utils/s3Upload.js';
 
 // Helper function to store file locally when S3 is not available
 const storeFileLocally = async (buffer, filename) => {
