@@ -13,7 +13,7 @@ import { getMediaUrl, getProfileImageUrl } from '../../utils/imageUtils';
 import PostComments from './PostComments';
 import { API_URL } from '../../config';
 
-const SinglePostView = ({ post }) => {
+const SinglePostView = ({ post, className }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [imageError, setImageError] = useState(false);
@@ -85,7 +85,7 @@ const SinglePostView = ({ post }) => {
 
   if (!localPost || !localPost.user) {
     return (
-      <div className="flex flex-col h-screen bg-black fixed inset-0 z-[200]">
+      <div className={`flex flex-col bg-black ${className || ''}`}>
         <div className="p-4">
           <button 
             onClick={() => navigate(-1)} 
@@ -114,11 +114,11 @@ const SinglePostView = ({ post }) => {
   };
 
   return (
-      <div className="flex flex-col h-screen bg-black fixed inset-0 z-[200]">
+      <div className={`flex flex-col bg-black ${className || ''}`}>
       {/* Main content */}
-      <div className="flex-1 flex flex-col bg-black overflow-y-auto">
+      <div className="flex flex-col bg-black overflow-y-auto">
         {/* User info with back button */}
-        <div className="p-4 mt-50">
+        <div className="p-4">
           <div className="flex items-center mb-4">
             <button 
               onClick={() => navigate(-1)} 

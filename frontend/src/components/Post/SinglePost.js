@@ -59,8 +59,8 @@ const SinglePost = () => {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-[200] flex flex-col h-screen bg-[#C5B358]">
-        <div className="p-4">
+      <div className="fixed inset-0 z-[200] flex flex-col h-screen bg-[#C5B358] overflow-y-auto">
+        <div className="p-4 mt-20">
           <button 
             onClick={() => window.history.back()} 
             className="text-white hover:opacity-80"
@@ -102,8 +102,8 @@ const SinglePost = () => {
   }
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black">
-      <SinglePostView post={post} />
+    <div className="fixed inset-0 z-[200] bg-black overflow-y-auto">
+      <SinglePostView post={post} className="min-h-screen" />
     </div>
   );
 };
