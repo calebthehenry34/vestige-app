@@ -142,11 +142,11 @@ const Navbar = () => {
                   </div>
                 )}
                 {user ? (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 mt-3">
                     <img
                       src={getProfileImageUrl(user)}
                       alt={user?.username || 'User'}
-                      className="w-10 h-10 rounded-md object-cover"
+                      className="w-10 h-10 rounded-md object-cover mb-3"
                       onError={(e) => {
                         e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
                       }}
