@@ -332,7 +332,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
                           className="text-gray-500 hover:text-red-500 transition-colors"
                         >
                           {comment.likes?.includes(user?.id) ? (
-                            <HeartFilled className="w-4 h-4 text-red-500" />
+                            <HeartFilled className="w-4 h-4 text-red-500 fill-red-500" />
                           ) : (
                             <HeartRegular className="w-4 h-4" />
                           )}
@@ -400,7 +400,7 @@ const PostComments = ({ post, isOpen, onComment, onReply }) => {
                             className="text-gray-500 hover:text-red-500 transition-colors"
                           >
                             {reply.likes?.includes(user?.id) ? (
-                              <HeartFilled className="w-4 h-4 text-red-500" />
+                              <HeartFilled className="w-4 h-4 text-red-500 fill-red-500" />
                             ) : (
                               <HeartRegular className="w-4 h-4" />
                             )}

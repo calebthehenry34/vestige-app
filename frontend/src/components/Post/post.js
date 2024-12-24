@@ -234,7 +234,7 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
           <div className="flex items-center gap-4 text-white">
             <button onClick={handleLike} className="transform hover:scale-110 transition-transform">
               {isLiked ? (
-                <HeartFilled className="w-6 h-6 text-red-600" style={{ fill: '#dc2626' }} />
+                <HeartFilled className="w-6 h-6 text-red-600 fill-red-600" />
               ) : (
                 <HeartRegular className="w-6 h-6" />
               )}
