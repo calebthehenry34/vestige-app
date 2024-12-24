@@ -102,7 +102,14 @@ const Feed = ({ onRefreshNeeded }) => {
                   key={post._id}
                   post={post}
                   onDelete={handleDelete}
-                  onRefresh={fetchPosts}
+                  onRefresh={(updatedPost) => {
+                    // Only update the specific post in the posts array
+                    setPosts(prevPosts => 
+                      prevPosts.map(p => 
+                        p._id === updatedPost._id ? updatedPost : p
+                      )
+                    );
+                  }}
                 />
               ))}
             </div>

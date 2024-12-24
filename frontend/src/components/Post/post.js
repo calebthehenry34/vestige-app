@@ -72,15 +72,44 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // Keep localPost in sync with post prop
+  // Initialize localPost only once
   useEffect(() => {
-    setLocalPost(post);
-  }, [post]);
+    if (!localPost) {
+      setLocalPost(post);
+    }
+  }, []);
+
+  // Only update specific fields from post prop
+  useEffect(() => {
+    if (localPost) {
+      setLocalPost(prev => ({
+        ...prev,
+        caption: post.caption,
+        comments: post.comments
+      }));
+    }
+  }, [post.caption, post.comments]);
+
   const isOwner = localPost?.user?._id === user?.id;
   const isLiked = localPost?.likes?.includes(user?.id);
 
   const handleLike = async () => {
     try {
+      // Optimistically update the like state
+      const currentLikes = [...(localPost.likes || [])];
+      const userIndex = currentLikes.indexOf(user?.id);
+      
+      if (userIndex === -1) {
+        currentLikes.push(user?.id);
+      } else {
+        currentLikes.splice(userIndex, 1);
+      }
+
+      setLocalPost(prev => ({
+        ...prev,
+        likes: currentLikes
+      }));
+
       const response = await fetch(`${API_URL}/api/posts/${localPost._id}/like`, {
         method: 'POST',
         headers: {
@@ -94,13 +123,19 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
       }
 
       const updatedPost = await response.json();
-      setLocalPost(updatedPost);
-      // Only refresh feed for significant changes, not likes
-      if (updatedPost.caption !== localPost.caption) {
-        onRefresh?.();
-      }
+      
+      // Update only the likes array from the response
+      setLocalPost(prev => ({
+        ...prev,
+        likes: updatedPost.likes
+      }));
     } catch (error) {
       console.error('Error liking post:', error);
+      // Revert optimistic update on error
+      setLocalPost(prev => ({
+        ...prev,
+        likes: post.likes
+      }));
     }
   };
 
@@ -246,7 +281,7 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh }) => {
           <div className="flex items-center gap-4 text-white">
             <button onClick={handleLike} className="transform hover:scale-110 transition-transform">
               {isLiked ? (
-                <HeartFilled className="w-6 h-6 text-red-500" />
+                <HeartFilled className="w-6 h-6 text-red-600" style={{ fill: '#dc2626' }} />
               ) : (
                 <HeartRegular className="w-6 h-6" />
               )}
