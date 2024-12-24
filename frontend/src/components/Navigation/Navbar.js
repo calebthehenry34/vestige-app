@@ -88,7 +88,7 @@ const Navbar = () => {
         { 
           icon: theme === 'dark-theme' ? <WeatherSunnyRegular /> : <WeatherMoonRegular />, 
           label: `${theme === 'dark-theme' ? 'Light' : 'Dark'} Mode`, 
-          action: toggleTheme 
+          action: () => toggleTheme(theme === 'dark-theme' ? 'light-theme' : 'dark-theme')
         },
       ]
     },
@@ -142,14 +142,25 @@ const Navbar = () => {
                   </div>
                 )}
                 {user ? (
-                  <img
-                    src={getProfileImageUrl(user)}
-                    alt={user?.username || 'User'}
-                    className="w-8 h-8 rounded-md object-cover"
-                    onError={(e) => {
-                      e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
-                    }}
-                  />
+                  <div className="flex items-center space-x-2">
+                    <img
+                      src={getProfileImageUrl(user)}
+                      alt={user?.username || 'User'}
+                      className="w-10 h-10 rounded-md object-cover"
+                      onError={(e) => {
+                        e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
+                      }}
+                    />
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNavigation('/settings');
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                      <SettingsRegular className="w-4 h-4" />
+                    </button>
+                  </div>
                 ) : (
                   <div className="w-8 h-8 rounded-md bg-gray-200 flex items-center justify-center">
                     <PersonRegular className="w-5 h-5 text-gray-400" />
@@ -175,30 +186,9 @@ const Navbar = () => {
           showDrawer ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className={`flex items-center justify-between p-4 border-b ${
+        <div className={`flex justify-end p-4 border-b ${
           theme === 'dark-theme' ? 'border-gray-800' : 'border-gray-200'
         }`}>
-          <div className="flex items-center space-x-3">
-            {user ? (
-              <img
-                src={getProfileImageUrl(user)}
-                alt={user?.username || 'User'}
-                className="w-6 h-6 rounded-md object-cover"
-                onError={(e) => {
-                  e.target.src = `https://ui-avatars.com/api/?name=${user?.username || 'user'}&background=random`;
-                }}
-              />
-            ) : (
-              <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                <PersonRegular className="w-6 h-6 text-gray-400" />
-              </div>
-            )}
-            <div>
-              <div className={`font-medium ${theme === 'dark-theme' ? 'text-white' : 'text-gray-900'}`}>
-                {user?.username || 'Guest'}
-              </div>
-            </div>
-          </div>
           <button
             onClick={() => setShowDrawer(false)}
             className={`p-2 rounded-lg transition-colors ${

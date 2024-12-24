@@ -19,7 +19,7 @@ const MobileNav = ({ onPostCreatorClick, isHidden }) => {
   return (
     <div className={`fixed inset-x-0 bottom-0 mx-4 mb-4 z-[90] backdrop-blur-xl shadow-lg rounded-2xl ${
       theme === 'dark-theme' ? 'bg-[#0d0d0d]/95 border-gray-800' : 'bg-white/95 border-gray-200'} border w-auto pb-[env(safe-area-inset-bottom)] transition-opacity duration-300 ${
-      isHidden ? 'opacity-0 pointer-events-none' : 'opacity-100'
+      isHidden ? 'hidden' : 'opacity-100'
     }`}>
         <div className="flex justify-around items-center h-16 max-w-xl mx-auto px-4">
           <button 
