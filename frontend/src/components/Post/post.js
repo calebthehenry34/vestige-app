@@ -326,7 +326,11 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
             {localPost.mediaItems[currentMediaIndex] ? (
               <>
                 <img
-                  src={getMediaUrl(localPost.mediaItems[currentMediaIndex])}
+                  src={getMediaUrl({
+                    ...localPost.mediaItems[currentMediaIndex],
+                    postId: localPost._id,
+                    index: currentMediaIndex
+                  })}
                   loading="lazy"
                   alt={`Post content ${currentMediaIndex + 1}`}
                   className={`w-full object-cover ${imageErrors[currentMediaIndex] ? 'opacity-50' : ''}`}
@@ -436,7 +440,10 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
                 />
               ) : (
                 <img
-                  src={getMediaUrl(localPost.media)}
+                  src={getMediaUrl({
+                    ...localPost.media,
+                    postId: localPost._id
+                  })}
                   alt="Post content"
                   className={`w-full object-cover ${imageErrors[0] ? 'opacity-50' : ''}`}
                   onError={(e) => handleImageError(e, 0)}

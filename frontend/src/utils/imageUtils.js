@@ -190,7 +190,7 @@ export const getMediaUrl = (media) => {
     }
 
     // Handle case where media only has type property
-    if (Object.keys(media).length === 1 && media.type) {
+    if (Object.keys(media).length === 1 && media.type && !media.postId) {
       return '';
     }
 
