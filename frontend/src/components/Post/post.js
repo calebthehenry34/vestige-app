@@ -77,13 +77,23 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
     }
   };
 
-  // Keep localPost in sync with post
+  // Keep localPost in sync with post and handle cleanup
   useEffect(() => {
     if (post) {
       setLocalPost(post);
       // Reset error states when post changes
       setImageErrors({});
       setCurrentMediaIndex(0);
+      
+      // Cleanup function to abort any pending image loads
+      return () => {
+        const images = document.querySelectorAll('img[data-post-id="' + post._id + '"]');
+        images.forEach(img => {
+          if (img.src) {
+            img.src = ''; // Cancel any pending image loads
+          }
+        });
+      };
     }
   }, [post]);
 
@@ -188,14 +198,29 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
     setShowMenu(false);
   };
 
-  const handleImageError = (e, index) => {
+  const handleImageError = useCallback((e, index) => {
+    // Prevent handling error if component is unmounted or post changed
+    if (!localPost?._id) return;
+
+    // Track retry attempts
+    const retryCount = e.target.dataset.retryCount ? parseInt(e.target.dataset.retryCount) : 0;
+    if (retryCount >= 2) {
+      setImageErrors(prev => ({ ...prev, [index]: true }));
+      return;
+    }
+
+    // Get media object with proper fallback
     const media = localPost?.mediaItems?.[index] || localPost?.media;
+    if (!media) {
+      setImageErrors(prev => ({ ...prev, [index]: true }));
+      return;
+    }
     
-    // Add postId to media object for fallback URL generation
+    // Add postId and index to media object for fallback URL generation
     const mediaWithPostId = {
       ...media,
-      postId: localPost?._id,
-      index
+      postId: localPost._id,
+      index: index
     };
 
     // Get a new URL using the enhanced getMediaUrl function
@@ -203,11 +228,12 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
     
     // Only retry if we have a different URL
     if (newUrl && newUrl !== e.target.src) {
+      e.target.dataset.retryCount = retryCount + 1;
       e.target.src = newUrl;
     } else {
       setImageErrors(prev => ({ ...prev, [index]: true }));
     }
-  };
+  }, [localPost]);
 
   if (!localPost || !localPost.user) {
     return (
@@ -287,7 +313,7 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
       )}
 
       {/* Post Content */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden" aria-live="polite">
         {/* Multiple Media Items */}
         {localPost.mediaItems?.length > 0 ? (
           <div 
@@ -305,6 +331,10 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
                   alt={`Post content ${currentMediaIndex + 1}`}
                   className={`w-full object-cover ${imageErrors[currentMediaIndex] ? 'opacity-50' : ''}`}
                   onError={(e) => handleImageError(e, currentMediaIndex)}
+                  data-retry-count="0"
+                  data-post-id={localPost._id}
+                  data-media-index={currentMediaIndex}
+                  aria-label={imageErrors[currentMediaIndex] ? 'Image failed to load' : `Post image ${currentMediaIndex + 1}`}
                 />
                 {imageErrors[currentMediaIndex] && (
                   <div className={`absolute inset-0 flex items-center justify-center text-red-500 ${theme === 'dark-theme' ? 'bg-zinc-800' : 'bg-gray-100'} bg-opacity-50`}>
@@ -374,18 +404,26 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
                   controls 
                   className="w-full h-full object-cover"
                   onError={(e) => {
+                    const retryCount = e.target.dataset.retryCount ? parseInt(e.target.dataset.retryCount) : 0;
+                    if (retryCount >= 2) {
+                      setImageErrors({ 0: true });
+                      return;
+                    }
+
                     console.error('Video load error:', {
                       media: localPost.media,
                       error: e.error || 'Unknown error',
                       timestamp: new Date().toISOString(),
                       postId: localPost?._id,
-                      url: e.target.src
+                      url: e.target.src,
+                      retryCount
                     });
                     
                     // Try to fetch from post media endpoint as fallback
                     if (localPost?._id) {
                       const mediaUrl = `${API_URL}/api/posts/${localPost._id}/media`;
                       if (e.target.src !== mediaUrl) {
+                        e.target.dataset.retryCount = retryCount + 1;
                         e.target.src = mediaUrl;
                         return;
                       }
@@ -393,6 +431,8 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
                     
                     setImageErrors({ 0: true });
                   }}
+                  data-retry-count="0"
+                  aria-label={imageErrors[0] ? 'Video failed to load' : 'Post video'}
                 />
               ) : (
                 <img
@@ -400,6 +440,10 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
                   alt="Post content"
                   className={`w-full object-cover ${imageErrors[0] ? 'opacity-50' : ''}`}
                   onError={(e) => handleImageError(e, 0)}
+                  data-retry-count="0"
+                  data-post-id={localPost._id}
+                  data-media-index="0"
+                  aria-label={imageErrors[0] ? 'Image failed to load' : 'Post image'}
                 />
               )
             ) : (

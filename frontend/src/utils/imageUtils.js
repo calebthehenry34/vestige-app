@@ -174,6 +174,7 @@ const getValidUrl = (url) => {
 
 export const getMediaUrl = (media) => {
   try {
+    // Early return for null/undefined media
     if (!media) {
       return '';
     }
@@ -183,59 +184,57 @@ export const getMediaUrl = (media) => {
       return getValidUrl(media);
     }
 
+    // Ensure media is an object
+    if (typeof media !== 'object') {
+      return '';
+    }
+
     // Handle case where media only has type property
     if (Object.keys(media).length === 1 && media.type) {
       return '';
     }
+
+    // Try to get URL in order of preference
+    const getUrlFromVariant = (variant) => {
+      if (!variant) return null;
+      if (variant.cdnUrl) return variant.cdnUrl;
+      if (variant.urls?.webp) return getValidUrl(variant.urls.webp);
+      if (variant.urls?.jpeg) return getValidUrl(variant.urls.jpeg);
+      if (variant.url) return getValidUrl(variant.url);
+      return null;
+    };
 
     // Handle new media structure with variants
     if (media.variants) {
       // Try variants in order: large, medium, small, thumbnail
       const variantSizes = ['large', 'medium', 'small', 'thumbnail'];
       for (const size of variantSizes) {
-        const variant = media.variants[size];
-        if (variant) {
-          // Try CDN URL first
-          if (variant.cdnUrl) {
-            return variant.cdnUrl;
-          }
-          // Then try WebP or JPEG URLs
-          if (variant.urls) {
-            if (variant.urls.webp) return getValidUrl(variant.urls.webp);
-            if (variant.urls.jpeg) return getValidUrl(variant.urls.jpeg);
-          }
-          // Finally try direct URL
-          if (variant.url) {
-            return getValidUrl(variant.url);
-          }
-        }
+        const url = getUrlFromVariant(media.variants[size]);
+        if (url) return url;
       }
 
       // If no size-specific variants found, try the first available variant
       const firstVariant = Object.values(media.variants)[0];
-      if (firstVariant) {
-        if (firstVariant.cdnUrl) return firstVariant.cdnUrl;
-        if (firstVariant.urls?.webp) return getValidUrl(firstVariant.urls.webp);
-        if (firstVariant.urls?.jpeg) return getValidUrl(firstVariant.urls.jpeg);
-        if (firstVariant.url) return getValidUrl(firstVariant.url);
-      }
+      const url = getUrlFromVariant(firstVariant);
+      if (url) return url;
     }
 
     // Handle legacy media structure
     if (media.legacy) {
-      if (media.legacy.cdnUrl) return getValidUrl(media.legacy.cdnUrl);
-      if (media.legacy.url) return getValidUrl(media.legacy.url);
+      const legacyUrl = media.legacy.cdnUrl || media.legacy.url;
+      if (legacyUrl) return getValidUrl(legacyUrl);
     }
 
     // Handle direct properties
     if (media.cdnUrl) return getValidUrl(media.cdnUrl);
     if (media.url) return getValidUrl(media.url);
 
-    // If no URL is found, try to construct a URL from the post media endpoint
+    // If no URL is found but we have a postId, use the media endpoint
     if (media.postId) {
-      return `${API_URL}/api/posts/${media.postId}/media`;
+      return `${API_URL}/api/posts/${media.postId}/media${media.index ? `?index=${media.index}` : ''}`;
     }
 
+    // If all attempts fail, return empty string instead of throwing
     return '';
   } catch (error) {
     console.error('getMediaUrl error:', error);
