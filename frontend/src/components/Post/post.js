@@ -191,56 +191,21 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
   const handleImageError = (e, index) => {
     const media = localPost?.mediaItems?.[index] || localPost?.media;
     
-    // Log detailed error information
-    console.error('Image load error:', {
-      media,
-      mediaType: media?.type || 'unknown',
-      hasVariants: !!media?.variants,
-      variantKeys: media?.variants ? Object.keys(media.variants) : [],
-      url: e.target.src,
-      generatedUrl: getMediaUrl(media),
+    // Add postId to media object for fallback URL generation
+    const mediaWithPostId = {
+      ...media,
       postId: localPost?._id,
-      isMediaItems: !!localPost?.mediaItems,
-      mediaItemsLength: localPost?.mediaItems?.length,
-      fullPost: localPost,
-      error: e.error || 'Unknown error',
-      timestamp: new Date().toISOString()
-    });
+      index
+    };
 
-    // Track failed attempts to prevent infinite retries
-    const retryCount = parseInt(e.target.dataset.retryCount || '0');
-    if (retryCount >= 3) {
-      console.error('Max retry attempts reached for image:', e.target.src);
+    // Get a new URL using the enhanced getMediaUrl function
+    const newUrl = getMediaUrl(mediaWithPostId);
+    
+    // Only retry if we have a different URL
+    if (newUrl && newUrl !== e.target.src) {
+      e.target.src = newUrl;
+    } else {
       setImageErrors(prev => ({ ...prev, [index]: true }));
-      return;
-    }
-    e.target.dataset.retryCount = (retryCount + 1).toString();
-
-    setImageErrors(prev => ({ ...prev, [index]: true }));
-
-    // Attempt to reload with a different variant if available
-    if (!e.target.dataset.retried && media?.variants) {
-      e.target.dataset.retried = 'true';
-      const variants = Object.keys(media.variants);
-      if (variants.length > 0) {
-        // Try next available variant
-        const currentVariant = e.target.dataset.currentVariant || variants[0];
-        const nextVariantIndex = (variants.indexOf(currentVariant) + 1) % variants.length;
-        const nextVariant = variants[nextVariantIndex];
-        
-        // Update dataset to track current variant
-        e.target.dataset.currentVariant = nextVariant;
-        e.target.src = getMediaUrl({
-          ...media,
-          preferredVariant: nextVariant
-        });
-      }
-    }
-
-    // If no variants available and media has only type, try to fetch from post media endpoint
-    if (!media?.variants && media?.type === 'image' && localPost?._id) {
-      const mediaUrl = `${API_URL}/api/posts/${localPost._id}/media${index ? `?index=${index}` : ''}`;
-      e.target.src = mediaUrl;
     }
   };
 

@@ -1,5 +1,6 @@
 import imageCompression from 'browser-image-compression';
 import localforage from 'localforage';
+import { API_URL } from '../config';
 
 // Initialize localforage instance for image cache
 const imageCache = localforage.createInstance({
@@ -174,78 +175,74 @@ const getValidUrl = (url) => {
 export const getMediaUrl = (media) => {
   try {
     if (!media) {
-      console.debug('getMediaUrl: No media provided');
       return '';
     }
-
-    // Log media object for debugging
-    console.debug('getMediaUrl input:', JSON.stringify(media, null, 2));
 
     // Handle direct URL string
     if (typeof media === 'string') {
       return getValidUrl(media);
     }
 
-    // Handle URL property
-    if (media.url) {
-      return getValidUrl(media.url);
-    }
-
     // Handle case where media only has type property
     if (Object.keys(media).length === 1 && media.type) {
-      console.debug('getMediaUrl: Media object only has type property');
       return '';
     }
 
     // Handle new media structure with variants
     if (media.variants) {
-      console.debug('getMediaUrl variants:', Object.keys(media.variants));
-      // If a preferred variant is specified and exists, use it
-      if (media.preferredVariant && media.variants[media.preferredVariant]) {
-        const variant = media.variants[media.preferredVariant];
-        if (variant.urls?.webp) return getValidUrl(variant.urls.webp);
-        if (variant.urls?.jpeg) return getValidUrl(variant.urls.jpeg);
-        if (variant.url) return getValidUrl(variant.url);
-      }
-
       // Try variants in order: large, medium, small, thumbnail
       const variantSizes = ['large', 'medium', 'small', 'thumbnail'];
       for (const size of variantSizes) {
         const variant = media.variants[size];
         if (variant) {
-          console.debug(`getMediaUrl checking ${size} variant:`, variant);
-          if (variant.urls?.webp) return getValidUrl(variant.urls.webp);
-          if (variant.urls?.jpeg) return getValidUrl(variant.urls.jpeg);
-          if (variant.url) return getValidUrl(variant.url);
+          // Try CDN URL first
+          if (variant.cdnUrl) {
+            return variant.cdnUrl;
+          }
+          // Then try WebP or JPEG URLs
+          if (variant.urls) {
+            if (variant.urls.webp) return getValidUrl(variant.urls.webp);
+            if (variant.urls.jpeg) return getValidUrl(variant.urls.jpeg);
+          }
+          // Finally try direct URL
+          if (variant.url) {
+            return getValidUrl(variant.url);
+          }
         }
       }
 
-      // If no preferred variants found, try any available variant
+      // If no size-specific variants found, try the first available variant
       const firstVariant = Object.values(media.variants)[0];
       if (firstVariant) {
-        console.debug('getMediaUrl using first available variant:', firstVariant);
+        if (firstVariant.cdnUrl) return firstVariant.cdnUrl;
         if (firstVariant.urls?.webp) return getValidUrl(firstVariant.urls.webp);
         if (firstVariant.urls?.jpeg) return getValidUrl(firstVariant.urls.jpeg);
         if (firstVariant.url) return getValidUrl(firstVariant.url);
       }
-
-      console.debug('getMediaUrl: No valid URLs found in variants');
     }
 
     // Handle legacy media structure
     if (media.legacy) {
-      console.debug('getMediaUrl checking legacy structure:', media.legacy);
       if (media.legacy.cdnUrl) return getValidUrl(media.legacy.cdnUrl);
       if (media.legacy.url) return getValidUrl(media.legacy.url);
     }
 
-    // Handle CDN URL
+    // Handle direct properties
     if (media.cdnUrl) return getValidUrl(media.cdnUrl);
+    if (media.url) return getValidUrl(media.url);
 
-    console.debug('getMediaUrl: No valid URL found in media object');
+    // If no URL is found, try to construct a URL from the post media endpoint
+    if (media.postId) {
+      return `${API_URL}/api/posts/${media.postId}/media`;
+    }
+
     return '';
   } catch (error) {
-    console.error('getMediaUrl error:', error, 'Media:', media);
+    console.error('getMediaUrl error:', error);
+    // On error, try to use post media endpoint if postId is available
+    if (media && media.postId) {
+      return `${API_URL}/api/posts/${media.postId}/media`;
+    }
     return '';
   }
 };
