@@ -103,12 +103,13 @@ export const processPostsWithPresignedUrls = async (posts) => {
       });
       try {
         // Handle single media
-        if (postObj.media?.variants) {
+        if (postObj.media) {
           postObj.media = {
             type: postObj.media.type || 'image',
             variants: postObj.media.variants,
             metadata: postObj.media.metadata,
-            placeholder: postObj.media.placeholder
+            placeholder: postObj.media.placeholder,
+            postId: postObj._id // Add postId to media object
           };
         }
         

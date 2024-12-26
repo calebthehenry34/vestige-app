@@ -128,11 +128,13 @@ const Feed = ({ onRefreshNeeded }) => {
                       
                       // Create new array with updated post
                       const newPosts = [...prevPosts];
+                      // Ensure we don't lose the user object when updating
+                      const existingPost = newPosts[postIndex];
                       newPosts[postIndex] = {
-                        ...newPosts[postIndex],
+                        ...existingPost,
                         ...updatedPost,
-                        // Preserve any local state that shouldn't be overwritten
-                        user: updatedPost.user || newPosts[postIndex].user
+                        // Always preserve the existing user object
+                        user: existingPost.user
                       };
                       
                       return newPosts;

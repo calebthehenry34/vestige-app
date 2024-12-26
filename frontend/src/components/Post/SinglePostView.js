@@ -59,7 +59,12 @@ const SinglePostView = ({ post, className }) => {
       }
 
       const updatedPost = await response.json();
-      setLocalPost(updatedPost);
+      // Preserve user data when updating post
+      setLocalPost(prev => ({
+        ...prev,
+        ...updatedPost,
+        user: prev.user // Always preserve the user object
+      }));
       setPreviousLikes(updatedPost.likes || []);
     } catch (error) {
       console.error('Error liking post:', error);
@@ -227,10 +232,20 @@ const SinglePostView = ({ post, className }) => {
           post={localPost} 
           isOpen={showComments}
           onComment={(updatedPost) => {
-            setLocalPost(updatedPost);
+            // Preserve user data when updating post
+            setLocalPost(prev => ({
+              ...prev,
+              ...updatedPost,
+              user: prev.user // Always preserve the user object
+            }));
           }}
           onReply={(updatedPost) => {
-            setLocalPost(updatedPost);
+            // Preserve user data when updating post
+            setLocalPost(prev => ({
+              ...prev,
+              ...updatedPost,
+              user: prev.user // Always preserve the user object
+            }));
           }}
         />
       </div>

@@ -140,7 +140,12 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
       const updatedPost = await response.json();
       
       // Update with server response
-      setLocalPost(updatedPost);
+      // Preserve user data when updating post
+      setLocalPost(prev => ({
+        ...prev,
+        ...updatedPost,
+        user: prev.user // Always preserve the user object
+      }));
       setPreviousLikes(updatedPost.likes || []);
       
       // Notify parent component
@@ -494,7 +499,12 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
         isOpen={showDetails}
         onComment={(updatedPost) => {
           try {
-            setLocalPost(updatedPost);
+            // Preserve user data when updating post
+            setLocalPost(prev => ({
+              ...prev,
+              ...updatedPost,
+              user: prev.user // Always preserve the user object
+            }));
             onRefresh?.(updatedPost);
           } catch (error) {
             console.error('Error updating comment:', error);
@@ -503,7 +513,12 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
         }}
         onReply={(updatedPost) => {
           try {
-            setLocalPost(updatedPost);
+            // Preserve user data when updating post
+            setLocalPost(prev => ({
+              ...prev,
+              ...updatedPost,
+              user: prev.user // Always preserve the user object
+            }));
             onRefresh?.(updatedPost);
           } catch (error) {
             console.error('Error updating reply:', error);
@@ -519,7 +534,12 @@ const Post = ({ post, onDelete, onReport, onEdit, onRefresh, onClick }) => {
           onClose={() => setShowEditModal(false)}
           onUpdate={(updatedPost) => {
             try {
-              setLocalPost(updatedPost);
+              // Preserve user data when updating post
+              setLocalPost(prev => ({
+                ...prev,
+                ...updatedPost,
+                user: prev.user // Always preserve the user object
+              }));
               // Update parent without full refresh
               onRefresh?.(updatedPost);
             } catch (error) {

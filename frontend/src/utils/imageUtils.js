@@ -190,7 +190,11 @@ export const getMediaUrl = (media) => {
     }
 
     // Handle case where media only has type property
-    if (Object.keys(media).length === 1 && media.type && !media.postId) {
+    if (Object.keys(media).length === 1 && media.type) {
+      // If we have a postId, use the media endpoint
+      if (media.postId) {
+        return `${API_URL}/api/posts/${media.postId}/media`;
+      }
       return '';
     }
 
